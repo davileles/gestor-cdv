@@ -324,6 +324,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
   <button class="main-tab" id="tab-ofertas">📡 Aprovar Ofertas<span class="alerta-badge" id="ofertas-badge" style="display:none">0</span></button>
   <button class="main-tab" id="tab-campanha">📣 Campanha</button>
   <button class="main-tab" id="tab-entrada">👥 Reentrada</button>
+  <button class="main-tab" id="tab-gradm">🛡️ Grupos</button>
   <button class="main-tab" id="tab-config">⚙️ Config</button>
 </div>
 
@@ -776,10 +777,12 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     <div id="re-estado" style="font-size:12.5px;color:var(--muted);margin:10px 0">Carregando grupos de reentrada…</div>
     <div id="re-grupos"></div>
 
-    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin-top:12px">
-      <input type="checkbox" id="re-avisar" checked style="margin-top:2px"/>
-      <span>Mandar no privado da pessoa os links dos grupos em que o WhatsApp não deixou adicionar direto.</span>
-    </label>
+    <p class="cfg-ajuda" style="margin-top:12px;color:#ffc46b">
+      ⚠️ Antes de adicionar, peça para a pessoa <b>salvar o número do clube e mandar uma mensagem</b>. Sem essa
+      mensagem o servidor recusa — adicionar quem não tem o número salvo foi o que bloqueou a conta principal.
+      A inclusão sai pela conta que recebeu a mensagem, um grupo por vez, com pausa de 45–90s, e nada é enviado
+      no privado: se o WhatsApp não deixar incluir direto, o link aparece aqui para você mandar pelo celular.
+    </p>
 
     <button class="btn btn-blue" style="margin-top:14px" onclick="reAdicionar()">➕ Adicionar aos grupos marcados</button>
     <div id="re-fb" style="font-size:12.5px;margin-top:10px;text-align:center"></div>
@@ -788,6 +791,18 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     <p class="cfg-ajuda" style="margin-top:14px">
       A lista de grupos é a cadastrada em <b>Config → Grupos de reentrada</b>.
     </p>
+  </div>
+</div>
+
+<!-- ══ PAINEL GRUPOS (administracao) ══ -->
+<div class="main-panel" id="panel-gradm">
+  <div class="card">
+    <p class="badge-hint">🛡️ Administrar grupos do clube</p>
+    <p class="cfg-ajuda">
+      Incluir e excluir número, tornar e tirar admin, trocar nome e descrição. As ações saem pelos números
+      conectados que são admin de cada grupo, uma por vez e com pausa. A tela é a mesma do painel Tica Promos.
+    </p>
+    <div id="gg-cdv" style="font-size:12.5px;color:var(--muted)">Carregando…</div>
   </div>
 </div>
 
@@ -1070,7 +1085,7 @@ document.getElementById('logo-img').src = "data:image/png;base64,/9j/4AAQSkZJRgA
 
 // ══ TABS ══
 function switchMain(name) {
-  ['oferta','milhas','alertas','enviadas','ofertas','campanha','entrada','config'].forEach(function(id) {
+  ['oferta','milhas','alertas','enviadas','ofertas','campanha','entrada','gradm','config'].forEach(function(id) {
     document.getElementById('tab-'+id).classList.toggle('active', id===name);
     document.getElementById('panel-'+id).classList.toggle('active', id===name);
   });
@@ -1079,6 +1094,7 @@ function switchMain(name) {
   if (name === 'ofertas') carregarOfertasPendentes();
   if (name === 'campanha') campAoAbrir();
   if (name === 'entrada') reAoAbrir();
+  if (name === 'gradm') ggAbrir();
   if (name === 'config') cfgCarregar();
 }
 
@@ -5705,32 +5721,46 @@ async function reAdicionar() {
     fb.textContent = 'Marque ao menos um grupo.';
     return;
   }
-  if (!confirm('Adicionar ' + tel + ' em ' + jids.length + ' grupo(s)?\n\n'
-    + 'São chamadas em série, com pausa entre elas — leva cerca de '
-    + Math.max(1, Math.round(jids.length * 6 / 60)) + ' minuto(s).')) return;
+
+  // Trava da inclusao (16/09/2026): a pessoa precisa ter escrito para um numero
+  // nosso antes. O servidor tambem confere — aqui e so para avisar cedo.
+  fb.style.color = 'var(--muted)';
+  fb.textContent = 'Conferindo se a pessoa já mandou mensagem…';
+  var c;
+  try {
+    var rc = await fetch(SERVER + '/grupos-gestao/contato?telefone=' + tel + '&t=' + Date.now(), { cache:'no-cache', signal: AbortSignal.timeout(30000) });
+    c = await rc.json();
+    if (!c.ok) throw new Error(c.erro || 'resposta inválida');
+  } catch (e) {
+    fb.style.color = '#ff9a9d';
+    fb.textContent = 'Não consegui verificar: ' + e.message;
+    return;
+  }
+  if (!c.recebida) {
+    fb.style.color = '#ffc46b';
+    fb.innerHTML = 'Ainda não chegou mensagem desse número nas últimas ' + c.janelaHoras + 'h. Peça para a pessoa salvar e mandar um "oi" para '
+      + (c.contas || []).map(function(x){ return '<b>' + cfgEsc(reTelFmt(x.numero)) + '</b> (' + cfgEsc(x.id) + ')'; }).join(' ou ')
+      + ' e tente de novo.';
+    return;
+  }
+
+  if (!confirm('Adicionar ' + reTelFmt(tel) + ' em ' + jids.length + ' grupo(s) pela conta ' + c.conta + '?\n\n'
+    + 'Um grupo por vez, com pausa de 45–90s — cerca de ' + Math.max(1, Math.round((jids.length - 1) * 70 / 60))
+    + ' minuto(s). A tarefa continua no servidor mesmo se você fechar a aba.')) return;
 
   RE_OCUPADO = true;
   fb.style.color = 'var(--muted)';
-  fb.textContent = 'Adicionando… não feche a aba.';
+  fb.textContent = 'Iniciando…';
   saida.innerHTML = '';
   try {
     var r = await fetch(SERVER + '/cdv/entrada/adicionar', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        telefone: tel,
-        jids: jids,
-        avisar: document.getElementById('re-avisar').checked,
-      }),
-      // Teto largo de proposito: 6s de pausa por grupo, e abortar no meio nao
-      // desfaz o que ja entrou — so esconde o resultado de quem entrou.
-      signal: AbortSignal.timeout(Math.max(120000, jids.length * 20000)),
+      body: JSON.stringify({ telefone: tel, jids: jids }),
+      signal: AbortSignal.timeout(60000),
     });
     var j = await r.json();
     if (!j.ok) throw new Error(j.erro || 'falha ao adicionar');
-    fb.style.color = 'var(--green, #3ddc84)';
-    fb.textContent = '✓ ' + j.feitos + ' adicionado(s), ' + j.pulados + ' já estava(m), ' + j.falhas + ' pendente(s).'
-      + (j.avisado ? ' Links enviados no privado.' : '');
-    saida.innerHTML = reHtmlResultado(j);
+    await reAcompanhar(j.jobId, fb, saida);
     // Retrato novo: o que entrou agora precisa aparecer como "ja esta" na
     // proxima tentativa, senao a mesma pessoa e adicionada duas vezes.
     reCarregar(true);
@@ -5739,6 +5769,35 @@ async function reAdicionar() {
     fb.textContent = 'Não deu: ' + e.message;
   } finally {
     RE_OCUPADO = false;
+  }
+}
+
+function reTelFmt(d) {
+  d = String(d || '').replace(/\D/g, '');
+  var m = /^55(\d{2})(\d{4,5})(\d{4})$/.exec(d);
+  return m ? '+55 ' + m[1] + ' ' + m[2] + '-' + m[3] : (d ? '+' + d : '');
+}
+
+// Acompanha a tarefa no servidor ate terminar, redesenhando o resultado.
+async function reAcompanhar(id, fb, saida) {
+  for (;;) {
+    var r = await fetch(SERVER + '/grupos-gestao/tarefa/' + encodeURIComponent(id) + '?t=' + Date.now(), { cache:'no-cache', signal: AbortSignal.timeout(30000) });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'perdi o acompanhamento da tarefa');
+    var t = j.tarefa;
+    saida.innerHTML = reHtmlResultado({ resultados: t.resultados });
+    if (t.estado === 'rodando') {
+      fb.style.color = 'var(--muted)';
+      fb.textContent = 'Adicionando… ' + t.resultados.length + '/' + t.total
+        + (t.proximaEm ? ' — próximo grupo às ' + new Date(t.proximaEm).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) : '');
+      await new Promise(function(ok){ setTimeout(ok, 3000); });
+      continue;
+    }
+    if (t.estado === 'erro') throw new Error(t.erro || 'tarefa interrompida');
+    fb.style.color = 'var(--green, #3ddc84)';
+    fb.textContent = '✓ ' + t.feitos + ' adicionado(s), ' + t.pulados + ' já estava(m), ' + t.falhas + ' pendente(s).'
+      + (t.resultados.some(function(x){ return x.link; }) ? ' Mande os links pelo seu celular.' : '');
+    return;
   }
 }
 
@@ -5766,6 +5825,25 @@ function reCopiarLink(link) {
   try { navigator.clipboard.writeText(link); } catch (e) {}
 }
 
+// ══ GRUPOS (interface compartilhada) ══
+// A tela de administracao de grupos e servida pelo baileys-server e e a mesma
+// do painel Tica Promos: uma implementacao so. Carrega na primeira abertura.
+function ggAbrir() {
+  var el = document.getElementById('gg-cdv');
+  if (!el) return;
+  if (window.GG) { window.GG.montar(el, { server: SERVER, operacao: 'cdv' }); return; }
+  if (document.getElementById('gg-script')) return;
+  var s = document.createElement('script');
+  s.id = 'gg-script';
+  s.src = SERVER + '/grupos-gestao/ui.js?t=' + Date.now();
+  s.onload = function() { window.GG.montar(el, { server: SERVER, operacao: 'cdv' }); };
+  s.onerror = function() {
+    s.remove();
+    el.innerHTML = 'Não consegui carregar a tela de grupos do servidor. <button class="camp-mini" onclick="ggAbrir()">Tentar de novo</button>';
+  };
+  document.head.appendChild(s);
+}
+
 // ══ TEMA ══
 function aplicarTema(t) {
   document.body.setAttribute('data-tema', t);
@@ -5790,6 +5868,7 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('tab-ofertas').addEventListener('click', function(){ switchMain('ofertas'); });
   document.getElementById('tab-campanha').addEventListener('click', function(){ switchMain('campanha'); });
   document.getElementById('tab-entrada').addEventListener('click', function(){ switchMain('entrada'); });
+  document.getElementById('tab-gradm').addEventListener('click', function(){ switchMain('gradm'); });
   document.getElementById('tab-config').addEventListener('click', function(){ switchMain('config'); });
   var cfgCorpo = document.getElementById('camp-cfg-corpo');
   ['input','change'].forEach(function(ev){ cfgCorpo.addEventListener(ev, function(){ campSujo(); }); });
