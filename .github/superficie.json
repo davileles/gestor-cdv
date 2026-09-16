@@ -17,6 +17,7 @@
         "async function enviarEmissao(",
         "async function enviarWA(",
         "async function limparFila(",
+        "async function limparTodasOfertasPendentes(",
         "async function regerarAlerta(",
         "async function registrarPassagem(",
         "async function rejeitarAlerta(",

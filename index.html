@@ -540,7 +540,9 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 
 <!-- ══ PAINEL APROVAR OFERTAS ══ -->
 <div class="main-panel" id="panel-ofertas">
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <span id="limpar-ofertas-fb" style="font-size:12px;color:var(--muted2)"></span>
+    <button id="btn-limpar-ofertas" class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px" onclick="limparTodasOfertasPendentes()">🗑️ Limpar todas</button>
     <button id="btn-refresh-ofertas" class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px" onclick="carregarOfertasPendentes()">↻ Atualizar</button>
   </div>
   <div id="ofertas-lista"></div>
@@ -3683,6 +3685,51 @@ async function rejeitarOfertaPendente(id) {
       fb.style.color='#ff585e'; fb.textContent='Erro: '+(d.erro||'falha');
     }
   } catch(e) { fb.style.color='#ff585e'; fb.textContent='Erro: '+e.message; }
+}
+
+// ══ LIMPAR TODAS AS OFERTAS PENDENTES (aba Aprovar Ofertas) ══
+// Rejeita e bloqueia só os ids que estão na tela — oferta que chegou depois do
+// último carregamento continua na fila. Usa o endpoint em lote do proxy; se ele
+// ainda não existir (deploy em andamento), cai para rejeitar uma a uma.
+async function limparTodasOfertasPendentes() {
+  var fb  = document.getElementById('limpar-ofertas-fb');
+  var btn = document.getElementById('btn-limpar-ofertas');
+  var ids = ofertasPendentesData.map(function(o){ return o.id; }).filter(Boolean);
+  if (!ids.length) { fb.style.color='var(--muted2)'; fb.textContent='Nenhuma oferta para limpar.'; return; }
+  if (!confirm('Rejeitar e bloquear as '+ids.length+' oferta(s) pendente(s) desta aba?\nElas não voltam para a fila.')) return;
+
+  btn.disabled = true; fb.style.color='var(--muted2)'; fb.textContent='Limpando '+ids.length+'...';
+  try {
+    var r = await fetch(CDV_PROXY+'/ofertas/rejeitar-todas', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ids: ids })
+    });
+    if (r.status === 404) {
+      var falhas = 0;
+      for (var i = 0; i < ids.length; i++) {
+        fb.textContent = 'Limpando '+(i+1)+'/'+ids.length+'...';
+        try {
+          var r1 = await fetch(CDV_PROXY+'/ofertas/rejeitar', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ id: ids[i] })
+          });
+          var d1 = await r1.json();
+          if (!d1.ok) falhas++;
+        } catch(e1) { falhas++; }
+      }
+      if (falhas) throw new Error(falhas+' de '+ids.length+' não foram rejeitadas');
+    } else {
+      var d = await r.json();
+      if (!d.ok) throw new Error(d.erro || 'falha');
+    }
+    fb.style.color='#4ade80'; fb.textContent='✓ '+ids.length+' oferta(s) limpa(s)';
+    setTimeout(function(){ fb.textContent=''; }, 4000);
+  } catch(e) {
+    fb.style.color='#ff585e'; fb.textContent='Erro: '+e.message;
+  } finally {
+    btn.disabled = false;
+    carregarOfertasPendentes();
+  }
 }
 
 // ══ LIMPAR FILA ══
