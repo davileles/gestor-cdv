@@ -2120,7 +2120,7 @@ async function enviarEmissao(idx) {
   // Mascara qualquer link afiliado colado/editado no texto, nao so o do bloco LINK
   var texto=afiliarTexto(editEl?editEl.value:'', 'em');
   var s=document.getElementById(id+'-send-ok');
-  if (!wsConectado){s.style.color='#ff585e';s.textContent='Servidor desconectado.';setTimeout(function(){s.textContent='';},4000);return;}
+  if (!wsConectado){s.style.color='#ff585e';s.textContent='Nenhuma conta de WhatsApp conectada para disparo.';setTimeout(function(){s.textContent='';},4000);return;}
 
   // Verificar agendamento
   var schedInput = document.getElementById(id+'-sched');
@@ -3925,9 +3925,12 @@ function verificarServidor(){
   fetch(SERVER+'/status',{signal:AbortSignal.timeout(2000)})
     .then(function(r){return r.json();})
     .then(function(d){
-      wsConectado=d.conectado;
-      document.getElementById('ws-dot').className='ws-dot '+(d.conectado?'on':'off');
-      document.getElementById('ws-label').textContent=d.conectado?'WhatsApp conectado — envio automático ativo':'Servidor encontrado mas WhatsApp não conectado';
+      // Envio para grupo sai por qualquer conta de disparo (principal ou ticos).
+      // 'conectado' reflete so a principal; disparoDisponivel cobre todas.
+      var disparoOk = (d.disparoDisponivel !== undefined) ? !!d.disparoDisponivel : !!d.conectado;
+      wsConectado=disparoOk;
+      document.getElementById('ws-dot').className='ws-dot '+(disparoOk?'on':'off');
+      document.getElementById('ws-label').textContent=d.conectado?'WhatsApp conectado — envio automático ativo':(disparoOk?'Envio ativo pelas contas de disparo — conta principal desconectada':'Servidor encontrado mas nenhuma conta de WhatsApp conectada');
       // badge de alertas atualizado por atualizarBadge() após carregarAlertas()
     })
     .catch(function(){wsConectado=false;document.getElementById('ws-dot').className='ws-dot off';document.getElementById('ws-label').textContent='Servidor desconectado.';});
@@ -3958,7 +3961,7 @@ async function enviarWA(msgId,statusId,fileKey) {
   // Mascara qualquer link afiliado colado/editado no texto, nao so o do bloco LINK
   var texto=afiliarTexto(editEl?editEl.value:'', fileKey==='o' ? 'of' : 'em');
   var s=document.getElementById(statusId);
-  if (!wsConectado){s.style.color='#ff585e';s.textContent='Servidor desconectado.';setTimeout(function(){s.textContent='';},4000);return;}
+  if (!wsConectado){s.style.color='#ff585e';s.textContent='Nenhuma conta de WhatsApp conectada para disparo.';setTimeout(function(){s.textContent='';},4000);return;}
 
   // Verificar agendamento
   var schedInput = document.getElementById(fileKey==='o' ? 'o-sched-input' : fileKey+'-sched');
