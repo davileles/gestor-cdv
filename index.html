@@ -827,6 +827,11 @@ body[data-tema="light"] textarea.out{color:var(--text)}
         <select id="cfg-g-emissao"></select>
       </div>
       <div class="field" style="margin-bottom:6px">
+        <label>Emissões em executiva <span style="color:var(--muted2);font-weight:400">— opcional</span></label>
+        <select id="cfg-g-executiva"></select>
+      </div>
+      <p class="cfg-ajuda">Toda emissão em Executiva (ou Primeira Classe) que sai no grupo de Emissão é repetida aqui — grupo dos clientes do Concierge. Vazio: sem cópia.</p>
+      <div class="field" style="margin-bottom:6px">
         <label>Avisos operacionais <span style="color:var(--muted2);font-weight:400">— opcional</span></label>
         <select id="cfg-g-operador"></select>
       </div>
@@ -4945,6 +4950,7 @@ function cfgOpcoesGrupo(selecionado, comVazio) {
 function cfgRenderSelectsGrupo() {
   document.getElementById('cfg-g-ofertas').innerHTML  = cfgOpcoesGrupo(CFG_CDV.grupos.ofertas, false);
   document.getElementById('cfg-g-emissao').innerHTML  = cfgOpcoesGrupo(CFG_CDV.grupos.emissao, false);
+  document.getElementById('cfg-g-executiva').innerHTML = cfgOpcoesGrupo(CFG_CDV.grupos.executiva || '', true);
   document.getElementById('cfg-g-operador').innerHTML = cfgOpcoesGrupo(CFG_CDV.grupos.operador, true);
 }
 
@@ -5562,6 +5568,7 @@ async function cfgSalvar() {
     grupos: {
       ofertas:  document.getElementById('cfg-g-ofertas').value,
       emissao:  document.getElementById('cfg-g-emissao').value,
+      executiva: document.getElementById('cfg-g-executiva').value,
       operador: document.getElementById('cfg-g-operador').value,
     },
     monitorados: CFG_CDV.monitorados,
@@ -5571,6 +5578,10 @@ async function cfgSalvar() {
     envio:   { conta: document.getElementById('cfg-conta').value },
     leitura: { conta: document.getElementById('cfg-leitor-cdv').value },
   };
+  if (body.grupos.executiva && body.grupos.executiva === body.grupos.emissao) {
+    alert('O grupo de Emissões em executiva não pode ser o mesmo grupo de Emissão.');
+    return;
+  }
   if (body.grupos.ofertas && body.grupos.ofertas === body.grupos.emissao) {
     if (!confirm('Ofertas e Emissão vão para o MESMO grupo. Confirma?')) return;
   }
