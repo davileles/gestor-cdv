@@ -1062,7 +1062,8 @@ function linkPrograma(programa, origem) {
 
 // Listas fixas (dropdown) para o histórico de transferências bonificadas — evita erro de grafia
 // que quebraria o match de "chave" no historico-transferencias.json
-var ORIGEM_TRANSFERENCIA_OPTIONS = ['Todos','Azul Fidelidade','BRB','BTG','C6','Caixa','Esfera','Inter','Itaú','LATAM Pass','Livelo','Nubank','Porto Seguro','Revolut','Sicoob','Sicredi','Smiles','XP'];
+// Espelhada em painel-cdv/transferencia-deducao.js (deducao no proxy) — ajuste nos DOIS.
+var ORIGEM_TRANSFERENCIA_OPTIONS = ['Todos','Alloyal','Azul Fidelidade','BRB','BTG','C6','Caixa','Esfera','Inter','Itaú','LATAM Pass','Livelo','Nubank','Porto Seguro','Premmia','Revolut','Sicoob','Sicredi','Smiles','XP'];
 var DESTINO_TRANSFERENCIA_OPTIONS = ['AAdvantage','ALL Accor','Azul Fidelidade','Connect Miles','Flying Blue','Hilton Honors','Iberia Plus','IHG','LATAM Pass','Livelo','Smiles','TAP Miles&Go'];
 var PROGRAMA_COMPRA_BONIFICADA_OPTIONS = ['Azul Fidelidade','Banco do Brasil','Esfera','Inter','LATAM Pass','Livelo','Méliuz','PicPay','PortoPlus','Smiles'];
 var CLASSIFICACAO_LABELS = { acima_padrao:'📈 Acima do padrão', dentro_padrao:'➡️ Dentro do padrão', abaixo_padrao:'📉 Abaixo do padrão' };
@@ -3095,7 +3096,9 @@ var ALIAS_PROGRAMAS = {
   'C6': ['c6 bank','c6'],
   'BTG': ['btg pactual','btg'],
   'Inter': ['banco inter','inter'],
-  'AAdvantage': ['aadvantage','advantage']
+  'AAdvantage': ['aadvantage','advantage'],
+  'Premmia': ['petrobras premmia','premmia'],
+  'Alloyal': ['alloyal']
 };
 function aliasesDe(op) { return ALIAS_PROGRAMAS[op] || [normalizarBusca(op)]; }
 function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
