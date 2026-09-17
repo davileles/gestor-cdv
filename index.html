@@ -2367,8 +2367,11 @@ function autoGrowAlertasTodos() {
 // para o Radar de Passagens do painel de membros.
 var ALERTA_CAMPOS_TEXTO = ['origem','destino','cia','pontos'];
 
-function acInput(id, campo, label, valor) {
-  return '<div class="ac-f"><label>'+label+'</label>'
+function acWrap(id, campo, oculto) {
+  return '<div class="ac-f" id="acf-'+campo+'-'+id+'"'+(oculto?' style="display:none"':'')+'>';
+}
+function acInput(id, campo, label, valor, oculto) {
+  return acWrap(id, campo, oculto)+'<label>'+label+'</label>'
     +'<input id="ac-'+campo+'-'+id+'" value="'+escapeAttr(valor==null?'':String(valor))+'" oninput="marcarAlertaSujo('+id+')"/></div>';
 }
 function acSelect(id, campo, label, valor, opcoes) {
@@ -2377,7 +2380,7 @@ function acSelect(id, campo, label, valor, opcoes) {
     var t = typeof o === 'string' ? o : o.t;
     return '<option value="'+escapeAttr(v)+'"'+(String(valor||'')===v?' selected':'')+'>'+escapeHtml(t)+'</option>';
   }).join('');
-  return '<div class="ac-f"><label>'+label+'</label>'
+  return acWrap(id, campo, arguments[5])+'<label>'+label+'</label>'
     +'<select id="ac-'+campo+'-'+id+'" onchange="marcarAlertaSujo('+id+')">'+opts+'</select></div>';
 }
 function acTextarea(id, campo, label, valor) {
@@ -2409,25 +2412,50 @@ function valorAlertaTexto(pontos, programa) {
   if (nums.length > 1) hint += ' · total R$ '+vTot.toLocaleString('pt-BR')+' ('+soma.toLocaleString('pt-BR')+' pts)';
   return { txt:'R$ '+vTre.toLocaleString('pt-BR'), hint:hint };
 }
-function acValor(id, d) {
+function acValor(id, d, oculto) {
   var r = valorAlertaTexto(d.pontos, d.programa);
-  return '<div class="ac-f"><label>Valor (trecho)</label>'
-    +'<input id="ac-valor-'+id+'" class="ac-ro" readonly value="'+escapeAttr(r.txt)+'" title="'+escapeAttr(r.hint)+'"/>'
-    +'<span class="ac-hint" id="ac-valor-hint-'+id+'">'+escapeHtml(r.hint)+'</span></div>';
+  return acWrap(id, 'valorcpm', oculto)+'<label>Valor (trecho)</label>'
+    +'<input id="ac-valorcpm-'+id+'" class="ac-ro" readonly value="'+escapeAttr(r.txt)+'" title="'+escapeAttr(r.hint)+'"/>'
+    +'<span class="ac-hint" id="ac-valorcpm-hint-'+id+'">'+escapeHtml(r.hint)+'</span></div>';
 }
+
+// ══ TARIFA PAGANTE ══
+// Emissao comprada em dinheiro no site da cia: nao tem programa nem pontos, o
+// servidor nao a registra em passagens.json (a base 180d e em pontos) e nunca
+// deixa auto-enviar. Manter programa/pontos na tela so convida a gravar preco
+// em reais como se fosse milha — que e o defeito que este modo conserta.
+var ALERTA_CAMPOS_MILHAS  = ['programa','pontos','valorcpm'];
+var ALERTA_CAMPOS_PAGANTE = ['valor','link'];
+function ehAlertaPagante(id) {
+  var el = document.getElementById('ac-tarifa-'+id);
+  return !!el && el.value === 'pagante';
+}
+function aplicarModoTarifa(id) {
+  var pag = ehAlertaPagante(id);
+  ALERTA_CAMPOS_MILHAS.forEach(function(c){
+    var el = document.getElementById('acf-'+c+'-'+id);
+    if (el) el.style.display = pag ? 'none' : '';
+  });
+  ALERTA_CAMPOS_PAGANTE.forEach(function(c){
+    var el = document.getElementById('acf-'+c+'-'+id);
+    if (el) el.style.display = pag ? '' : 'none';
+  });
+}
+
 function atualizarValorAlerta(id) {
-  var el = document.getElementById('ac-valor-'+id);
+  var el = document.getElementById('ac-valorcpm-'+id);
   if (!el) return;
   var p = document.getElementById('ac-pontos-'+id);
   var g = document.getElementById('ac-programa-'+id);
   var r = valorAlertaTexto(p ? p.value : '', g ? g.value : '');
   el.value = r.txt; el.title = r.hint;
-  var h = document.getElementById('ac-valor-hint-'+id);
+  var h = document.getElementById('ac-valorcpm-hint-'+id);
   if (h) h.textContent = r.hint;
 }
 
 function blocoCamposAlerta(o) {
   var d = o.dadosExtraidos || {};
+  var pag = String(d.tarifa || '').trim().toLowerCase() === 'pagante';
   var progOpts = [''].concat(PROGRAMAS_EMISSAO);
   var motivoHtml = o.motivoFila
     ? '<div style="margin-bottom:10px;padding:9px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;font-size:12px;color:#f59e0b;line-height:1.5">🛈 <strong>Por que está aqui:</strong> '+escapeHtml(o.motivoFila)+'</div>'
@@ -2439,11 +2467,14 @@ function blocoCamposAlerta(o) {
     + acInput(o.id,'origem','Origem',d.origem)
     + acInput(o.id,'destino','Destino',d.destino)
     + acInput(o.id,'cia','Cia aérea',d.cia)
-    + acSelect(o.id,'programa','Programa',d.programa,progOpts)
-    + acInput(o.id,'pontos','Pontos',d.pontos)
-    + acValor(o.id,d)
+    + acSelect(o.id,'programa','Programa',d.programa,progOpts,pag)
+    + acInput(o.id,'pontos','Pontos',d.pontos,pag)
+    + acValor(o.id,d,pag)
+    + acInput(o.id,'valor','Valor da tarifa',d.valor,!pag)
+    + acInput(o.id,'link','Link',d.link,!pag)
     + acSelect(o.id,'cabine','Cabine',d.cabine||'Economica',[{v:'Economica',t:'Econômica'},{v:'Executiva',t:'Executiva'}])
     + acSelect(o.id,'tipoVoo','Tipo',d.tipoVoo||'internacional',[{v:'internacional',t:'Internacional'},{v:'nacional',t:'Nacional'}])
+    + acSelect(o.id,'tarifa','Tarifa',d.tarifa||'',[{v:'',t:'🎟️ Milhas'},{v:'pagante',t:'💵 Pagante (dinheiro)'}])
     +'</div>'
     +'<div class="ac-grid2">'
     + acTextarea(o.id,'datasIda','🛫 Datas de ida',d.datasIda)
@@ -2460,6 +2491,7 @@ function blocoCamposAlerta(o) {
 function marcarAlertaSujo(id) {
   var av = document.getElementById('ac-aviso-'+id);
   if (av) av.textContent = '⚠️ Campos alterados — clique em Regerar para refletir na mensagem.';
+  aplicarModoTarifa(id);
   atualizarValorAlerta(id);
   atualizarAvisoSanidade(id);
 }
@@ -2467,10 +2499,12 @@ function marcarAlertaSujo(id) {
 function coletarEdicoesAlerta(id) {
   var v = function(campo){ var el = document.getElementById('ac-'+campo+'-'+id); return el ? el.value.trim() : null; };
   var dados = {};
-  ['origem','destino','cia','programa','pontos','cabine','tipoVoo','datasIda','datasVolta'].forEach(function(c){
+  ['origem','destino','cia','programa','pontos','cabine','tipoVoo','datasIda','datasVolta','tarifa','valor','link'].forEach(function(c){
     var val = v(c);
     if (val !== null) dados[c] = val;
   });
+  if (ehAlertaPagante(id)) { dados.programa = ''; dados.pontos = ''; }
+  else                     { dados.valor = ''; dados.link = ''; }
   return dados;
 }
 
