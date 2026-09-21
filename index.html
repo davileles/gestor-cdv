@@ -208,6 +208,8 @@ select[multiple] option:checked{background:var(--accent,#4a8dff);color:#fff}
 .env-ord{background:transparent;border:1px solid #3f3f3f;color:var(--muted);border-radius:6px;font-size:11px;line-height:1;padding:4px 6px;margin-right:3px;cursor:pointer}
 .env-ord:hover:not([disabled]){border-color:var(--muted);color:#fff}
 .env-ord[disabled]{opacity:.25;cursor:default}
+.env-agora{border-color:#f59e0b;color:#f59e0b}
+.env-agora:hover:not([disabled]){background:#f59e0b;color:#111}
 .env-x:hover{border-color:#ff585e;color:#ff585e}
 .env-msg{color:var(--muted2);font-style:italic;white-space:normal;max-width:520px}
 .env-resumo{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:12px}
@@ -2704,9 +2706,27 @@ function _botoesPrioridade(it) {
     return '<button class="env-ord" title="' + ttl + '"' + (off ? ' disabled' : '')
       + ' onclick="moverNaFila(\'' + id + '\',\'' + dir + '\')">' + txt + '</button>';
   };
-  return b('topo','⤒','Enviar primeiro', idx <= 0)
+  return '<button class="env-ord env-agora" title="Disparar agora (ignora o intervalo de 10 min)"'
+       + ' onclick="dispararAgoraFila(\'' + id + '\')">⚡</button>'
+       + b('topo','⤒','Enviar primeiro', idx <= 0)
        + b('cima','▲','Subir uma posição', idx <= 0)
        + b('baixo','▼','Descer uma posição', idx < 0 || idx >= fila.length - 1);
+}
+
+async function dispararAgoraFila(id) {
+  if (!confirm('Disparar agora? A mensagem sai sem esperar o intervalo de 10 min.')) return;
+  document.querySelectorAll('.env-ord').forEach(function(bt){ bt.disabled = true; });
+  try {
+    var r = await fetch(SERVER + '/fila-envio/disparar/' + encodeURIComponent(id), {
+      method:'POST', signal: AbortSignal.timeout(15000)
+    });
+    var d = await r.json();
+    if (!d.ok) alert('Falha: ' + (d.erro || 'erro desconhecido'));
+    else if (d.dentroJanela === false) alert('Fora da janela de envio (' + (d.janelaEnvio || '') + '). O item foi para o topo e sai na abertura da janela.');
+  } catch(e) { alert('Falha: ' + e.message); }
+  // Dá tempo do worker publicar antes de recarregar as duas listas.
+  setTimeout(carregarEnviadasHoje, 4000);
+  carregarProgramadas();
 }
 
 async function moverNaFila(id, dir) {
