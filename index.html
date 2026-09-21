@@ -205,6 +205,9 @@ select[multiple] option:checked{background:var(--accent,#4a8dff);color:#fff}
 .env-tab tr.env-prog-row:hover td{background:rgba(167,139,250,.09)}
 .env-prev{font-variant-numeric:tabular-nums;font-weight:700;color:#a78bfa}
 .env-x{background:none;border:1px solid var(--border);color:var(--muted2);border-radius:6px;font-size:11px;font-weight:800;padding:3px 8px;cursor:pointer;line-height:1}
+.env-ord{background:transparent;border:1px solid #3f3f3f;color:var(--muted);border-radius:6px;font-size:11px;line-height:1;padding:4px 6px;margin-right:3px;cursor:pointer}
+.env-ord:hover:not([disabled]){border-color:var(--muted);color:#fff}
+.env-ord[disabled]{opacity:.25;cursor:default}
 .env-x:hover{border-color:#ff585e;color:#ff585e}
 .env-msg{color:var(--muted2);font-style:italic;white-space:normal;max-width:520px}
 .env-resumo{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:12px}
@@ -2682,6 +2685,50 @@ async function cancelarProgramada(tipo, id) {
   } catch(e) { alert('Falha: ' + e.message); }
 }
 
+// ── PRIORIDADE DA FILA — ⤒ ▲ ▼ nas linhas tipo 'fila' ─────────────────────
+// Agendamentos têm horário fixo e não entram na ordenação. O item que o worker
+// já está publicando (enviando) não se move nem pode ser ultrapassado.
+function _filaReordenavel() {
+  return (window._envProgCache || [])
+    .filter(function(x){ return x.tipo === 'fila'; })
+    .sort(function(a,b){ return a.pos - b.pos; });
+}
+
+function _botoesPrioridade(it) {
+  if (it.tipo !== 'fila') return '';
+  if (it.enviando) return '<span class="env-badge env-prog" title="O worker está publicando este item agora.">enviando…</span> ';
+  var fila = _filaReordenavel().filter(function(x){ return !x.enviando; });
+  var idx = fila.findIndex(function(x){ return String(x.id) === String(it.id); });
+  var id = String(it.id).replace(/'/g,'');
+  var b = function(dir, txt, ttl, off) {
+    return '<button class="env-ord" title="' + ttl + '"' + (off ? ' disabled' : '')
+      + ' onclick="moverNaFila(\'' + id + '\',\'' + dir + '\')">' + txt + '</button>';
+  };
+  return b('topo','⤒','Enviar primeiro', idx <= 0)
+       + b('cima','▲','Subir uma posição', idx <= 0)
+       + b('baixo','▼','Descer uma posição', idx < 0 || idx >= fila.length - 1);
+}
+
+async function moverNaFila(id, dir) {
+  var fila = _filaReordenavel().filter(function(x){ return !x.enviando; });
+  var ids = fila.map(function(x){ return String(x.id); });
+  var i = ids.indexOf(String(id));
+  if (i < 0) return;
+  ids.splice(i, 1);
+  var j = dir === 'topo' ? 0 : dir === 'cima' ? Math.max(0, i - 1) : Math.min(ids.length, i + 1);
+  ids.splice(j, 0, String(id));
+  document.querySelectorAll('.env-ord').forEach(function(bt){ bt.disabled = true; });
+  try {
+    var r = await fetch(SERVER + '/fila-envio/ordem', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ids: ids }), signal: AbortSignal.timeout(15000)
+    });
+    var d = await r.json();
+    if (!d.ok) alert('Falha ao reordenar: ' + (d.erro || 'erro desconhecido'));
+  } catch(e) { alert('Falha ao reordenar: ' + e.message); }
+  carregarProgramadas();
+}
+
 async function carregarProgramadas() {
   var wrap = document.getElementById('env-programadas');
   if (!wrap) return;
@@ -2709,6 +2756,8 @@ async function carregarProgramadas() {
         detalhe: '~' + (Number(it.previsaoMin) || 0) + ' min · pos. ' + it.posicao,
         dados:   it.dados,
         preview: it.preview || '',
+        pos:      Number(it.posicao) || 0,
+        enviando: !!it.enviando,
       });
     });
   } catch(e) { /* fila indisponível — segue com os agendamentos */ }
@@ -2760,7 +2809,8 @@ async function carregarProgramadas() {
     + '<th>Programa</th><th>Cia</th><th style="text-align:right">Pontos</th><th>Envio</th><th></th>'
     + '</tr></thead><tbody>'
     + itens.map(function(it, i) {
-        var acao = '<td style="text-align:right"><button class="env-x" title="Cancelar" '
+        var acao = '<td style="text-align:right;white-space:nowrap">' + _botoesPrioridade(it)
+          + '<button class="env-x" title="Cancelar" '
           + 'onclick="cancelarProgramada(\'' + it.tipo + '\',\'' + String(it.id).replace(/'/g,"") + '\')">✕</button></td>';
         var quando = '<td class="env-prev" title="' + escapeHtml(it.detalhe) + '">' + escapeHtml(it.quando) + '</td>';
         var d = it.dados;
