@@ -882,6 +882,32 @@ body[data-tema="light"] textarea.out{color:var(--text)}
         <span id="cfg-ent-sel" style="font-size:12px;color:var(--muted2)"></span>
       </div>
 
+      <div class="camp-sec">Redirecionamento de grupos</div>
+      <p class="cfg-ajuda">
+        Toda mensagem nova dos <b>grupos de origem</b> é copiada no <b>grupo destino</b> exatamente como veio
+        (texto, imagem, vídeo, documento, legenda), sem passar pela IA e sem o selo "Encaminhada".
+        A cópia sai pelo mesmo número que recebeu a mensagem — ele precisa estar também no grupo destino.
+        Destino vazio = vale o padrão antigo do servidor (grupo "Redirect").
+      </p>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input type="checkbox" id="cfg-red-ativo" onchange="cfgRedAtivo(this.checked)"/> Redirecionamento ligado
+      </label>
+      <div class="field">
+        <label>Grupo destino</label>
+        <select id="cfg-red-destino" onchange="cfgRedDestino(this.value)"></select>
+      </div>
+      <div id="cfg-red-origens" style="margin-top:8px"></div>
+      <div class="field" style="margin-top:10px">
+        <label>Adicionar grupos de origem <span style="color:var(--muted2);font-weight:400">— Ctrl/Cmd ou Shift para escolher vários</span></label>
+        <input id="cfg-red-busca" type="text" placeholder="Filtrar por nome ou JID…" oninput="cfgRenderRedNovo()" style="margin-bottom:6px"/>
+        <select id="cfg-red-novo" multiple size="8"></select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+        <button class="camp-mini" style="padding:10px 14px" onclick="cfgAddRedOrigem()">+ Adicionar selecionados</button>
+        <button class="camp-mini" style="padding:10px 14px" onclick="cfgRecarregarNomes()" title="Relê os grupos de todos os números conectados">🔄 Atualizar lista de grupos</button>
+        <span id="cfg-red-info" style="font-size:12px;color:var(--muted2)"></span>
+      </div>
+
       <div class="camp-sec">Administradores</div>
       <p class="cfg-ajuda">
         <b>Telefone</b> só é usado pelo papel Avisos. <b>E-mail</b> registra quem pode aprovar, disparar e mexer nesta
@@ -5026,6 +5052,7 @@ function cfgRender() {
   cfgRenderMonitorados();
   cfgRenderCategorias();
   cfgRenderEntrada();
+  cfgRenderRedirect();
   cfgRenderAdmins();
   cfgRenderContas();
   cfgRenderLeitores();
@@ -5294,6 +5321,7 @@ async function cfgRecarregarNomes() {
     CFG_NOMES = j.nomes || {};
     var novos = Object.keys(CFG_NOMES).length - antes;
     cfgRenderEntNovo();
+    cfgRenderRedirect();
     cfgEntSelInfo(Object.keys(CFG_NOMES).length + ' grupo(s) na lista'
       + (novos > 0 ? ' — ' + novos + ' novo(s).' : '.'));
   } catch (e) {
@@ -5353,6 +5381,95 @@ function cfgRemoverEntrada(i) {
   if (!confirm('Remover "' + cfgNomeDe(g.jid, g.nome) + '" da reentrada?\n\nPara apenas deixar de fora por ora, desmarque a caixa: o cadastro fica.')) return;
   CFG_CDV.entrada.splice(i, 1);
   cfgRenderEntrada();
+  cfgSujo();
+}
+
+// ── Redirecionamento (config_cdv.redirect) ──
+// Servidor antigo nao devolve a secao: default para a tela nao quebrar.
+function cfgRedirect() {
+  if (!CFG_CDV.redirect || typeof CFG_CDV.redirect !== 'object') CFG_CDV.redirect = { ativo: true, destino: '', origens: [] };
+  if (!Array.isArray(CFG_CDV.redirect.origens)) CFG_CDV.redirect.origens = [];
+  return CFG_CDV.redirect;
+}
+
+function cfgRenderRedirect() {
+  var r = cfgRedirect();
+  var at = document.getElementById('cfg-red-ativo');
+  if (!at) return;
+  at.checked = r.ativo !== false;
+  document.getElementById('cfg-red-destino').innerHTML = cfgOpcoesGrupo(r.destino || '', true);
+  var alvo = document.getElementById('cfg-red-origens');
+  if (!r.origens.length) {
+    alvo.innerHTML = '<p class="cfg-ajuda">Nenhum grupo de origem cadastrado.</p>';
+  } else {
+    var html = '<p class="cfg-ajuda">' + r.origens.filter(function(g){ return g.ativo !== false; }).length
+             + ' de ' + r.origens.length + ' grupo(s) de origem ligado(s).</p>';
+    r.origens.forEach(function(g, i) {
+      var on = g.ativo !== false;
+      html += '<div class="cfg-linha' + (on ? '' : ' off') + '">'
+            + '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="cfgToggleRedOrigem(' + i + ',this.checked)"/>'
+            + '<div style="flex:1;min-width:0">'
+            +   '<div class="cfg-nome">' + cfgEsc(cfgNomeDe(g.jid, g.nome)) + '</div>'
+            +   '<div class="cfg-jid">' + cfgEsc(g.jid) + '</div>'
+            + '</div>'
+            + '<button class="camp-mini" style="color:#ff9a9d" onclick="cfgRemoverRedOrigem(' + i + ')" title="Remover">🗑️</button>'
+            + '</div>';
+    });
+    alvo.innerHTML = html;
+  }
+  cfgRenderRedNovo();
+}
+
+function cfgRenderRedNovo() {
+  var sel = document.getElementById('cfg-red-novo');
+  if (!sel) return;
+  var r = cfgRedirect();
+  var jaTem = {};
+  r.origens.forEach(function(g){ jaTem[g.jid] = 1; });
+  if (r.destino) jaTem[r.destino] = 1;
+  var termo = ((document.getElementById('cfg-red-busca') || {}).value || '').trim().toLowerCase();
+  var opcoes = Object.keys(CFG_NOMES)
+    .filter(function(jid){ return !jaTem[jid]; })
+    .map(function(jid){ return { jid: jid, nome: CFG_NOMES[jid] || jid }; })
+    .filter(function(o){ return !termo || o.nome.toLowerCase().indexOf(termo) >= 0 || o.jid.toLowerCase().indexOf(termo) >= 0; })
+    .sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  sel.innerHTML = opcoes.length
+    ? opcoes.map(function(o){ return '<option value="' + cfgEsc(o.jid) + '" title="' + cfgEsc(o.jid) + '">' + cfgEsc(o.nome) + '</option>'; }).join('')
+    : '<option value="" disabled>' + (termo ? '— nenhum grupo com \u201C' + cfgEsc(termo) + '\u201D —' : '— nenhum grupo disponível —') + '</option>';
+}
+
+function cfgRedAtivo(on) { cfgRedirect().ativo = !!on; cfgSujo(); }
+
+function cfgRedDestino(jid) {
+  var r = cfgRedirect();
+  if (jid && r.origens.some(function(o){ return o.jid === jid; })) {
+    alert('Esse grupo está entre as origens. Remova-o das origens antes de usá-lo como destino.');
+    document.getElementById('cfg-red-destino').value = r.destino || '';
+    return;
+  }
+  r.destino = jid || '';
+  cfgRenderRedNovo();
+  cfgSujo();
+}
+
+function cfgAddRedOrigem() {
+  var sel = document.getElementById('cfg-red-novo');
+  var escolhidos = Array.prototype.slice.call(sel.selectedOptions || []).map(function(o){ return o.value; }).filter(Boolean);
+  var info = document.getElementById('cfg-red-info');
+  if (!escolhidos.length) { info.textContent = 'Escolha ao menos um grupo na lista acima.'; return; }
+  var r = cfgRedirect();
+  escolhidos.forEach(function(jid){ r.origens.push({ jid: jid, nome: CFG_NOMES[jid] || '', ativo: true }); });
+  cfgRenderRedirect();
+  info.textContent = escolhidos.length + ' grupo(s) adicionado(s) — falta Salvar.';
+  cfgSujo();
+}
+
+function cfgToggleRedOrigem(i, on) { cfgRedirect().origens[i].ativo = !!on; cfgRenderRedirect(); cfgSujo(); }
+
+function cfgRemoverRedOrigem(i) {
+  var r = cfgRedirect();
+  r.origens.splice(i, 1);
+  cfgRenderRedirect();
   cfgSujo();
 }
 
@@ -5680,6 +5797,7 @@ async function cfgSalvar() {
     },
     monitorados: CFG_CDV.monitorados,
     entrada: CFG_CDV.entrada || [],
+    redirect: cfgRedirect(),
     ofertas: { categoriasBloqueadas: (CFG_CDV.ofertas && CFG_CDV.ofertas.categoriasBloqueadas) || [] },
     admins: CFG_CDV.admins,
     envio:   { conta: document.getElementById('cfg-conta').value },
