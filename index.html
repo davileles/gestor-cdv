@@ -1098,6 +1098,39 @@ function linkPrograma(programa, origem) {
   return IR_BASE + slug + (origem ? '?o=' + encodeURIComponent(origem) : '');
 }
 
+// Compra bonificada de PARCEIRO UNICO (Tier 1): link pelo dominio do Clube,
+// ir.clubedoviajante.com.br/cb-<parceiro>?u=<link>&o=of-<programa>, para medir
+// cliques por parceiro em cliques.json. So ofertas com tier1 === true.
+// ESPELHO FIEL de painel-cdv/link-parceiro.js (o proxy resolve os slugs cb-*
+// com a mesma lista de dominios). Mudou aqui, muda la.
+var DOMINIOS_CB = ['clubedoviajante.com.br','esfera.com.vc','inter.co','latam.com','latamairlines.com',
+  'latampass.com','livelo.com.br','meliuz.com.br','shoppingsmiles.com.br','smiles.com.br',
+  'topcashback.co.uk','topcashback.com','voeazul.com.br',
+  'camicado.com.br','casasbahia.com.br','extra.com.br','lojasrenner.com.br','magazineluiza.com.br',
+  'netshoes.com.br','pontofrio.com.br'];
+function slugTextoCb(s, max) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/&/g, 'e').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    .slice(0, max || 37).replace(/-+$/g, '');
+}
+function slugParceiroCb(nome) { var s = slugTextoCb(nome, 37); return s ? 'cb-' + s : ''; }
+function linkParceiroCb(o) {
+  var link = o && o.link;
+  if (!link || !IR_ATIVO) return link;
+  if (!o.tier1 || o.categoria !== 'compra_bonificada') return link;
+  var slug = slugParceiroCb(o.loja);
+  if (!slug) return link;
+  var u;
+  try { u = new URL(String(link).trim()); } catch(e) { return link; }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return link;
+  var host = u.hostname.toLowerCase();
+  if (host === IR_HOST || host === 'ir.clubedoviajante.com.br') return link;
+  var ok = DOMINIOS_CB.some(function(d){ return host === d || host.endsWith('.' + d); });
+  if (!ok) return link;
+  var origem = 'of' + (o.programa ? '-' + slugTextoCb(o.programa, 30) : '');
+  return IR_BASE + slug + '?u=' + encodeURIComponent(u.toString()) + '&o=' + encodeURIComponent(origem);
+}
+
 // Listas fixas (dropdown) para o histórico de transferências bonificadas — evita erro de grafia
 // que quebraria o match de "chave" no historico-transferencias.json
 // Espelhada em painel-cdv/transferencia-deducao.js (deducao no proxy) — ajuste nos DOIS.
@@ -3731,7 +3764,7 @@ function montarMensagemRadar(o) {
     msg += '📆 *PRAZO* ' + o.prazo + '\n\n';
   }
   if (o.importante) msg += '⚠️ *IMPORTANTE* ' + stripEmojis(o.importante) + '\n\n';
-  msg += '🔗 *LINK* ' + (afiliarLink(o.link,'of') || '—') + '\n\n';
+  msg += '🔗 *LINK* ' + (afiliarLink(linkParceiroCb(o),'of') || '—') + '\n\n';
   msg += RODAPE_OFERTA;
   return msg;
 }
