@@ -356,16 +356,15 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     </div>
     <div id="mode-imagem" style="display:none">
       <div class="field" style="margin-bottom:10px">
-        <label>Envie um arquivo da oferta</label>
+        <label>Arquivos da oferta <span class="tag">selecione um ou mais</span></label>
         <div class="img-drop" id="ai-img-drop">
-          <input type="file" id="ai-img-input" accept="image/*,application/pdf" style="display:none"/>
-          <div class="img-drop-text">📎 Clique para selecionar ou arraste o arquivo</div>
-          <div class="img-drop-sub">Imagem (print, foto, banner) ou PDF</div>
+          <input type="file" id="ai-img-input" accept="image/*,application/pdf" multiple style="display:none"/>
+          <div class="img-drop-text">📎 Clique para selecionar ou arraste os arquivos</div>
+          <div class="img-drop-sub">Imagens (print, foto, banner) ou PDF — vários de uma vez</div>
         </div>
         <div id="ai-file-preview" style="display:none;margin-top:10px">
-          <img id="ai-img-el" src="" alt="preview" style="display:none;width:100%;max-height:180px;object-fit:cover;border-radius:8px"/>
-          <div id="ai-pdf-label" style="display:none;padding:10px 0;font-size:13px;color:var(--muted);font-weight:600">📄 <span id="ai-pdf-name"></span></div>
-          <button id="ai-clear-btn" style="margin-top:6px;padding:4px 12px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer">✕ Remover arquivo</button>
+          <div id="ai-files-list" style="display:flex;flex-direction:column;gap:6px"></div>
+          <button id="ai-clear-btn" style="margin-top:8px;padding:4px 12px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer">✕ Remover todos</button>
         </div>
       </div>
       <div class="field" style="margin-bottom:10px">
@@ -1144,7 +1143,7 @@ var historicoTransferenciasData = null;
 // ══ ESTADO ══
 var currentMode = 'link';
 var currentMilhasMode = 'texto';
-var aiB64 = null, aiType = null, aiPdf = false;
+var aiFiles = [];
 var mAiFiles = [];
 var emissoesPendentes = [];
 var pastedFile = null, mPastedFile = null;
@@ -1204,27 +1203,21 @@ function carregarArquivoAi(file, isM) {
       mAiFiles.push({b64: parts[1], type: file.type, isPdf: isPdf, name: file.name, src: src});
       renderMiAiPreview();
     } else {
-      aiB64=parts[1]; aiType=file.type; aiPdf=isPdf;
-      var imgEl = document.getElementById('ai-img-el');
-      var pdfEl = document.getElementById('ai-pdf-label');
-      var prev  = document.getElementById('ai-file-preview');
-      if (isPdf) {
-        imgEl.style.display='none'; pdfEl.style.display='block';
-        document.getElementById('ai-pdf-name').textContent=file.name;
-      } else {
-        imgEl.src=src; imgEl.style.display='block'; pdfEl.style.display='none';
-      }
-      prev.style.display='block';
+      aiFiles.push({b64: parts[1], type: file.type, isPdf: isPdf, name: file.name, src: src});
+      renderAiPreview();
     }
   };
   r.readAsDataURL(file);
 }
 
-function renderMiAiPreview() {
-  var list = document.getElementById('m-ai-files-list');
-  var prev = document.getElementById('m-ai-file-preview');
+function renderMiAiPreview() { renderListaArquivosAi(mAiFiles, 'm-ai-files-list', 'm-ai-file-preview', renderMiAiPreview); }
+function renderAiPreview() { renderListaArquivosAi(aiFiles, 'ai-files-list', 'ai-file-preview', renderAiPreview); }
+
+function renderListaArquivosAi(arr, listId, prevId, rerender) {
+  var list = document.getElementById(listId);
+  var prev = document.getElementById(prevId);
   list.innerHTML = '';
-  mAiFiles.forEach(function(f, i) {
+  arr.forEach(function(f, i) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;';
     if (f.isPdf) {
@@ -1235,11 +1228,11 @@ function renderMiAiPreview() {
     var btn = document.createElement('button');
     btn.textContent = '✕';
     btn.style.cssText = 'background:none;border:none;color:var(--muted2);cursor:pointer;font-size:14px;padding:0 4px;flex-shrink:0';
-    btn.addEventListener('click', (function(idx){ return function(){ mAiFiles.splice(idx,1); renderMiAiPreview(); }; })(i));
+    btn.addEventListener('click', (function(idx){ return function(){ arr.splice(idx,1); rerender(); }; })(i));
     row.appendChild(btn);
     list.appendChild(row);
   });
-  prev.style.display = mAiFiles.length ? 'block' : 'none';
+  prev.style.display = arr.length ? 'block' : 'none';
 }
 
 function limparArquivoAi(isM) {
@@ -1248,12 +1241,9 @@ function limparArquivoAi(isM) {
     document.getElementById('m-ai-img-input').value='';
     renderMiAiPreview();
   } else {
-    aiB64=null; aiType=null; aiPdf=false;
+    aiFiles = [];
     document.getElementById('ai-img-input').value='';
-    document.getElementById('ai-img-el').src='';
-    document.getElementById('ai-img-el').style.display='none';
-    document.getElementById('ai-pdf-label').style.display='none';
-    document.getElementById('ai-file-preview').style.display='none';
+    renderAiPreview();
   }
 }
 
@@ -1577,13 +1567,19 @@ async function analisarOferta() {
     okEl.style.color='var(--muted)'; okEl.textContent='Analisando texto...';
     messages = [{role:'user',content:'Extraia as informações desta oferta:\n\n'+txt+'\n\n'+PROMPT}];
   } else {
-    if (!aiB64) { okEl.style.color='#ff585e'; okEl.textContent='Selecione um arquivo antes.'; return; }
+    if (!aiFiles.length) { okEl.style.color='#ff585e'; okEl.textContent='Selecione ao menos um arquivo.'; return; }
     btn.textContent='⏳ Analisando...'; btn.disabled=true;
-    okEl.style.color='var(--muted)'; okEl.textContent='Analisando arquivo...';
-    var fc = aiPdf ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:aiB64}} : {type:'image',source:{type:'base64',media_type:aiType,data:aiB64}};
+    okEl.style.color='var(--muted)'; okEl.textContent = aiFiles.length > 1 ? 'Analisando '+aiFiles.length+' arquivos...' : 'Analisando arquivo...';
+    var partesArq = [];
+    aiFiles.forEach(function(f, i) {
+      if (aiFiles.length > 1) partesArq.push({type:'text',text:'(Arquivo '+(i+1)+')'});
+      partesArq.push(f.isPdf ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:f.b64}} : {type:'image',source:{type:'base64',media_type:f.type,data:f.b64}});
+    });
     var imgCtx = (document.getElementById('ai-img-contexto').value||'').trim();
-    var imgInstrucao = imgCtx ? 'Contexto informado pelo usuário: '+imgCtx+'\n\nExtraia as informações desta oferta.\n\n'+PROMPT : 'Extraia as informações desta oferta.\n\n'+PROMPT;
-    messages = [{role:'user',content:[fc,{type:'text',text:imgInstrucao}]}];
+    var baseInstr = aiFiles.length > 1 ? 'Estes arquivos são da mesma oferta. Combine as informações de todos eles, sem duplicar dados, e extraia as informações desta oferta.' : 'Extraia as informações desta oferta.';
+    var imgInstrucao = imgCtx ? 'Contexto informado pelo usuário: '+imgCtx+'\n\n'+baseInstr+'\n\n'+PROMPT : baseInstr+'\n\n'+PROMPT;
+    partesArq.push({type:'text',text:imgInstrucao});
+    messages = [{role:'user',content:partesArq}];
   }
 
   var useSearch = currentMode === 'link';
@@ -6239,10 +6235,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
   var aiInput=document.getElementById('ai-img-input'),aiDrop=document.getElementById('ai-img-drop');
   aiDrop.addEventListener('click',function(){aiInput.click();});
-  aiInput.addEventListener('change',function(){if(aiInput.files[0])carregarArquivoAi(aiInput.files[0],false);});
+  aiInput.addEventListener('change',function(){Array.from(aiInput.files).forEach(function(f){carregarArquivoAi(f,false);});aiInput.value='';});
   aiDrop.addEventListener('dragover',function(e){e.preventDefault();aiDrop.classList.add('dragover');});
   aiDrop.addEventListener('dragleave',function(){aiDrop.classList.remove('dragover');});
-  aiDrop.addEventListener('drop',function(e){e.preventDefault();aiDrop.classList.remove('dragover');if(e.dataTransfer.files[0])carregarArquivoAi(e.dataTransfer.files[0],false);});
+  aiDrop.addEventListener('drop',function(e){e.preventDefault();aiDrop.classList.remove('dragover');Array.from(e.dataTransfer.files).forEach(function(f){carregarArquivoAi(f,false);});});
   document.getElementById('ai-clear-btn').addEventListener('click',function(){limparArquivoAi(false);});
 
   var mAiInput=document.getElementById('m-ai-img-input'),mAiDrop=document.getElementById('m-ai-img-drop');
