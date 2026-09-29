@@ -690,11 +690,18 @@ body[data-tema="light"] textarea.out{color:var(--text)}
         <span class="camp-chev">▾</span>
       </div>
       <div class="camp-passo-bd" id="camp-cfg-corpo">
-        <div class="camp-sec" style="margin-top:0">Ritmo de envio</div>
+        <div class="camp-sec" style="margin-top:0">Número que envia</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px">
+          <div class="field" style="flex:1;margin:0"><label>Sai pelo número</label><select id="cfg-conta" onchange="campContaMudou()"></select></div>
+          <button class="camp-mini" style="padding:10px 14px" onclick="campCarregarContas(true)" title="Atualizar status dos números">↻</button>
+        </div>
+        <div id="cfg-conta-info" style="font-size:11.5px;color:var(--muted);margin-bottom:4px"></div>
+
+        <div class="camp-sec">Ritmo de envio</div>
         <div class="camp-grid">
           <div class="field"><label>Intervalo mínimo <span class="tag">min</span></label><input type="number" id="cfg-int-min" min="1"/></div>
           <div class="field"><label>Intervalo máximo <span class="tag">min</span></label><input type="number" id="cfg-int-max" min="1"/></div>
-          <div class="field"><label>Teto diário <span class="tag">máx. 25</span></label><input type="number" id="cfg-diario" min="1" max="25"/></div>
+          <div class="field"><label>Teto diário <span class="tag" id="cfg-diario-tag">máx. 25</span></label><input type="number" id="cfg-diario" min="1" max="25"/></div>
           <div class="field"><label>Pausa longa a cada <span class="tag">envios</span></label><input type="number" id="cfg-pausa-cada" min="0"/></div>
           <div class="field"><label>Pausa longa mín <span class="tag">min</span></label><input type="number" id="cfg-pausa-min" min="0"/></div>
           <div class="field"><label>Pausa longa máx <span class="tag">min</span></label><input type="number" id="cfg-pausa-max" min="0"/></div>
@@ -4172,7 +4179,13 @@ var CAMP_ID  = null;   // id da campanha selecionada
 var CAMP_MSG = null;   // id da mensagem em edição
 var CAMP_IMPORT = null;
 
-var CAMP_TETO_DIARIO = 25;   // trava dura: num dia de pressa é fácil subir para 200
+var CAMP_TETO_DIARIO = 25;   // trava dura da PRINCIPAL: num dia de pressa é fácil subir para 200
+// Número exclusivo de campanha (apelido camp-*, pareado na aba Config): é o
+// número que a base já tem salvo, então aguenta volume maior. O servidor aplica
+// o mesmo teto (CAMP_TETO_CONTA no baileys-server) — mudou um, muda o outro.
+var CAMP_TETO_CONTA = 300;
+var CAMP_RE_CONTA = /^camp-/i;
+var CAMP_CONTAS = null;   // [{ id, conectado }] — só contas camp-*, do GET /contas
 var CAMP_CAMPOS_IMPORT = [
   ['nome','Nome completo'], ['telefone','Telefone'], ['email','E-mail'],
   ['produto','Produto'], ['valor','Valor'], ['dataFalha','Data da falha'],
@@ -4311,7 +4324,7 @@ function campResumos() {
   var jan = (g.janelas || []).map(function(j){ return j[0] + '–' + j[1]; }).join(', ');
   var txtRitmo = jan
     ? (Math.round((g.intervaloMinSegundos||0)/60) + '–' + Math.round((g.intervaloMaxSegundos||0)/60)
-       + ' min · até ' + (g.limiteDiario||0) + '/dia · ' + jan
+       + ' min · até ' + (g.limiteDiario||0) + '/dia · ' + (g.conta || 'principal') + ' · ' + jan
        + (g.diasUteisApenas ? ' · dias úteis' : ''))
     : 'Sem janela de horário definida';
   campSetPasso('ritmo', (g.janelas||[]).length > 0, txtRitmo);
@@ -4342,6 +4355,12 @@ function campChecklist() {
     { ok: fila > 0,               txt: fila > 0 ? fila + ' contato(s) na fila' : 'Nenhum contato na fila' },
     { ok: temMsg,                 txt: temMsg ? 'Mensagem com conteúdo' : 'Mensagem sem conteúdo' },
     { ok: (g.janelas||[]).length > 0, txt: (g.janelas||[]).length ? 'Janela de horário definida' : 'Sem janela de horário' },
+    (function(){
+      var st = campContaInfo(g.conta || '');
+      var nome = g.conta || 'principal';
+      return { ok: st.ok, txt: st.ok ? 'Número ' + nome + ' conectado'
+        : (CAMP_CONTAS === null ? 'Verificando número ' + nome + '…' : 'Número ' + nome + (st.conhecida ? ' desconectado' : ' não pareado')) };
+    })(),
     { ok: !CAMP_SUJO,             txt: CAMP_SUJO ? 'Há alterações não salvas' : 'Tudo salvo' }
   ];
   var pronto = itens.every(function(i){ return i.ok; });
@@ -4440,8 +4459,69 @@ function campRenderContadores() {
 }
 
 // ── Configuração ─────────────────────────────────────────────────────────────
+async function campCarregarContas(avisar) {
+  try {
+    var r = await fetch(SERVER + '/contas?t=' + Date.now(), { cache:'no-cache', signal:AbortSignal.timeout(15000) });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'resposta inválida');
+    CAMP_CONTAS = (j.extras || []).filter(function(x){ return CAMP_RE_CONTA.test(x.id); })
+      .map(function(x){ return { id: x.id, conectado: !!x.conectado, numero: x.numero || '' }; });
+    CAMP_CONTAS.principalConectada = !!(j.principal && j.principal.conectado);
+    if (avisar) campFb('camp-salvar-fb', '✓ Status dos números atualizado.', true);
+  } catch(e) {
+    if (avisar) campFb('camp-salvar-fb', 'Não consegui ler os números: ' + e.message);
+  }
+  var c = campAtual();
+  if (c) { campRenderConta((document.getElementById('cfg-conta') || {}).value || (c.config||{}).conta || ''); campChecklist(); }
+}
+function campContaInfo(ap) {
+  if (!ap) return { ok: !CAMP_CONTAS || CAMP_CONTAS.principalConectada !== false, conhecida: true };
+  var x = (CAMP_CONTAS || []).find(function(k){ return k.id.toLowerCase() === ap.toLowerCase(); });
+  return { ok: !!(x && x.conectado), conhecida: !!x, numero: x ? x.numero : '' };
+}
+function campRenderConta(atual) {
+  var sel = document.getElementById('cfg-conta');
+  if (!sel) return;
+  atual = String(atual || '');
+  var ops = [{ v:'', t:'Principal (número de monitoramento)' }];
+  var lista = (CAMP_CONTAS || []).slice().sort(function(a,b){ return a.id.localeCompare(b.id,'pt-BR'); });
+  lista.forEach(function(k){
+    ops.push({ v:k.id, t:k.id + (k.numero ? ' · ' + k.numero : '') + (k.conectado ? ' — conectado' : ' — desconectado') });
+  });
+  if (atual && !lista.some(function(k){ return k.id.toLowerCase() === atual.toLowerCase(); })) {
+    ops.push({ v:atual, t:atual + ' — ' + (CAMP_CONTAS ? 'não pareado' : 'carregando…') });
+  }
+  sel.innerHTML = ops.map(function(o){
+    return '<option value="' + o.v.replace(/"/g,'&quot;') + '">' + o.t.replace(/</g,'&lt;') + '</option>';
+  }).join('');
+  sel.value = atual;
+  campAtualizarTeto();
+}
+function campAtualizarTeto() {
+  var ap = (document.getElementById('cfg-conta') || {}).value || '';
+  var teto = ap ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO;
+  var inp = document.getElementById('cfg-diario');
+  inp.max = teto;
+  document.getElementById('cfg-diario-tag').textContent = 'máx. ' + teto;
+  var info = document.getElementById('cfg-conta-info');
+  var st = campContaInfo(ap);
+  info.innerHTML = ap
+    ? (st.ok ? '<span style="color:#22c55e">●</span> Envia só por este número — se ele cair, a campanha espera (nunca vai pela principal).'
+             : '<span style="color:#f59e0b">●</span> ' + (st.conhecida ? 'Número desconectado.' : 'Número não pareado.')
+               + ' Pareie na aba ⚙️ Config → Números conectados com apelido começando em <code>camp-</code>.')
+    : 'Principal: teto de ' + CAMP_TETO_DIARIO + '/dia e divide o espaçamento com a fila de ofertas. Para a base que tem seu número salvo, pareie um número <code>camp-</code> na aba Config.';
+}
+function campContaMudou() {
+  var inp = document.getElementById('cfg-diario');
+  campAtualizarTeto();
+  if (Number(inp.value) > Number(inp.max)) inp.value = inp.max;
+  campSujo();
+}
+
 function campRenderConfig(c) {
   var g = c.config || {};
+  campRenderConta(g.conta || '');
+  if (CAMP_CONTAS === null) campCarregarContas(false);
   var v = function(id, val){ document.getElementById(id).value = val; };
   v('cfg-int-min',   Math.round((g.intervaloMinSegundos||180)/60));
   v('cfg-int-max',   Math.round((g.intervaloMaxSegundos||480)/60));
@@ -4470,10 +4550,12 @@ function campColetarConfig(c) {
     .map(function(l){ return l.split('-').map(function(x){ return x.trim(); }); })
     .filter(function(j){ return j.length === 2 && /^\d{1,2}:\d{2}$/.test(j[0]) && /^\d{1,2}:\d{2}$/.test(j[1]); });
 
-  var diario = Math.min(n('cfg-diario') || 15, CAMP_TETO_DIARIO);
+  var conta = (document.getElementById('cfg-conta').value || '').trim();
+  var diario = Math.min(n('cfg-diario') || 15, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
   document.getElementById('cfg-diario').value = diario;
 
   c.config = {
+    conta: conta,
     intervaloMinSegundos: Math.max(60, n('cfg-int-min') * 60),
     intervaloMaxSegundos: Math.max(60, n('cfg-int-max') * 60),
     limiteDiario: diario,
@@ -4517,7 +4599,7 @@ async function campStatus(novo) {
     if (CAMP_SUJO) return campFb('camp-status-fb', 'Salve a campanha antes de iniciar.');
     var fila = (c.contatos||[]).filter(function(x){ return x.status === 'fila'; }).length;
     if (!fila) return campFb('camp-status-fb', 'Não há contatos na fila.');
-    if (!confirm('Iniciar "'+c.nome+'"?\n\n'+fila+' contato(s) na fila, até '+c.config.limiteDiario+' por dia.\nQualquer outra campanha ativa será pausada.')) return;
+    if (!confirm('Iniciar "'+c.nome+'"?\n\n'+fila+' contato(s) na fila, até '+c.config.limiteDiario+' por dia, pelo número '+(c.config.conta||'principal')+'.\nQualquer outra campanha ativa será pausada.')) return;
   }
   try {
     var d = await campApi('/campanhas/status', { method:'POST', body:{ campanhaId: c.id, status: novo } });
