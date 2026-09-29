@@ -4187,7 +4187,20 @@ async function enviarWA(msgId,statusId,fileKey) {
               method:'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify(ofertaPayload)
             }).then(function(rp){ return rp.json(); }).then(function(dp){
-              if (dp.ok) { s.textContent='✓ Enviado e publicado no Radar!'; }
+              if (dp.ok) {
+                s.textContent='✓ Enviado e publicado no Radar!';
+                // Envio manual nao passa pela filaRadar: registra o texto
+                // enviado para o lembrete "⏰ ACABA HOJE" no ultimo dia do prazo
+                // (o baileys decide pela categoria/prazo de ofertas.json).
+                if (dp.id) {
+                  fetch(SERVER+'/radar/lembretes/registrar', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ id: dp.id, grupo: grupo, mensagem: texto })
+                  }).then(function(rl){ return rl.json(); }).then(function(dl){
+                    if (!dl.ok) console.warn('[Lembrete] Falha ao registrar:', dl.erro);
+                  }).catch(function(el){ console.warn('[Lembrete] Erro ao registrar:', el.message); });
+                }
+              }
               else { console.warn('[Radar] Falha ao publicar:', dp.erro); }
             }).catch(function(ep){ console.warn('[Radar] Erro ao publicar:', ep.message); });
           }
