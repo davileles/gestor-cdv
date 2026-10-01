@@ -289,6 +289,7 @@ Cron do GitHub está degradado (atrasa 2–4 h): disparo real vem do Railway; cr
 - Alertas de passagem vêm de grupos WhatsApp monitorados → extração IA → fila pendente → aprovação.
 - Auto-envio de emissão aprovada quando pontos ≤ média histórica ± tolerância.
 - **Alaska Atmos é proibido de envio automático** — sempre aprovação manual.
+- **Reenvio x campanha nova (histórico de transferências, desde 01/10/2026):** `GET /ofertas/pendentes` e `/ofertas/mensagem/:id` devolvem `situacaoHistorico` em cada oferta `transferencia` (`reenvio` | `duplicada_fila` | `nova` | `indefinida`, com `texto` pronto), calculada na leitura (nunca gravada) por `situacaoHistoricoTransferencia` no proxy. Mesma campanha = mesma chave origem→destino e (mesmo prazo **ou** registro ainda vigente **ou**, sem prazo, registrado há ≤ 5 dias) — `registroMesmaCampanha`, a mesma regra que `atualizarHistoricoTransferencia` usa na aprovação (reenvio só anexa o `ofertaId`; prazo maior prorroga; bônus maior atualiza). O gestor mostra selo + bloco no card (checkbox "registrar como campanha nova mesmo assim" → `edits.campanhaNova:true` pula a dedup); o bot de ofertas do Telegram mostra a linha no card.
 - Comparador: abas de compras bonificadas e transferências bonificadas; parceiros Tier 1 recebem mensagens individuais; projeções de frequência/próximo aumento.
 - Coleta de passagens do seats.aero é feita por automação de navegador (API bloqueada para o Brasil) e entra por `/passagens/registrar`.
 

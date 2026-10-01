@@ -3554,9 +3554,10 @@ function renderOfertaPendenteCard(o) {
   return '<div class="alerta-card" id="oferta-card-'+o.id+'"'+cardStyle+'>'
     +'<div class="alerta-header">'
     +'<span class="alerta-id">'+(o.emoji||'📰')+'</span>'
-    +'<span class="alerta-rota">'+escapeHtml(o.titulo||'')+'</span>'    +badgeEncerrada    +badgeOrigemOferta(o)    +'<span class="alerta-time">'+data+'</span>'
+    +'<span class="alerta-rota">'+escapeHtml(o.titulo||'')+'</span>'    +badgeEncerrada    +badgeSituacaoHistorico(o)    +badgeOrigemOferta(o)    +'<span class="alerta-time">'+data+'</span>'
     +'</div>'
     +'<div style="padding:14px;display:flex;flex-direction:column;gap:10px">'
+      +blocoSituacaoHistorico(o)
       +'<div class="g2">'
         +'<div class="field"><label>Título</label><input id="of-titulo-'+o.id+'" value="'+escapeAttr(o.titulo)+'" oninput="atualizarPrevia(\''+o.id+'\')"/></div>'
         +'<div class="field"><label>Categoria</label><select id="of-categoria-'+o.id+'" onchange="atualizarPrevia(\''+o.id+'\'); toggleCamposHistorico(\''+o.id+'\')">'+ofCatOptions(o.categoria)+'</select></div>'
@@ -3612,6 +3613,39 @@ function renderOfertaPendenteCard(o) {
     +'</div>';
 }
 
+// Reenvio x campanha nova: calculado pelo proxy (situacaoHistorico em
+// GET /ofertas/pendentes) com a MESMA regra que grava o historico na aprovacao
+// — mesmo prazo, campanha registrada ainda vigente ou, sem prazo, registrada
+// ha ate 5 dias. Reenvio aprovado so anexa o id ao registro existente.
+function badgeSituacaoHistorico(o) {
+  var s = o.situacaoHistorico;
+  if (!s) return '';
+  var cfg = {
+    reenvio:        ['#78350f', '#fcd34d', '&#128257; REENVIO'],
+    duplicada_fila: ['#78350f', '#fcd34d', '&#128257; DUPLICADA NA FILA'],
+    nova:           ['#14532d', '#86efac', '&#127381; CAMPANHA NOVA'],
+    indefinida:     ['#374151', '#d1d5db', '&#10068; HISTÓRICO?']
+  }[s.tipo];
+  if (!cfg) return '';
+  return '<span title="' + escapeAttr(s.texto || '') + '" style="background:' + cfg[0] + ';color:' + cfg[1]
+       + ';font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px">' + cfg[2] + '</span>';
+}
+
+function blocoSituacaoHistorico(o) {
+  var s = o.situacaoHistorico;
+  if (!s || !s.texto) return '';
+  var alerta = s.tipo === 'reenvio' || s.tipo === 'duplicada_fila';
+  var cor = alerta ? '#f59e0b' : (s.tipo === 'nova' ? '#22c55e' : 'var(--border2)');
+  var forcar = s.tipo === 'reenvio'
+    ? '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:11px;color:var(--muted);cursor:pointer">'
+      + '<input type="checkbox" id="of-campnova-' + o.id + '" style="margin-top:2px"/>'
+      + '<span>É outra campanha do mesmo par no mesmo período: registrar como campanha nova mesmo assim</span></label>'
+    : '';
+  return '<div style="font-size:12px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid ' + cor
+    + ';border-left-width:4px;border-radius:8px;padding:10px 12px">'
+    + '<strong>Histórico de transferências:</strong> ' + escapeHtml(s.texto) + forcar + '</div>';
+}
+
 // Oferta capturada em grupo de WhatsApp nao teve artigo por tras: nao ha texto
 // longo, regulamento nem "informacoes importantes" para a IA ter lido. Marcar a
 // procedencia no card e o que permite revisar essa com mais desconfianca do que
@@ -3649,8 +3683,10 @@ function coletarEdicoesOferta(id) {
   var restricoes = get('restricoes').split('\n').map(function(s){return s.trim();}).filter(Boolean);
   var bonusMaxRaw = get('bonusmax');
   var semHistEl = document.getElementById('of-semhist-'+id);
+  var campNovaEl = document.getElementById('of-campnova-'+id);
   return {
     semHistorico: !!(semHistEl && semHistEl.checked),
+    campanhaNova: !!(campNovaEl && campNovaEl.checked),
     titulo: get('titulo'),
     categoria: get('categoria'),
     programa: get('programa'),
