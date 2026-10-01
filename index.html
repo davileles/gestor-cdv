@@ -666,6 +666,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
         <div style="display:flex;gap:8px;margin-bottom:18px">
           <button class="camp-mini" onclick="campAddBloco('texto')">+ Bloco de texto</button>
           <button class="camp-mini" onclick="campAddBloco('imagem')">+ Bloco de imagem</button>
+          <button class="camp-mini" onclick="campAddBloco('audio')">+ Bloco de áudio</button>
         </div>
 
         <div class="camp-sec">Prévia com contato real</div>
@@ -4391,7 +4392,7 @@ function campResumos() {
   var nBlocos = (c.mensagens || []).reduce(function(a, x){ return a + (x.blocos||[]).length; }, 0);
   var vazia = !(c.mensagens||[]).some(function(x){
     return (x.blocos||[]).some(function(b){
-      return b.tipo === 'imagem' ? !!b.arquivo : !!String(b.conteudo||'').trim();
+      return (b.tipo === 'imagem' || b.tipo === 'audio') ? !!b.arquivo : !!String(b.conteudo||'').trim();
     });
   });
   var txtMsg = !m ? 'Nenhuma mensagem'
@@ -4425,7 +4426,7 @@ function campChecklist() {
   var g = c.config || {};
   var temMsg = (c.mensagens||[]).some(function(x){
     return (x.blocos||[]).some(function(b){
-      return b.tipo === 'imagem' ? !!b.arquivo : !!String(b.conteudo||'').trim();
+      return (b.tipo === 'imagem' || b.tipo === 'audio') ? !!b.arquivo : !!String(b.conteudo||'').trim();
     });
   });
 
@@ -4830,10 +4831,24 @@ function campRenderBlocos() {
   document.getElementById('camp-msg-seg').value  = m.segmento || '*';
   wrap.innerHTML = (m.blocos||[]).map(function(b, i) {
     var topo = '<div class="camp-bloco-top"><span style="font-size:10px;font-weight:800;letter-spacing:1px;color:var(--muted2)">'
-      + (b.tipo === 'imagem' ? '🖼️ IMAGEM' : '💬 TEXTO') + ' · BLOCO ' + (i+1) + '</span><span>'
+      + (b.tipo === 'imagem' ? '🖼️ IMAGEM' : b.tipo === 'audio' ? '🎙️ ÁUDIO' : '💬 TEXTO') + ' · BLOCO ' + (i+1) + '</span><span>'
       + '<button class="camp-mini" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,-1)">↑</button> '
       + '<button class="camp-mini" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,1)">↓</button> '
       + '<button class="camp-mini" data-i="'+i+'" onclick="campRemoverBloco(this.dataset.i)">✕</button></span></div>';
+    if (b.tipo === 'audio') {
+      var ehVoz = /\.(ogg|opus)$/i.test(b.arquivo || '');
+      return '<div class="camp-bloco">' + topo
+        + '<div class="field" style="margin-bottom:8px"><label>Arquivo</label>'
+        + '<input type="text" data-i="'+i+'" value="'+(b.arquivo||'').replace(/"/g,'&quot;')+'" oninput="campSetBloco(this.dataset.i,\'arquivo\',this.value)" placeholder="audio-volta.opus"/></div>'
+        + '<input type="file" accept=".ogg,.opus,.m4a,.mp3,.aac,audio/*" data-i="'+i+'" style="font-size:12px;padding:6px" onchange="campUploadMidia(this.dataset.i, this)"/>'
+        + (b.arquivo ? '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">'
+            + '<button class="camp-mini" data-i="'+i+'" onclick="campOuvirAudio(this.dataset.i, this)">▶ Ouvir</button>'
+            + '<span style="font-size:11px;color:var(--muted2)">' + (b.segundos ? Math.round(b.segundos) + 's · ' : '')
+            + (ehVoz ? 'sai como mensagem de voz' : 'sai como arquivo de áudio (para mensagem de voz, use .ogg/.opus)') + '</span>'
+            + '<audio data-i="'+i+'" controls style="display:none;width:100%;margin-top:4px"></audio></div>' : '')
+        + '<div style="font-size:11px;color:var(--muted2);margin-top:8px">O mesmo áudio vai para todos (sem variáveis). Para gerar .opus: grave no WhatsApp numa conversa com você mesmo e exporte/compartilhe o áudio.</div>'
+        + '</div>';
+    }
     if (b.tipo === 'imagem') {
       return '<div class="camp-bloco">' + topo
         + '<div class="field" style="margin-bottom:8px"><label>Arquivo</label>'
@@ -4855,7 +4870,9 @@ function campSetBloco(i, campo, valor) {
 }
 function campAddBloco(tipo) {
   var m = campMsgAtual(); if (!m) return;
-  m.blocos.push(tipo === 'imagem' ? { tipo:'imagem', arquivo:'', legenda:'' } : { tipo:'texto', conteudo:'' });
+  m.blocos.push(tipo === 'imagem' ? { tipo:'imagem', arquivo:'', legenda:'' }
+    : tipo === 'audio' ? { tipo:'audio', arquivo:'', segundos:0 }
+    : { tipo:'texto', conteudo:'' });
   campRenderBlocos();
   campSujo();
 }
@@ -4874,6 +4891,54 @@ function campMoverBloco(i, dir) {
   var tmp = m.blocos[i]; m.blocos[i] = m.blocos[j]; m.blocos[j] = tmp;
   campRenderBlocos();
   campSujo();
+}
+// Duração lida no navegador; vai junto no bloco para a mensagem de voz mostrar o tempo certo.
+function campDuracaoAudio(f) {
+  return new Promise(function(res) {
+    try {
+      var a = new Audio(), u = URL.createObjectURL(f);
+      a.preload = 'metadata';
+      a.onloadedmetadata = function(){ var s = a.duration; URL.revokeObjectURL(u); res(isFinite(s) ? s : 0); };
+      a.onerror = function(){ URL.revokeObjectURL(u); res(0); };
+      a.src = u;
+    } catch(e) { res(0); }
+  });
+}
+async function campUploadMidia(i, input) {
+  var f = input.files && input.files[0]; if (!f) return;
+  if (f.size > 3 * 1024 * 1024) return alert('Áudio acima de 3MB. Um áudio de 40s em .opus tem uns 100KB.');
+  var seg = await campDuracaoAudio(f);
+  var b64 = await new Promise(function(res, rej) {
+    var r = new FileReader();
+    r.onload  = function(){ res(String(r.result).split(',')[1]); };
+    r.onerror = function(){ rej(new Error('falha ao ler o arquivo')); };
+    r.readAsDataURL(f);
+  });
+  try {
+    var d = await campApi('/campanhas/midia', { method:'POST', body:{ arquivo: f.name, base64: b64 } });
+    var m = campMsgAtual(); if (m) m.blocos[Number(i)].segundos = Math.round(seg);
+    campSetBloco(i, 'arquivo', d.arquivo);
+    campRenderBlocos();
+    campFb('camp-salvar-fb', '✓ Áudio enviado: ' + d.arquivo + '. Salve a campanha.', true);
+  } catch(e) {
+    alert('Erro no upload: ' + e.message);
+  }
+}
+async function campOuvirAudio(i, btn) {
+  var m = campMsgAtual(); if (!m) return;
+  var b = m.blocos[Number(i)]; if (!b || !b.arquivo) return;
+  var el = document.querySelector('#camp-blocos audio[data-i="' + i + '"]');
+  if (!el) return;
+  if (!el.src) {
+    btn.textContent = 'Carregando…';
+    try {
+      var d = await campApi('/campanhas/midia/' + encodeURIComponent(b.arquivo));
+      el.src = 'data:' + (d.mime || 'audio/ogg') + ';base64,' + d.base64;
+    } catch(e) { btn.textContent = '▶ Ouvir'; return alert('Erro ao carregar o áudio: ' + e.message); }
+  }
+  btn.style.display = 'none';
+  el.style.display = 'block';
+  el.play().catch(function(){});
 }
 async function campUploadImagem(i, input) {
   var f = input.files && input.files[0]; if (!f) return;
@@ -4930,6 +4995,10 @@ function campRenderPreview() {
   var ct = (c.contatos||[]).find(function(x){ return x.id === id; });
   if (!ct) { box.innerHTML = '<p style="font-size:12px;color:var(--muted2)">Importe o público para ver a prévia com dados reais.</p>'; return; }
   box.innerHTML = (m.blocos||[]).map(function(b) {
+    if (b.tipo === 'audio') {
+      return '<div class="camp-prev" style="color:var(--muted)">🎙️ ' + (b.arquivo || '(sem arquivo)')
+        + (b.segundos ? ' · ' + Math.round(b.segundos) + 's' : '') + '</div>';
+    }
     if (b.tipo === 'imagem') {
       return '<div class="camp-prev" style="color:var(--muted)">🖼️ ' + (b.arquivo || '(sem arquivo)')
         + (b.legenda ? '\n' + campResolver(b.legenda, ct) : '') + '</div>';
