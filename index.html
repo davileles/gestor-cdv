@@ -103,6 +103,95 @@ textarea.out{padding:1.25rem 1.5rem;font-family:'Courier New',monospace;font-siz
 body[data-tema="light"] .camp-sujo{background:#fff7e6;border-color:#f0c26b;color:#9a6400}
 body[data-tema="light"] .camp-passo.ok .camp-num{background:#16a34a;border-color:#16a34a;color:#fff}
 .camp-sec:first-child{margin-top:0}
+/* ── Campanha (estrutura lista / preparar / acompanhar) ── */
+.camp-barra{display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:10px;flex-wrap:wrap}
+.camp-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted2);margin-bottom:2px}
+.camp-topo{position:sticky;top:0;z-index:6;background:var(--bg);padding-bottom:2px;margin:-6px 0 8px}
+.camp-topo-tit{font-size:16px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.camp-topo-tit > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+.camp-ico{padding:2px 7px;font-size:11px}
+.camp-btn{width:auto;margin:0;padding:10px 16px;font-size:13px}
+.camp-btn.btn-aprovar{background:#22c55e;color:#06230f}
+.camp-btn.btn-pausar{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.camp-btn.btn-off{background:var(--surface2);color:var(--muted2);border:1px solid var(--border);cursor:not-allowed}
+.camp-abas{display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px}
+.camp-abas button{border:none;background:transparent;color:var(--muted);font-family:var(--font);font-size:12px;font-weight:700;padding:6px 12px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.camp-abas button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.camp-sec-card{display:grid;grid-template-columns:150px minmax(0,1fr);gap:20px;align-items:start;padding:18px 20px}
+.camp-sec-card .camp-lado h3{font-size:14px;font-weight:800;margin:0 0 4px}
+.camp-res{font-size:12px;color:var(--muted);line-height:1.5}
+.camp-res b.ok{color:#6ee7a0}.camp-res b.falta{color:#fbbf24}
+.camp-duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.camp-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.camp-chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.camp-chip.var{cursor:pointer}.camp-chip.var:hover{color:var(--text);border-color:var(--border2)}
+.camp-det{margin-top:12px;font-size:12.5px}
+.camp-det summary{cursor:pointer;color:var(--blue);font-weight:700;list-style:none;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.camp-det summary::before{content:'▸';font-size:11px;transition:transform .15s}
+.camp-det[open] summary::before{transform:rotate(90deg)}
+.camp-det summary::-webkit-details-marker{display:none}
+.camp-det > *:not(summary){margin-top:10px}
+.camp-ajuda{font-size:11.5px;color:var(--muted2);line-height:1.6;margin:8px 0 0}
+.camp-bl{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.camp-bl-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--muted2);text-transform:uppercase}
+.camp-bl-top span:first-child{flex:1}
+.camp-bl textarea{min-height:84px;font-size:13px;line-height:1.5;background:var(--surface)}
+.camp-bl .camp-arq{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.camp-bl .camp-arq small{display:block;font-size:11px;color:var(--muted2);font-weight:500;margin-top:2px}
+.camp-zap{background:#0b141a;border:1px solid var(--border);border-radius:12px;padding:14px 12px;min-height:120px;background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1px);background-size:14px 14px}
+.camp-bolha{background:#005c4b;color:#e9edef;border-radius:10px 10px 2px 10px;padding:7px 10px 6px;max-width:88%;margin:0 0 6px auto;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 1px rgba(0,0,0,.3)}
+.camp-bolha .hora{display:block;text-align:right;font-size:10px;color:#9fd3c7;margin-top:2px}
+.camp-bolha img{max-width:100%;border-radius:7px;display:block;margin-bottom:4px}
+.camp-bolha.audio{display:flex;align-items:center;gap:8px}
+.camp-bolha.audio .play{width:28px;height:28px;border-radius:50%;background:#8696a0;color:#0b141a;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.camp-bolha.audio .onda{flex:1;height:3px;background:#8696a0;border-radius:3px;position:relative}
+.camp-bolha.audio .onda::after{content:'';position:absolute;left:0;top:-4px;width:11px;height:11px;border-radius:50%;background:#53bdeb}
+.camp-zap .entre{text-align:center;font-size:10.5px;color:#6b7a8f;margin:2px 0 8px}
+.camp-zap .vazio{color:#6b7a8f;font-size:12px;text-align:center;padding:20px 0}
+.camp-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:6px}
+.camp-preset{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface2);cursor:pointer;text-align:left;font-family:var(--font);color:var(--text)}
+.camp-preset.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.camp-preset b{display:block;font-size:13px;margin-bottom:2px}
+.camp-preset span{font-size:11px;color:var(--muted);line-height:1.4;display:block}
+.camp-rodape{margin-top:4px}
+.camp-estado{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:14px;align-items:center}
+.camp-estado i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.camp-estado b{color:var(--text)}
+.camp-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.camp-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.camp-kpi{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;min-width:0}
+.camp-kpi b{display:block;font-size:22px;font-weight:800;line-height:1.1}
+.camp-kpi span{font-size:11px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camp-prog-barra{height:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+#camp-prog-fill{height:100%;width:0;background:linear-gradient(90deg,#126eff,#22c55e);transition:width .4s}
+.camp-prox td{background:#126eff14}
+.camp-prox td:first-child{box-shadow:inset 3px 0 0 #126eff}
+.camp-tab td small{display:block;color:var(--muted2);font-family:'Courier New',monospace;font-size:11px}
+.camp-lc{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.camp-lc:hover{border-color:var(--border2)}
+.camp-lc .nm{flex:1;min-width:0}
+.camp-lc .nm b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camp-lc .nm span{font-size:11.5px;color:var(--muted)}
+.camp-lc .mini-barra{width:90px;height:6px;border-radius:6px;background:var(--surface);border:1px solid var(--border);overflow:hidden;flex:none}
+.camp-lc .mini-barra div{height:100%;background:linear-gradient(90deg,#126eff,#22c55e)}
+.st-ativa{background:#22c55e33;color:#6ee7a0}.st-pausada{background:#f59e0b33;color:#fbbf24}.st-rascunho{background:#3d4a66;color:#b9c7e2}.st-concluida{background:#126eff33;color:#7db0ff}
+body[data-tema="light"] .camp-abas button.on{box-shadow:0 1px 2px rgba(0,0,0,.08)}
+body[data-tema="light"] .camp-res b.ok{color:#15803d}body[data-tema="light"] .camp-res b.falta{color:#b45309}
+body[data-tema="light"] .camp-zap{background:#efeae2;border-color:var(--border2);background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px)}
+body[data-tema="light"] .camp-bolha{background:#d9fdd3;color:#111b21}
+body[data-tema="light"] .camp-bolha .hora{color:#667781}
+body[data-tema="light"] .camp-zap .entre,body[data-tema="light"] .camp-zap .vazio{color:#667781}
+body[data-tema="light"] .st-ativa{background:#d6f5e3;color:#12783f}body[data-tema="light"] .st-pausada{background:#fdf0d5;color:#8a5a00}
+body[data-tema="light"] .st-rascunho{background:#e3e9f4;color:#4a5878}body[data-tema="light"] .st-concluida{background:#dceafd;color:#0b4fc0}
+body[data-tema="light"] .camp-btn.btn-aprovar{background:#16a34a;color:#fff}
+@media(max-width:760px){
+  .camp-sec-card{grid-template-columns:1fr;gap:10px}
+  .camp-duas{grid-template-columns:1fr}
+  .camp-presets{grid-template-columns:1fr}
+  .camp-kpis{grid-template-columns:1fr 1fr}
+  .camp-topo-tit > span:first-child{max-width:100%}
+}
+
 .camp-bloco{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
 .camp-bloco-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .camp-mini{background:var(--surface);border:1px solid var(--border2);color:var(--muted);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer;font-family:var(--font)}
@@ -568,217 +657,230 @@ body[data-tema="light"] textarea.out{color:var(--text)}
       <label>Chave de operador</label>
       <input type="password" id="camp-key" placeholder="••••••••" autocomplete="off"/>
     </div>
-    <button class="btn btn-blue" onclick="campDestravar()">Destravar</button>
-    <div id="camp-gate-fb" style="font-size:12px;margin-top:10px;text-align:center"></div>
+    <button class="btn btn-blue" onclick="campDestravar()">Entrar</button>
+    <div id="camp-gate-fb" style="font-size:12px;margin-top:8px"></div>
   </div>
 
   <div id="camp-app" style="display:none">
 
-    <!-- Campanha selecionada -->
-    <div class="card" style="padding:1rem 1.25rem">
-      <div style="display:flex;gap:10px;align-items:flex-end">
-        <div class="field" style="flex:1">
-          <label>Campanha</label>
-          <select id="camp-sel" onchange="campSelecionar(this.value)"></select>
+    <!-- ══ VISTA 1: LISTA DE CAMPANHAS ══ -->
+    <div id="camp-v-lista">
+      <div class="card camp-barra">
+        <div style="flex:1;min-width:0">
+          <div class="camp-eyebrow">Campanhas</div>
+          <div id="camp-lista-res" style="font-size:12.5px;color:var(--muted)">—</div>
         </div>
-        <button class="camp-mini" style="padding:10px 14px" onclick="campRecarregar()" title="Recarregar do servidor">↻</button>
-        <button class="camp-mini" style="padding:10px 14px" onclick="campNova()">+ Nova</button>
-        <button class="camp-mini" style="padding:10px 14px" onclick="campDuplicar()" title="Duplicar campanha">⧉</button>
-        <button class="camp-mini" style="padding:10px 14px;color:#ff9a9d" onclick="campExcluir()" title="Excluir campanha">🗑️</button>
+        <button class="camp-mini" style="padding:9px 12px" onclick="campRecarregar()" title="Recarregar do servidor">↻ Atualizar</button>
+        <button class="btn btn-gerar camp-btn" onclick="campNova()">+ Nova campanha</button>
       </div>
+      <div id="camp-lista"></div>
     </div>
 
-    <!-- PASSO 1 — PÚBLICO -->
-    <div class="camp-passo aberto" id="passo-publico">
-      <div class="camp-passo-hd" onclick="campToggle('publico')">
-        <span class="camp-num">1</span>
-        <div style="flex:1">
-          <div class="camp-passo-tit">Quem vai receber</div>
-          <div class="camp-passo-res" id="res-publico">—</div>
-        </div>
-        <span class="camp-chev">▾</span>
-      </div>
-      <div class="camp-passo-bd">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          <button class="camp-mini" onclick="campToggleImport()">📥 Importar lista</button>
-          <button class="camp-mini" onclick="campCopiarPublico()">📋 Copiar de outra campanha</button>
-        </div>
+    <!-- ══ VISTA 2: UMA CAMPANHA (Preparar / Acompanhar) ══ -->
+    <div id="camp-v-camp" style="display:none">
 
-        <div id="camp-import" style="display:none;margin-bottom:16px">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <button class="camp-mini" onclick="campBaixarModelo()">⬇️ Baixar modelo (.csv)</button>
-            <button class="camp-mini" onclick="document.getElementById('camp-file').click()">📄 Enviar arquivo</button>
-            <input type="file" id="camp-file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="campLerArquivo(this)"/>
+      <div class="camp-topo">
+        <div class="card camp-barra">
+          <button class="camp-mini" style="padding:9px 12px" onclick="campIrLista()">‹ Campanhas</button>
+          <div style="flex:1;min-width:0">
+            <div class="camp-eyebrow">Campanha</div>
+            <div class="camp-topo-tit"><span id="camp-topo-nome">—</span> <span class="camp-st" id="camp-topo-st">—</span>
+              <button class="camp-mini camp-ico" onclick="campRenomear()" title="Renomear">✎</button></div>
           </div>
-          <p style="font-size:11.5px;color:var(--muted2);line-height:1.6;margin-bottom:12px">
-            Aceita <b>.csv</b> ou <b>.tsv</b> com a primeira linha de cabeçalho, separador <b>;</b> <b>,</b> ou tabulação.
-            Colunas do modelo: <code>nome · telefone · email · produto · valor · dataFalha · segmento · obs</code>.
-            Só <b>telefone</b> é obrigatório. Qualquer coluna a mais pode virar variável de mensagem no mapeamento.
-          </p>
-          <div class="field" style="margin-bottom:10px">
-            <label>Ou cole direto da planilha <span class="tag">Ctrl+C no Sheets/Excel e Ctrl+V aqui</span></label>
-            <textarea id="camp-import-txt" style="min-height:120px;font-family:'Courier New',monospace;font-size:12px" placeholder="nome&#9;telefone&#9;email&#9;produto..."></textarea>
+          <div class="camp-abas">
+            <button type="button" id="camp-aba-preparar" class="on" onclick="campVista('preparar')">Preparar</button>
+            <button type="button" id="camp-aba-acompanhar" onclick="campVista('acompanhar')">Acompanhar</button>
           </div>
-          <button class="camp-mini" onclick="campAnalisarImport()">Analisar colunas</button>
-          <div id="camp-map" style="display:none;margin-top:14px"></div>
-        </div>
-
-        <div class="field" style="margin-bottom:12px;max-width:240px">
-          <label>Filtrar por status</label>
-          <select id="camp-filtro" onchange="campRenderContatos()">
-            <option value="">Todos</option>
-            <option value="fila">Na fila</option>
-            <option value="enviado">Enviados</option>
-            <option value="respondido">Respondidos</option>
-            <option value="erro">Erros</option>
-            <option value="optout">Opt-out</option>
-          </select>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="camp-tab"><thead><tr>
-            <th>Nome</th><th>Telefone</th><th>Segmento</th><th>Mensagem</th><th>Status</th><th>Enviado</th>
-          </tr></thead><tbody id="camp-contatos"></tbody></table>
+          <button class="btn camp-btn" id="camp-acao" onclick="campAcao()">▶ Iniciar envio</button>
         </div>
       </div>
-    </div>
 
-    <!-- PASSO 2 — MENSAGEM -->
-    <div class="camp-passo" id="passo-mensagem">
-      <div class="camp-passo-hd" onclick="campToggle('mensagem')">
-        <span class="camp-num">2</span>
-        <div style="flex:1">
-          <div class="camp-passo-tit">O que será enviado</div>
-          <div class="camp-passo-res" id="res-mensagem">—</div>
-        </div>
-        <span class="camp-chev">▾</span>
-      </div>
-      <div class="camp-passo-bd">
-        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px">
-          <div class="field" style="flex:1">
-            <label>Editando</label>
-            <select id="camp-msg-sel" onchange="campRenderBlocos()"></select>
+      <!-- ── PREPARAR ── -->
+      <div id="camp-v-preparar">
+
+        <!-- 1. Quem recebe -->
+        <div class="card camp-sec-card">
+          <div class="camp-lado">
+            <h3>1. Quem recebe</h3>
+            <div class="camp-res" id="res-publico">—</div>
           </div>
-          <button class="camp-mini" style="padding:10px 14px" onclick="campNovaMensagem()">+ Nova</button>
-        </div>
-        <div class="camp-grid" style="margin-bottom:14px">
-          <div class="field"><label>Nome</label><input type="text" id="camp-msg-nome" oninput="campMsgMeta()"/></div>
-          <div class="field"><label>Segmento <span class="tag">* = todos</span></label><input type="text" id="camp-msg-seg" oninput="campMsgMeta()"/></div>
+          <div style="min-width:0">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="camp-mini" onclick="campToggleImport()">📥 Importar lista</button>
+              <button class="camp-mini" onclick="campCopiarPublico()">📋 Copiar de outra campanha</button>
+              <span style="flex:1"></span>
+              <button class="camp-mini" id="camp-btn-verlista" onclick="campToggleLista()">Ver lista ▾</button>
+            </div>
+            <div id="camp-chips" class="camp-chips" style="margin-top:10px"></div>
+
+            <div id="camp-import" style="display:none;margin-top:14px;padding:14px;border:1px dashed var(--border2);border-radius:10px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+                <button class="camp-mini" onclick="campBaixarModelo()">⬇️ Baixar modelo (.csv)</button>
+                <button class="camp-mini" onclick="document.getElementById('camp-file').click()">📄 Enviar arquivo</button>
+                <input type="file" id="camp-file" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="campLerArquivo(this)"/>
+                <span style="flex:1"></span>
+                <button class="camp-mini" onclick="campToggleImport()">Fechar</button>
+              </div>
+              <p style="font-size:11.5px;color:var(--muted2);line-height:1.6;margin-bottom:12px">
+                Aceita <b>.csv</b> ou <b>.tsv</b> com cabeçalho na primeira linha. Só <b>telefone</b> é obrigatório.
+                Colunas do modelo: <code>nome · telefone · email · produto · valor · dataFalha · segmento · obs</code>. Qualquer coluna a mais pode virar variável da mensagem.
+              </p>
+              <div class="field" style="margin-bottom:10px">
+                <label>Ou cole direto da planilha <span class="tag">Ctrl+C no Sheets/Excel e Ctrl+V aqui</span></label>
+                <textarea id="camp-import-txt" style="min-height:110px;font-family:'Courier New',monospace;font-size:12px" placeholder="nome&#9;telefone&#9;email&#9;produto..."></textarea>
+              </div>
+              <button class="camp-mini" onclick="campAnalisarImport()">Analisar colunas</button>
+              <div id="camp-map" style="display:none;margin-top:14px"></div>
+            </div>
+
+            <div id="camp-lista-wrap" style="display:none;margin-top:12px">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+                <input type="search" id="camp-busca" placeholder="Buscar por nome ou telefone" oninput="campRenderContatos()" style="flex:1;padding:8px 11px;font-size:13px"/>
+                <select id="camp-filtro" onchange="campRenderContatos()" style="width:auto;padding:8px 32px 8px 11px;font-size:13px">
+                  <option value="">Todos</option>
+                  <option value="fila">Na fila</option>
+                  <option value="enviado">Enviados</option>
+                  <option value="respondido">Responderam</option>
+                  <option value="erro">Erros</option>
+                  <option value="optout">Opt-out</option>
+                </select>
+              </div>
+              <div style="max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:10px">
+                <table class="camp-tab"><thead><tr>
+                  <th>Nome</th><th>Telefone</th><th>Segmento</th><th>Status</th>
+                </tr></thead><tbody id="camp-contatos"></tbody></table>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div id="camp-vars" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px"></div>
-        <div id="camp-blocos"></div>
-        <div style="display:flex;gap:8px;margin-bottom:18px">
-          <button class="camp-mini" onclick="campAddBloco('texto')">+ Bloco de texto</button>
-          <button class="camp-mini" onclick="campAddBloco('imagem')">+ Bloco de imagem</button>
-          <button class="camp-mini" onclick="campAddBloco('audio')">+ Bloco de áudio</button>
+        <!-- 2. O que recebe -->
+        <div class="card camp-sec-card">
+          <div class="camp-lado">
+            <h3>2. O que recebe</h3>
+            <div class="camp-res" id="res-mensagem">—</div>
+          </div>
+          <div class="camp-duas" style="min-width:0">
+            <div style="min-width:0">
+              <div id="camp-blocos"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+                <button class="camp-mini" onclick="campAddBloco('texto')">+ Texto</button>
+                <button class="camp-mini" onclick="campAddBloco('imagem')">+ Imagem</button>
+                <button class="camp-mini" onclick="campAddBloco('audio')">+ Áudio</button>
+              </div>
+              <div id="camp-vars" class="camp-chips" style="margin-top:12px"></div>
+              <details class="camp-det" id="camp-det-variantes">
+                <summary>Variantes por segmento <span class="tag">avançado</span></summary>
+                <p class="camp-ajuda">Cada contato tem um <b>segmento</b> (coluna da planilha; <code>*</code> = todos). Dá para escrever uma mensagem diferente por segmento. Sem isso, todo mundo recebe a mensagem padrão.</p>
+                <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px">
+                  <div class="field" style="flex:1"><label>Editando a mensagem</label><select id="camp-msg-sel" onchange="campTrocarMensagem()"></select></div>
+                  <button class="camp-mini" style="padding:10px 14px" onclick="campNovaMensagem()">+ Nova variante</button>
+                </div>
+                <div class="camp-grid">
+                  <div class="field"><label>Nome</label><input type="text" id="camp-msg-nome" oninput="campMsgMeta()"/></div>
+                  <div class="field"><label>Segmento <span class="tag">* = todos</span></label><input type="text" id="camp-msg-seg" oninput="campMsgMeta()"/></div>
+                </div>
+              </details>
+            </div>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+                <label style="margin:0">Como vai chegar</label>
+                <select id="camp-prev-sel" onchange="campRenderPreview()" style="width:auto;flex:1;min-width:120px;padding:5px 30px 5px 9px;font-size:12px"></select>
+                <button class="camp-mini camp-ico" id="camp-btn-spintax" onclick="campRenderPreview()" title="Sortear as variações de texto de novo" style="display:none">🎲</button>
+              </div>
+              <div id="camp-preview" class="camp-zap"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="camp-sec">Prévia com contato real</div>
-        <div class="field" style="margin-bottom:12px">
-          <label>Contato</label>
-          <select id="camp-prev-sel" onchange="campRenderPreview()"></select>
+        <!-- 3. Como envia -->
+        <div class="card camp-sec-card">
+          <div class="camp-lado">
+            <h3>3. Como envia</h3>
+            <div class="camp-res" id="res-ritmo">—</div>
+          </div>
+          <div style="min-width:0" id="camp-cfg-corpo">
+            <div class="camp-grid" style="margin-bottom:12px">
+              <div class="field">
+                <label>Pelo número</label>
+                <div style="display:flex;gap:6px"><select id="cfg-conta" onchange="campContaMudou()"></select>
+                  <button class="camp-mini" style="padding:0 12px" onclick="campCarregarContas(true)" title="Atualizar status dos números">↻</button></div>
+                <div id="cfg-conta-info" style="font-size:11.5px;color:var(--muted);margin-top:4px"></div>
+              </div>
+              <div class="field">
+                <label>Horários de envio <span class="tag">ex.: 09:00-12:00, 14:00-19:30</span></label>
+                <input type="text" id="cfg-janelas" placeholder="09:00-12:00, 14:00-19:30" oninput="campSujo()"/>
+                <label style="display:flex;align-items:center;gap:7px;text-transform:none;font-size:12.5px;color:var(--text);cursor:pointer;margin-top:6px;letter-spacing:0;font-weight:600">
+                  <input type="checkbox" id="cfg-uteis" style="width:auto" onchange="campSujo()"/> Só em dias úteis
+                </label>
+              </div>
+            </div>
+
+            <label>Ritmo</label>
+            <div class="camp-presets" id="camp-presets"></div>
+            <div id="cfg-ritmo-aviso" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
+
+            <details class="camp-det" id="camp-det-manual">
+              <summary>Ajustar manualmente <span class="tag">intervalos, pausas, tempo entre mensagens, follow-up, parar após erros</span></summary>
+              <div class="camp-grid" style="margin-top:10px">
+                <div class="field"><label>Intervalo entre contatos: mínimo <span class="tag">min</span></label><input type="number" id="cfg-int-min" min="1" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Intervalo entre contatos: máximo <span class="tag">min</span></label><input type="number" id="cfg-int-max" min="1" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Limite por dia <span class="tag" id="cfg-diario-tag">máx. 25</span></label><input type="number" id="cfg-diario" min="1" max="25" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Pausa longa a cada <span class="tag">envios · 0 = nunca</span></label><input type="number" id="cfg-pausa-cada" min="0" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Pausa longa: mínimo <span class="tag">min</span></label><input type="number" id="cfg-pausa-min" min="0" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Pausa longa: máximo <span class="tag">min</span></label><input type="number" id="cfg-pausa-max" min="0" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Entre as mensagens do mesmo contato: mínimo <span class="tag">s</span></label><input type="number" id="cfg-delay-min" min="0" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Entre as mensagens do mesmo contato: máximo <span class="tag">s</span></label><input type="number" id="cfg-delay-max" min="0" oninput="campManualMudou()"/></div>
+                <div class="field"><label>Parar após N erros seguidos</label><input type="number" id="cfg-erros" min="1" oninput="campSujo()"/></div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:12.5px;color:var(--muted);margin:12px 0 0;letter-spacing:0;font-weight:600">
+                <input type="checkbox" id="cfg-verificar" checked disabled style="width:auto"/> Verificar se o número tem WhatsApp antes de enviar <span class="tag">(sempre ligado)</span>
+              </label>
+              <div class="camp-sec">Follow-up</div>
+              <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:12.5px;color:var(--text);margin-bottom:10px;cursor:pointer;letter-spacing:0;font-weight:600">
+                <input type="checkbox" id="cfg-fup-ativo" style="width:auto" onchange="campSujo()"/> Mandar uma segunda mensagem para quem não respondeu
+              </label>
+              <div class="camp-grid">
+                <div class="field"><label>Depois de <span class="tag">dias</span></label><input type="number" id="cfg-fup-dias" min="1" oninput="campSujo()"/></div>
+                <div class="field"><label>Com a mensagem</label><select id="cfg-fup-msg" onchange="campSujo()"></select></div>
+              </div>
+            </details>
+          </div>
         </div>
-        <div id="camp-preview"></div>
-        <button class="camp-mini" style="margin-top:10px" onclick="campRenderPreview()">🎲 Sortear spintax de novo</button>
+
+        <!-- Rodapé: estado + ações -->
+        <div class="card camp-barra camp-rodape">
+          <div id="camp-rodape-nota" style="flex:1;min-width:0;font-size:12.5px;color:var(--muted);line-height:1.5">—</div>
+          <button class="camp-mini" style="padding:9px 12px" onclick="campDuplicar()" title="Cria uma cópia com os mesmos contatos, mensagem e ritmo">⧉ Duplicar</button>
+          <button class="camp-mini" style="padding:9px 12px;color:#ff9a9d" onclick="campExcluir()">Excluir</button>
+          <button class="btn btn-rejeitar camp-btn" id="camp-btn-salvar" onclick="campSalvar()">Salvar</button>
+          <button class="btn camp-btn" id="camp-acao-2" onclick="campAcao()">▶ Iniciar envio</button>
+        </div>
+        <div id="camp-fb" style="font-size:12.5px;text-align:center;min-height:18px;margin-top:-4px"></div>
       </div>
+
+      <!-- ── ACOMPANHAR ── -->
+      <div id="camp-v-acompanhar" style="display:none">
+        <div class="card">
+          <div class="camp-estado" id="camp-estado">—</div>
+          <div class="camp-kpis" id="camp-kpis"></div>
+          <div class="camp-prog-barra" style="margin-top:14px"><div id="camp-prog-fill"></div></div>
+          <div id="camp-prog-txt" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <div class="camp-eyebrow" style="flex:1;margin:0">Contatos, na ordem de envio</div>
+            <div class="camp-abas" id="camp-prog-filtros"></div>
+          </div>
+          <div style="max-height:560px;overflow:auto;border:1px solid var(--border);border-radius:10px">
+            <table class="camp-tab"><thead><tr>
+              <th style="width:36px">#</th><th>Contato</th><th>Status</th><th>Quando</th>
+            </tr></thead><tbody id="camp-prog-lista"></tbody></table>
+          </div>
+        </div>
+      </div>
+
     </div>
-
-    <!-- PASSO 3 — RITMO -->
-    <div class="camp-passo" id="passo-ritmo">
-      <div class="camp-passo-hd" onclick="campToggle('ritmo')">
-        <span class="camp-num">3</span>
-        <div style="flex:1">
-          <div class="camp-passo-tit">Quando e em que ritmo</div>
-          <div class="camp-passo-res" id="res-ritmo">—</div>
-        </div>
-        <span class="camp-chev">▾</span>
-      </div>
-      <div class="camp-passo-bd" id="camp-cfg-corpo">
-        <div class="camp-sec" style="margin-top:0">Número que envia</div>
-        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px">
-          <div class="field" style="flex:1;margin:0"><label>Sai pelo número</label><select id="cfg-conta" onchange="campContaMudou()"></select></div>
-          <button class="camp-mini" style="padding:10px 14px" onclick="campCarregarContas(true)" title="Atualizar status dos números">↻</button>
-        </div>
-        <div id="cfg-conta-info" style="font-size:11.5px;color:var(--muted);margin-bottom:4px"></div>
-
-        <div class="camp-sec">Ritmo de envio</div>
-        <div class="camp-grid">
-          <div class="field"><label>Intervalo mínimo <span class="tag">min</span></label><input type="number" id="cfg-int-min" min="1"/></div>
-          <div class="field"><label>Intervalo máximo <span class="tag">min</span></label><input type="number" id="cfg-int-max" min="1"/></div>
-          <div class="field"><label>Teto diário <span class="tag" id="cfg-diario-tag">máx. 25</span></label><input type="number" id="cfg-diario" min="1" max="25"/></div>
-          <div class="field"><label>Pausa longa a cada <span class="tag">envios</span></label><input type="number" id="cfg-pausa-cada" min="0"/></div>
-          <div class="field"><label>Pausa longa mín <span class="tag">min</span></label><input type="number" id="cfg-pausa-min" min="0"/></div>
-          <div class="field"><label>Pausa longa máx <span class="tag">min</span></label><input type="number" id="cfg-pausa-max" min="0"/></div>
-          <div class="field"><label>Delay entre blocos mín <span class="tag">s</span></label><input type="number" id="cfg-delay-min" min="0"/></div>
-          <div class="field"><label>Delay entre blocos máx <span class="tag">s</span></label><input type="number" id="cfg-delay-max" min="0"/></div>
-        </div>
-
-        <div class="camp-sec">Janela de disparo</div>
-        <div class="field" style="margin-bottom:12px">
-          <label>Horários <span class="tag">um por linha, formato 09:00-11:30</span></label>
-          <textarea id="cfg-janelas" style="min-height:64px;font-family:'Courier New',monospace;font-size:13px"></textarea>
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--text);cursor:pointer">
-          <input type="checkbox" id="cfg-uteis" style="width:auto"/> Somente dias úteis
-        </label>
-
-        <div class="camp-sec">Segurança</div>
-        <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--muted);margin-bottom:12px">
-          <input type="checkbox" id="cfg-verificar" checked disabled style="width:auto"/> Verificar número no WhatsApp antes de enviar <span class="tag">(travado)</span>
-        </label>
-        <div class="field" style="margin-bottom:12px">
-          <label>Parar após N erros seguidos</label>
-          <input type="number" id="cfg-erros" min="1"/>
-        </div>
-
-        <div class="camp-sec">Follow-up</div>
-        <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--text);margin-bottom:12px;cursor:pointer">
-          <input type="checkbox" id="cfg-fup-ativo" style="width:auto"/> Enviar follow-up para quem não respondeu
-        </label>
-        <div class="camp-grid">
-          <div class="field"><label>Depois de <span class="tag">dias</span></label><input type="number" id="cfg-fup-dias" min="1"/></div>
-          <div class="field"><label>Com a mensagem</label><select id="cfg-fup-msg"></select></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SALVAR -->
-    <div class="card" style="padding:1rem 1.25rem">
-      <div id="camp-aviso-sujo" class="camp-sujo" style="display:none">
-        ⚠️ Há alterações não salvas nos passos acima. Elas só valem depois de salvar.
-      </div>
-      <button class="btn btn-gerar" style="margin-top:0" onclick="campSalvar()">💾 Salvar campanha</button>
-      <p style="font-size:11px;color:var(--muted2);text-align:center;margin-top:8px">
-        Salva os três passos de uma vez: público, mensagem e ritmo.
-      </p>
-      <div id="camp-salvar-fb" style="font-size:12px;margin-top:6px;text-align:center"></div>
-    </div>
-
-    <!-- DISPARO -->
-    <div class="card">
-      <div class="camp-sec" style="margin-top:0">Disparo</div>
-      <div id="camp-check-lista" style="margin-bottom:14px"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-aprovar" id="camp-btn-iniciar" onclick="campStatus('ativa')">▶️ Iniciar / Retomar</button>
-        <button class="btn btn-rejeitar" onclick="campStatus('pausada')">⏸️ Pausar</button>
-      </div>
-      <div id="camp-status-fb" style="font-size:12px;margin-top:10px;text-align:center"></div>
-      <div class="camp-sec">Andamento</div>
-      <div id="camp-contadores" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-      <div class="camp-sec" style="display:flex;align-items:center;gap:8px">Progresso
-        <span id="camp-prog-atual" style="font-size:10.5px;font-weight:600;color:var(--muted2);text-transform:none;letter-spacing:0"></span>
-        <button class="camp-mini" style="margin-left:auto" onclick="campAtualizarProgresso(true)">↻ Atualizar</button>
-      </div>
-      <div id="camp-prog-motor" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
-      <div class="camp-prog-barra"><div id="camp-prog-fill"></div></div>
-      <div id="camp-prog-txt" style="font-size:11.5px;color:var(--muted2);margin:6px 0 10px"></div>
-      <div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:10px">
-        <table class="camp-tab"><thead><tr>
-          <th>#</th><th>Contato</th><th>Status</th><th>Quando</th>
-        </tr></thead><tbody id="camp-prog-lista"></tbody></table>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -4266,13 +4368,21 @@ async function enviarWA(msgId,statusId,fileKey) {
 }
 
 // ══ CAMPANHAS ══
+// Três vistas: lista de campanhas → uma campanha em "Preparar" (quem recebe,
+// o que recebe, como envia) ou em "Acompanhar" (estado do motor + lista na
+// ordem de envio). O formato dos dados e as rotas do proxy/baileys são os
+// mesmos de antes; só a tela mudou.
 // A chave de operador fica só em sessionStorage: some ao fechar a aba, e nunca
 // entra no repositório. Sem ela o painel não carrega nada.
 var CAMP_KEY = '';
 var CAMP_DB  = null;   // { versao, campanhas: [] }
-var CAMP_ID  = null;   // id da campanha selecionada
-var CAMP_MSG = null;   // id da mensagem em edição
+var CAMP_ID  = null;   // id da campanha aberta
+var CAMP_MSG = null;   // id da mensagem (variante) em edição
 var CAMP_IMPORT = null;
+var CAMP_VISTA = 'lista';       // lista | preparar | acompanhar
+var CAMP_PROG_FILTRO = '';      // filtro da lista de acompanhamento
+var CAMP_MOTOR = null;          // última resposta de /campanha/status
+var CAMP_ATUALIZADO_EM = 0;
 
 var CAMP_TETO_DIARIO = 25;   // trava dura da PRINCIPAL: num dia de pressa é fácil subir para 200
 // Número exclusivo de campanha (apelido camp-*, pareado na aba Config): é o
@@ -4289,7 +4399,21 @@ var CAMP_CAMPOS_IMPORT = [
 ];
 // Campos que o sistema usa para operar. Qualquer outro vira variável de texto e
 // só isso — nome de campo personalizado não pode colidir com estes.
-var CAMP_RESERVADOS = ['id','jid','status','enviadoEm','respondidoEm','followupEm','erro','mensagemId','tentativasEnvio','primeiroNome'];
+var CAMP_RESERVADOS = ['id','jid','status','enviadoEm','respondidoEm','followupEm','erro','mensagemId','tentativasEnvio','primeiroNome','respostaTexto'];
+var CAMP_ROTULO = { fila:'na fila', enviado:'enviado', respondido:'respondeu', erro:'erro', optout:'opt-out' };
+var CAMP_ROTULO_ST = { rascunho:'Rascunho', ativa:'Enviando', pausada:'Pausada', concluida:'Concluída' };
+
+// Ritmos prontos. Os números de intervalo são em segundos (como o servidor lê).
+// "limite" é o teto por dia pedido; o teto real ainda é cortado pela conta
+// (25 na principal, 300 em camp-*).
+var CAMP_PRESETS = [
+  { id:'cuidadoso', nome:'Cuidadoso', desc:'1 a cada 3–8 min · até 60/dia · pausa de 20–30 min a cada 6',
+    cfg:{ intervaloMinSegundos:180, intervaloMaxSegundos:480, limiteDiario:60, pausaLongaACada:6, pausaLongaMinutos:[20,30], delayEntreMensagensSegundos:[20,40] } },
+  { id:'normal', nome:'Normal', desc:'1 a cada 1–2 min · até 200/dia · pausa de 8–12 min a cada 25',
+    cfg:{ intervaloMinSegundos:60, intervaloMaxSegundos:120, limiteDiario:200, pausaLongaACada:25, pausaLongaMinutos:[8,12], delayEntreMensagensSegundos:[10,20] } },
+  { id:'rapido', nome:'Rápido', desc:'1 a cada 40–90 s · até 300/dia · pausa de 5–10 min a cada 40',
+    cfg:{ intervaloMinSegundos:40, intervaloMaxSegundos:90, limiteDiario:300, pausaLongaACada:40, pausaLongaMinutos:[5,10], delayEntreMensagensSegundos:[8,15] } }
+];
 
 function campHead() {
   return { 'Content-Type':'application/json', 'X-CDV-Op': CAMP_KEY };
@@ -4311,12 +4435,32 @@ function campFb(id, msg, ok) {
   if (!el) return;
   el.style.color = ok ? '#4ade80' : '#ff585e';
   el.textContent = msg;
-  if (msg) setTimeout(function(){ if (el.textContent === msg) el.textContent = ''; }, 5000);
+  if (msg) setTimeout(function(){ if (el.textContent === msg) el.textContent = ''; }, 6000);
+}
+function campEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function(ch){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch];
+  });
+}
+function campHora(iso, comData) {
+  if (!iso) return '';
+  var d = new Date(iso); if (isNaN(d)) return '';
+  var o = { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' };
+  if (comData) { o.day = '2-digit'; o.month = '2-digit'; }
+  return d.toLocaleString('pt-BR', o);
+}
+function campHojeSP(iso) {
+  var f = function(d){ return new Date(d).toLocaleDateString('pt-BR', { timeZone:'America/Sao_Paulo' }); };
+  return f(iso) === f(Date.now());
+}
+function campFone(n) {
+  n = String(n || '');
+  return n.length >= 12 ? '+' + n.slice(0,2) + ' ' + n.slice(2,4) + ' ' + n.slice(4,-4) + '-' + n.slice(-4) : n;
 }
 
 // ── Gate ─────────────────────────────────────────────────────────────────────
 function campAoAbrir() {
-  if (CAMP_KEY) return;
+  if (CAMP_KEY) { campAtualizarMotor(); return; }
   var salva = '';
   try { salva = sessionStorage.getItem('cdv_camp_key') || ''; } catch(e) {}
   if (salva) { CAMP_KEY = salva; campCarregar(); }
@@ -4337,14 +4481,18 @@ async function campDestravar() {
       : 'Chave inválida.');
   }
 }
-
 async function campCarregar() {
   try {
     var d = await campApi('/campanhas');
     CAMP_DB = d.data;
     document.getElementById('camp-gate').style.display = 'none';
     document.getElementById('camp-app').style.display  = 'block';
-    campRenderSeletor();
+    if (CAMP_CONTAS === null) campCarregarContas(false);
+    // Abre direto na campanha que está rodando — é o que o operador quer ver.
+    var ativa = CAMP_DB.campanhas.find(function(c){ return c.status === 'ativa'; });
+    if (ativa && !CAMP_ID) campAbrir(ativa.id, 'acompanhar');
+    else if (CAMP_ID && campAtual()) campAbrir(CAMP_ID, CAMP_VISTA === 'lista' ? null : CAMP_VISTA);
+    else campIrLista();
   } catch(e) {
     CAMP_KEY = '';
     try { sessionStorage.removeItem('cdv_camp_key'); } catch(e2) {}
@@ -4353,290 +4501,267 @@ async function campCarregar() {
     campFb('camp-gate-fb', 'Falha ao carregar: ' + e.message);
   }
 }
-
 // Recarrega do servidor. Durante uma campanha rodando, o painel na tela e uma
 // foto do momento em que abriu: quem manda no status e o worker.
 async function campRecarregar() {
-  var manter = CAMP_ID;   // null apos exclusao: o seletor cai na primeira campanha
+  if (CAMP_SUJO && !confirm('Há alterações não salvas nesta campanha. Recarregar do servidor e descartá-las?')) return;
   try {
     var d = await campApi('/campanhas');
     CAMP_DB = d.data;
-    CAMP_ID = manter;
-    campRenderSeletor();
-    campFb('camp-status-fb', '✓ Atualizado.', true);
+    CAMP_SUJO = false;
+    if (CAMP_VISTA === 'lista' || !campAtual()) campIrLista();
+    else campAbrir(CAMP_ID, CAMP_VISTA);
+    campFb('camp-fb', '✓ Atualizado do servidor.', true);
   } catch(e) {
-    campFb('camp-status-fb', 'Erro ao atualizar: ' + e.message);
+    campFb('camp-fb', 'Erro ao atualizar: ' + e.message);
   }
 }
-
-// ── PASSOS, RESUMOS E TRAVA DE DISPARO ──────────────────────────────────────
-// O painel edita um objeto em memória; nada disso existe no servidor até salvar.
-// CAMP_SUJO marca "há edição pendente" — sem esse aviso o operador importa o
-// público, clica em Iniciar e a campanha sobe vazia. Foi o que aconteceu no
-// primeiro teste real.
-var CAMP_SUJO = false;
-
-function campSujo() {
-  CAMP_SUJO = true;
-  var el = document.getElementById('camp-aviso-sujo');
-  if (el) el.style.display = 'block';
-  campResumos();
+function campAtual() {
+  if (!CAMP_DB) return null;
+  return CAMP_DB.campanhas.find(function(c){ return c.id === CAMP_ID; }) || null;
 }
-function campLimpo() {
+function campTemConteudo(c) {
+  return (c.mensagens||[]).some(function(x){
+    return (x.blocos||[]).some(function(b){
+      return (b.tipo === 'imagem' || b.tipo === 'audio') ? !!b.arquivo : !!String(b.conteudo||'').trim();
+    });
+  });
+}
+function campContar(c) {
+  var por = { fila:0, enviado:0, respondido:0, erro:0, optout:0, total:0 };
+  (c.contatos || []).forEach(function(x){ por.total++; var s = x.status || 'fila'; if (por[s] !== undefined) por[s]++; });
+  por.feitos = por.total - por.fila;
+  return por;
+}
+
+// ── Vista 1: lista ───────────────────────────────────────────────────────────
+function campIrLista() {
+  if (CAMP_SUJO && !confirm('Há alterações não salvas. Sair sem salvar?')) return;
   CAMP_SUJO = false;
-  var el = document.getElementById('camp-aviso-sujo');
-  if (el) el.style.display = 'none';
-  campResumos();
+  CAMP_VISTA = 'lista';
+  document.getElementById('camp-v-lista').style.display = 'block';
+  document.getElementById('camp-v-camp').style.display  = 'none';
+  campRenderLista();
 }
-function campToggle(id) {
-  document.getElementById('passo-' + id).classList.toggle('aberto');
+function campRenderLista() {
+  var wrap = document.getElementById('camp-lista');
+  var todas = (CAMP_DB && CAMP_DB.campanhas || []).slice();
+  var grupos = [
+    { tit:'Em andamento', f:function(c){ return c.status === 'ativa' || c.status === 'pausada'; } },
+    { tit:'Prontas para iniciar', f:function(c){ return c.status === 'rascunho' && campContar(c).fila > 0; } },
+    { tit:'Rascunhos', f:function(c){ return c.status === 'rascunho' && !campContar(c).fila; } },
+    { tit:'Encerradas', f:function(c){ return c.status === 'concluida'; } }
+  ];
+  var nAtivas = todas.filter(function(c){ return c.status === 'ativa'; }).length;
+  document.getElementById('camp-lista-res').textContent = todas.length
+    ? todas.length + ' campanha(s) · ' + (nAtivas ? '1 enviando agora' : 'nenhuma enviando agora')
+    : 'Nenhuma campanha ainda. Crie a primeira.';
+  var html = '';
+  grupos.forEach(function(g) {
+    var lista = todas.filter(g.f).sort(function(a,b){ return String(b.criadoEm||'').localeCompare(String(a.criadoEm||'')) || String(a.nome).localeCompare(String(b.nome),'pt-BR'); });
+    if (!lista.length) return;
+    html += '<div class="card" style="padding:14px 16px"><div class="camp-eyebrow" style="margin-bottom:10px">' + g.tit + '</div>';
+    html += lista.map(function(c) {
+      var n = campContar(c), pct = n.total ? Math.round(n.feitos * 100 / n.total) : 0;
+      var m = (c.mensagens||[])[0] || {}, tipos = [];
+      (m.blocos||[]).forEach(function(b){ var t = b.tipo === 'imagem' ? 'imagem' : b.tipo === 'audio' ? 'áudio' : 'texto'; if (tipos.indexOf(t) < 0) tipos.push(t); });
+      var res;
+      if (c.status === 'ativa' || c.status === 'pausada') res = n.feitos + ' de ' + n.total + ' processados · ' + n.respondido + ' responderam' + (n.erro ? ' · ' + n.erro + ' erro(s)' : '');
+      else if (c.status === 'concluida') res = n.enviado + n.respondido + ' enviados de ' + n.total + ' · ' + n.respondido + ' responderam';
+      else res = (n.total ? n.total + ' contatos' : 'sem contatos') + (tipos.length ? ' · ' + tipos.join(' + ') : ' · sem mensagem');
+      res += ' · ' + ((c.config||{}).conta || 'principal');
+      return '<div class="camp-lc" onclick="campAbrir(\'' + campEsc(c.id) + '\')">'
+        + '<div class="nm"><b>' + campEsc(c.nome) + '</b><span>' + campEsc(res) + '</span></div>'
+        + (n.total && c.status !== 'rascunho' ? '<div class="mini-barra" title="' + pct + '%"><div style="width:' + pct + '%"></div></div>' : '')
+        + '<span class="camp-st st-' + c.status + '">' + (CAMP_ROTULO_ST[c.status] || c.status) + '</span></div>';
+    }).join('');
+    html += '</div>';
+  });
+  wrap.innerHTML = html || '<div class="card" style="text-align:center;color:var(--muted2);padding:30px">Nenhuma campanha. Clique em <b>+ Nova campanha</b>.</div>';
 }
 
-// Resumo de uma linha por passo: dá para conferir tudo sem abrir nada.
+// ── Vista 2: uma campanha ────────────────────────────────────────────────────
+function campAbrir(id, vista) {
+  CAMP_ID = id; CAMP_MSG = null; CAMP_IMPORT = null;
+  var c = campAtual(); if (!c) return campIrLista();
+  document.getElementById('camp-v-lista').style.display = 'none';
+  document.getElementById('camp-v-camp').style.display  = 'block';
+  document.getElementById('camp-import').style.display = 'none';
+  document.getElementById('camp-lista-wrap').style.display = 'none';
+  document.getElementById('camp-btn-verlista').textContent = 'Ver lista ▾';
+  campRenderConfig(c);
+  campRenderMensagens(c);
+  campRenderContatos();
+  campLimpo();
+  campVista(vista || (c.status === 'ativa' ? 'acompanhar' : 'preparar'));
+  window.scrollTo({ top: 0 });
+}
+function campVista(v) {
+  CAMP_VISTA = v;
+  document.getElementById('camp-v-preparar').style.display   = v === 'preparar'   ? 'block' : 'none';
+  document.getElementById('camp-v-acompanhar').style.display = v === 'acompanhar' ? 'block' : 'none';
+  document.getElementById('camp-aba-preparar').classList.toggle('on', v === 'preparar');
+  document.getElementById('camp-aba-acompanhar').classList.toggle('on', v === 'acompanhar');
+  campRenderTopo();
+  if (v === 'acompanhar') { campRenderProgresso(); campAtualizarProgresso(false); }
+}
+function campRenderTopo() {
+  var c = campAtual(); if (!c) return;
+  document.getElementById('camp-topo-nome').textContent = c.nome;
+  var st = document.getElementById('camp-topo-st');
+  st.className = 'camp-st st-' + c.status; st.textContent = CAMP_ROTULO_ST[c.status] || c.status;
+  var n = campContar(c);
+  var pronto = n.fila > 0 && campTemConteudo(c) && ((c.config||{}).janelas||[]).length > 0;
+  ['camp-acao','camp-acao-2'].forEach(function(id) {
+    var b = document.getElementById(id);
+    b.className = 'btn camp-btn';
+    b.disabled = false;
+    if (c.status === 'ativa') { b.textContent = '⏸ Pausar envio'; b.classList.add('btn-pausar'); }
+    else if (!pronto) {
+      b.textContent = !n.fila ? 'Sem contatos na fila' : !campTemConteudo(c) ? 'Falta a mensagem' : 'Falta o horário';
+      b.classList.add('btn-off'); b.disabled = true;
+    } else {
+      b.textContent = (c.status === 'pausada' ? '▶ Retomar envio' : '▶ Iniciar envio') + (CAMP_SUJO ? ' (salva antes)' : '');
+      b.classList.add('btn-aprovar');
+    }
+  });
+  var sv = document.getElementById('camp-btn-salvar');
+  sv.className = 'btn camp-btn ' + (CAMP_SUJO ? 'btn-blue' : 'btn-rejeitar');
+  sv.textContent = CAMP_SUJO ? 'Salvar alterações' : 'Salvo';
+}
+function campRenomear() {
+  var c = campAtual(); if (!c) return;
+  var nome = prompt('Nome da campanha:', c.nome);
+  if (!nome || nome.trim() === c.nome) return;
+  c.nome = nome.trim();
+  campSujo();
+}
+
+// ── Sujo / limpo / resumos ───────────────────────────────────────────────────
+// O painel edita um objeto em memória; nada disso existe no servidor até salvar.
+var CAMP_SUJO = false;
+function campSujo() { CAMP_SUJO = true; campResumos(); }
+function campLimpo() { CAMP_SUJO = false; campResumos(); }
 function campResumos() {
   var c = campAtual(); if (!c) return;
-  var ct = c.contatos || [];
-  var g = c.config || {};
+  var n = campContar(c), g = c.config || {};
+  var el = function(id, html){ document.getElementById(id).innerHTML = html; };
 
-  var fila = ct.filter(function(x){ return x.status === 'fila'; }).length;
-  var txtPub = ct.length
-    ? ct.length + ' contato(s) · ' + fila + ' na fila'
-    : 'Nenhum contato — importe uma lista';
-  campSetPasso('publico', ct.length > 0, txtPub);
+  el('res-publico', n.total
+    ? '<b class="ok">✓ ' + n.total + ' contato' + (n.total > 1 ? 's' : '') + '</b><br>' + n.fila + ' na fila' + (n.feitos ? ' · ' + n.feitos + ' já processados' : '')
+    : '<b class="falta">• Nenhum contato</b><br>Importe uma lista ou copie de outra campanha.');
 
-  var m = (c.mensagens || [])[0];
-  var nBlocos = (c.mensagens || []).reduce(function(a, x){ return a + (x.blocos||[]).length; }, 0);
-  var vazia = !(c.mensagens||[]).some(function(x){
-    return (x.blocos||[]).some(function(b){
-      return (b.tipo === 'imagem' || b.tipo === 'audio') ? !!b.arquivo : !!String(b.conteudo||'').trim();
-    });
+  var m0 = (c.mensagens||[])[0] || {}, partes = [];
+  (m0.blocos||[]).forEach(function(b){
+    if (b.tipo === 'imagem') partes.push('imagem');
+    else if (b.tipo === 'audio') partes.push('áudio' + (b.segundos ? ' de ' + Math.round(b.segundos) + ' s' : ''));
+    else if (String(b.conteudo||'').trim()) partes.push(/\{nome\}|\{primeiroNome\}/.test(b.conteudo) ? 'texto com nome' : 'texto');
   });
-  var txtMsg = !m ? 'Nenhuma mensagem'
-    : vazia ? (c.mensagens.length + ' mensagem(ns) — conteúdo em branco')
-    : c.mensagens.length + ' mensagem(ns) · ' + nBlocos + ' bloco(s)';
-  campSetPasso('mensagem', !!m && !vazia, txtMsg);
+  var nb = partes.length, nv = (c.mensagens||[]).length;
+  el('res-mensagem', campTemConteudo(c)
+    ? '<b class="ok">✓ ' + nb + ' mensage' + (nb > 1 ? 'ns' : 'm') + '</b><br>' + partes.join(' + ') + (nv > 1 ? '<br>' + nv + ' variantes por segmento' : '')
+    : '<b class="falta">• Mensagem em branco</b><br>Escreva o texto ou anexe um áudio/imagem.');
 
-  var jan = (g.janelas || []).map(function(j){ return j[0] + '–' + j[1]; }).join(', ');
-  var txtRitmo = jan
-    ? (Math.round((g.intervaloMinSegundos||0)/60) + '–' + Math.round((g.intervaloMaxSegundos||0)/60)
-       + ' min · até ' + (g.limiteDiario||0) + '/dia · ' + (g.conta || 'principal') + ' · ' + jan
-       + (g.diasUteisApenas ? ' · dias úteis' : ''))
-    : 'Sem janela de horário definida';
-  campSetPasso('ritmo', (g.janelas||[]).length > 0, txtRitmo);
+  var conta = g.conta || 'principal', st = campContaInfo(g.conta || '');
+  var jan = (g.janelas||[]).map(function(j){ return j[0] + '–' + j[1]; }).join(' e ');
+  var preset = campPresetAtual(g);
+  var ritmo = preset ? 'Ritmo ' + preset.nome.toLowerCase() : 'Ritmo personalizado';
+  var teto = Math.min(g.limiteDiario || 0, g.conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
+  el('res-ritmo', (st.ok ? '<b class="ok">✓ ' + campEsc(conta) + '</b> conectado' : '<b class="falta">• ' + campEsc(conta) + '</b> ' + (CAMP_CONTAS === null ? 'verificando…' : st.conhecida ? 'desconectado' : 'não pareado'))
+    + '<br>' + ritmo + ' · até ' + teto + '/dia<br>' + (jan ? jan + (g.diasUteisApenas ? ' · dias úteis' : '') : '<b class="falta">sem horário definido</b>'));
 
-  campChecklist();
+  // Rodapé
+  var dias = teto ? Math.ceil(n.fila / teto) : 0;
+  var itens = [];
+  if (CAMP_SUJO) itens.push('<b style="color:#fbbf24">Alterações não salvas</b>');
+  else itens.push('✓ Tudo salvo');
+  if (n.fila) itens.push(n.fila + ' na fila');
+  if (n.fila && dias) itens.push('≈ ' + dias + ' dia' + (dias > 1 ? 's' : '') + ' de envio');
+  if (!st.ok && CAMP_CONTAS !== null) itens.push('<b style="color:#fbbf24">número ' + campEsc(conta) + ' ' + (st.conhecida ? 'desconectado' : 'não pareado') + '</b>');
+  if (!n.fila && n.total && c.status !== 'ativa') itens.push('ninguém na fila — para mandar de novo para essa lista, use <b>Duplicar</b> (os contatos voltam para a fila)');
+  el('camp-rodape-nota', itens.join(' · '));
+  campRenderTopo();
 }
-function campSetPasso(id, ok, texto) {
-  var el = document.getElementById('passo-' + id);
-  var rs = document.getElementById('res-' + id);
-  if (el) el.classList.toggle('ok', !!ok);
-  if (rs) rs.textContent = texto;
-}
 
-// O botão de iniciar só libera quando tudo que o worker precisa existe DE FATO
-// no servidor. Campanha ativa sem fila é ativa à toa.
-function campChecklist() {
+// ── Público: chips, lista, importação, cópia ────────────────────────────────
+function campRenderContatos() {
   var c = campAtual(); if (!c) return;
   var ct = c.contatos || [];
-  var fila = ct.filter(function(x){ return x.status === 'fila'; }).length;
-  var g = c.config || {};
-  var temMsg = (c.mensagens||[]).some(function(x){
-    return (x.blocos||[]).some(function(b){
-      return (b.tipo === 'imagem' || b.tipo === 'audio') ? !!b.arquivo : !!String(b.conteudo||'').trim();
-    });
+  var chips = document.getElementById('camp-chips');
+  var mostrar = ct.slice(0, 8);
+  chips.innerHTML = ct.length
+    ? mostrar.map(function(x){ return '<span class="camp-chip">' + campEsc(x.nome || x.telefone) + '</span>'; }).join('')
+      + (ct.length > mostrar.length ? '<span class="camp-chip" style="cursor:pointer" onclick="campToggleLista(true)">+' + (ct.length - mostrar.length) + '</span>' : '')
+    : '<span style="font-size:12px;color:var(--muted2)">Ninguém ainda.</span>';
+
+  var tb = document.getElementById('camp-contatos');
+  var filtro = document.getElementById('camp-filtro').value;
+  var q = (document.getElementById('camp-busca').value || '').trim().toLowerCase(), dig = q.replace(/\D/g, '');
+  var lista = ct.filter(function(x){
+    if (filtro && (x.status || 'fila') !== filtro) return false;
+    if (!q) return true;
+    return String(x.nome||'').toLowerCase().indexOf(q) >= 0 || (dig && String(x.telefone||'').indexOf(dig) >= 0);
   });
-
-  var itens = [
-    { ok: fila > 0,               txt: fila > 0 ? fila + ' contato(s) na fila' : 'Nenhum contato na fila' },
-    { ok: temMsg,                 txt: temMsg ? 'Mensagem com conteúdo' : 'Mensagem sem conteúdo' },
-    { ok: (g.janelas||[]).length > 0, txt: (g.janelas||[]).length ? 'Janela de horário definida' : 'Sem janela de horário' },
-    (function(){
-      var st = campContaInfo(g.conta || '');
-      var nome = g.conta || 'principal';
-      return { ok: st.ok, txt: st.ok ? 'Número ' + nome + ' conectado'
-        : (CAMP_CONTAS === null ? 'Verificando número ' + nome + '…' : 'Número ' + nome + (st.conhecida ? ' desconectado' : ' não pareado')) };
-    })(),
-    { ok: !CAMP_SUJO,             txt: CAMP_SUJO ? 'Há alterações não salvas' : 'Tudo salvo' }
-  ];
-  var pronto = itens.every(function(i){ return i.ok; });
-
-  document.getElementById('camp-check-lista').innerHTML = itens.map(function(i){
-    return '<div class="camp-check' + (i.ok ? ' ok' : '') + '">'
-      + (i.ok ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#f59e0b">•</span>')
-      + ' ' + i.txt + '</div>';
-  }).join('');
-
-  var b = document.getElementById('camp-btn-iniciar');
-  b.disabled = !pronto;
-  b.style.opacity = pronto ? '1' : '.45';
-  b.style.cursor  = pronto ? 'pointer' : 'not-allowed';
+  tb.innerHTML = lista.map(function(x) {
+    var st = x.status || 'fila';
+    return '<tr><td>' + campEsc(x.nome || '(sem nome)') + '</td>'
+      + '<td style="font-family:monospace;font-size:11px">' + campEsc(x.telefone||'') + '</td>'
+      + '<td style="color:var(--muted)">' + campEsc(x.segmento || '*') + '</td>'
+      + '<td><span class="camp-st st-' + st + '">' + (CAMP_ROTULO[st] || st) + '</span></td></tr>';
+  }).join('') || '<tr><td colspan="4" style="color:var(--muted2);text-align:center;padding:16px">Nenhum contato.</td></tr>';
+  campRenderPrevSel();
+  campRenderVars();
+  campResumos();
+  if (CAMP_VISTA === 'acompanhar') campRenderProgresso();
 }
-
+function campToggleLista(abrir) {
+  var el = document.getElementById('camp-lista-wrap');
+  var aberto = abrir === true ? true : el.style.display === 'none';
+  el.style.display = aberto ? 'block' : 'none';
+  document.getElementById('camp-btn-verlista').textContent = aberto ? 'Esconder lista ▴' : 'Ver lista ▾';
+}
+function campToggleImport() {
+  var el = document.getElementById('camp-import');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 // Reaproveita o trabalho de importação sem transformar público em cadastro
 // separado: os contatos vêm zerados, e o histórico de envio continua sendo de
 // cada campanha.
 function campCopiarPublico() {
   var c = campAtual(); if (!c || !CAMP_DB) return;
   var outras = CAMP_DB.campanhas.filter(function(x){ return x.id !== c.id && (x.contatos||[]).length; });
-  if (!outras.length) return alert('Nenhuma outra campanha tem público cadastrado.');
+  if (!outras.length) return alert('Nenhuma outra campanha tem contatos.');
   var lista = outras.map(function(x, i){ return (i+1) + ') ' + x.nome + ' — ' + x.contatos.length + ' contato(s)'; }).join('\n');
-  var esc = prompt('Copiar o público de qual campanha?\n\n' + lista + '\n\nDigite o número:');
+  var esc = prompt('Copiar os contatos de qual campanha?\n\n' + lista + '\n\nDigite o número:');
   var idx = Number(esc) - 1;
   if (!(idx >= 0 && idx < outras.length)) return;
   var origem = outras[idx];
   if (!confirm('Copiar ' + origem.contatos.length + ' contato(s) de "' + origem.nome + '"?\n\n'
-    + 'Eles entram zerados (status "fila"), e a lista atual de "' + c.nome + '" ('
+    + 'Eles entram zerados (na fila), e a lista atual de "' + c.nome + '" ('
     + (c.contatos||[]).length + ') será substituída.')) return;
-
-  var idsMsg = (c.mensagens||[]).map(function(m){ return m.id; });
   c.contatos = origem.contatos.map(function(o, n) {
-    var seg = o.segmento || '*';
-    var msg = idsMsg.indexOf(seg) >= 0 ? seg
-      : ((c.mensagens.find(function(m){ return m.segmento === seg; }) || {}).id
-         || (c.mensagens.find(function(m){ return m.segmento === '*'; }) || c.mensagens[0] || {}).id || '');
     var novo = {};
     Object.keys(o).forEach(function(k){ novo[k] = o[k]; });
     novo.id = 'ct-' + String(n + 1).padStart(3, '0');
     novo.status = 'fila';
-    novo.enviadoEm = null; novo.respondidoEm = null; novo.followupEm = null;
-    novo.erro = null; novo.tentativasEnvio = 0; novo.mensagemId = msg;
+    novo.enviadoEm = null; novo.respondidoEm = null; novo.followupEm = null; novo.respostaTexto = null;
+    novo.erro = null; novo.tentativasEnvio = 0; novo.mensagemId = campMsgParaSegmento(c, o.segmento);
     return novo;
   });
   c.variaveis = campVariaveis(c);
   campRenderContatos();
-  campRenderPrevSel();
   campSujo();
-  campFb('camp-salvar-fb', c.contatos.length + ' contato(s) copiado(s) — clique em Salvar campanha.', true);
+  campFb('camp-fb', c.contatos.length + ' contato(s) copiado(s). Salve para valer.', true);
+}
+function campMsgParaSegmento(c, seg) {
+  seg = seg || '*';
+  var ms = c.mensagens || [];
+  var m = ms.find(function(x){ return x.id === seg; }) || ms.find(function(x){ return x.segmento === seg; })
+       || ms.find(function(x){ return x.segmento === '*'; }) || ms[0] || {};
+  return m.id || '';
 }
 
-function campAtual() {
-  if (!CAMP_DB) return null;
-  return CAMP_DB.campanhas.find(function(c){ return c.id === CAMP_ID; }) || null;
-}
-
-// ── Seletor e contadores ─────────────────────────────────────────────────────
-function campRenderSeletor() {
-  var sel = document.getElementById('camp-sel');
-  var lista = CAMP_DB.campanhas.slice().sort(function(a,b){
-    return String(a.nome).localeCompare(String(b.nome), 'pt-BR');
-  });
-  sel.innerHTML = lista.map(function(c){
-    return '<option value="'+c.id+'">'+c.nome+' — '+c.status+'</option>';
-  }).join('');
-  if (!CAMP_ID || !campAtual()) CAMP_ID = lista.length ? lista[0].id : null;
-  sel.value = CAMP_ID || '';
-  campSelecionar(CAMP_ID);
-}
-function campSelecionar(id) {
-  CAMP_ID  = id;
-  CAMP_MSG = null;
-  var c = campAtual();
-  if (!c) return;
-  campRenderConfig(c);
-  campRenderMensagens(c);
-  campRenderContatos();
-  campRenderContadores();
-  campLimpo();
-  campAtualizarMotor();
-}
-function campRenderContadores() {
-  var c = campAtual(); if (!c) return;
-  var ct = c.contatos || [];
-  var por = { fila:0, enviado:0, respondido:0, erro:0, optout:0 };
-  ct.forEach(function(x){ if (por[x.status] !== undefined) por[x.status]++; });
-  var dias = c.config.limiteDiario ? Math.ceil(por.fila / c.config.limiteDiario) : 0;
-  document.getElementById('camp-contadores').innerHTML =
-    '<span class="camp-pill">Status: <b style="color:var(--text)">'+c.status+'</b></span>' +
-    '<span class="camp-pill">Na fila: <b style="color:var(--text)">'+por.fila+'</b></span>' +
-    '<span class="camp-pill">Enviados: <b style="color:#7db0ff">'+por.enviado+'</b></span>' +
-    '<span class="camp-pill">Respondidos: <b style="color:#6ee7a0">'+por.respondido+'</b></span>' +
-    '<span class="camp-pill">Erros: <b style="color:#ff9a9d">'+por.erro+'</b></span>' +
-    (dias ? '<span class="camp-pill">≈ '+dias+' dia(s) de disparo</span>' : '');
-  campRenderProgresso();
-}
-
-// ── Progresso: lista na ordem de envio + estado do motor ────────────────────
-// A ordem é a da lista (o worker pega o primeiro "fila"). Enquanto a campanha
-// está ativa, atualiza sozinho a cada 20 s puxando só os campos de execução
-// (status, horários, erro) — edições não salvas na tela não são tocadas.
-function campEsc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"]/g, function(ch){
-    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch];
-  });
-}
-function campHora(iso) {
-  if (!iso) return '';
-  var d = new Date(iso); if (isNaN(d)) return '';
-  return d.toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-}
-var CAMP_ROTULO = { fila:'na fila', enviado:'enviado', respondido:'respondeu', erro:'erro', optout:'opt-out' };
-function campRenderProgresso() {
-  var c = campAtual(); var tb = document.getElementById('camp-prog-lista');
-  if (!c || !tb) return;
-  var ct = c.contatos || [];
-  var feitos = ct.filter(function(x){ return x.status && x.status !== 'fila'; }).length;
-  var pct = ct.length ? Math.round(feitos * 100 / ct.length) : 0;
-  document.getElementById('camp-prog-fill').style.width = pct + '%';
-  document.getElementById('camp-prog-txt').textContent = ct.length
-    ? feitos + ' de ' + ct.length + ' processados (' + pct + '%)' : 'Nenhum contato na campanha.';
-  var prox = ct.findIndex(function(x){ return (x.status || 'fila') === 'fila'; });
-  tb.innerHTML = ct.map(function(x, i) {
-    var st = x.status || 'fila';
-    var quando = st === 'respondido' ? 'respondeu ' + campHora(x.respondidoEm)
-      : x.enviadoEm ? campHora(x.enviadoEm) : (i === prox ? (c.status === 'ativa' ? 'próximo' : 'próximo ao iniciar') : '');
-    return '<tr' + (i === prox ? ' class="camp-prox"' : '') + '>'
-      + '<td style="color:var(--muted2);font-variant-numeric:tabular-nums">' + (i + 1) + '</td>'
-      + '<td><b>' + campEsc(x.nome || '(sem nome)') + '</b><div style="font-size:11px;color:var(--muted2);font-family:monospace">' + campEsc(x.telefone || '') + '</div></td>'
-      + '<td><span class="camp-st st-' + st + '">' + (CAMP_ROTULO[st] || st) + '</span>'
-      + (x.erro ? '<div style="font-size:11px;color:#ff9a9d;margin-top:3px">' + campEsc(x.erro) + '</div>' : '') + '</td>'
-      + '<td style="font-size:11.5px;color:var(--muted)">' + campEsc(quando) + '</td></tr>';
-  }).join('') || '<tr><td colspan="4" style="color:var(--muted2);text-align:center;padding:16px">Nenhum contato.</td></tr>';
-}
-async function campAtualizarMotor() {
-  var el = document.getElementById('camp-prog-motor'); if (!el) return;
-  var c = campAtual();
-  if (!c || c.status !== 'ativa') { el.textContent = c ? 'Campanha ' + c.status + ' — nada sendo enviado agora.' : ''; return; }
-  try {
-    var r = await fetch(SERVER + '/campanha/status?t=' + Date.now(), { headers: campHead(), cache:'no-cache', signal: AbortSignal.timeout(15000) });
-    var s = await r.json();
-    if (!s.ok || !s.ativa) { el.textContent = 'O servidor não vê campanha ativa ainda (pode levar 1 min).'; return; }
-    var partes = [];
-    partes.push(s.contaConectada ? '🟢 ' + s.conta + ' conectado' : '🔴 ' + s.conta + ' desconectado — envio parado');
-    partes.push(s.dentroDaJanela ? 'dentro da janela' : '⏸ fora da janela de horário (volta na próxima janela)');
-    partes.push('hoje ' + s.enviosHoje + '/' + s.limiteDiario + (s.enviosHoje >= s.limiteDiario ? ' — teto do dia atingido' : ''));
-    if (s.pausaLongaAte) partes.push('pausa longa até ' + campHora(s.pausaLongaAte));
-    if (s.errosSeguidos) partes.push('⚠️ ' + s.errosSeguidos + ' erro(s) seguido(s)');
-    el.textContent = partes.join(' · ');
-  } catch(e) { el.textContent = 'Não consegui consultar o servidor de envio: ' + e.message; }
-}
-async function campAtualizarProgresso(manual) {
-  var c = campAtual(); if (!c) return;
-  try {
-    var d = await campApi('/campanhas');
-    var rem = (d.data.campanhas || []).find(function(x){ return x.id === c.id; });
-    if (rem) {
-      var mapa = {};
-      (rem.contatos || []).forEach(function(x){ mapa[x.id + '|' + x.telefone] = x; });
-      (c.contatos || []).forEach(function(x){
-        var o = mapa[x.id + '|' + x.telefone]; if (!o) return;
-        ['status','enviadoEm','respondidoEm','followupEm','erro','tentativasEnvio'].forEach(function(k){ x[k] = o[k]; });
-      });
-      c.status = rem.status;
-    }
-    document.getElementById('camp-prog-atual').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    campRenderContatos();   // também redesenha contadores e progresso
-  } catch(e) {
-    if (manual) campFb('camp-status-fb', 'Erro ao atualizar progresso: ' + e.message);
-  }
-  campAtualizarMotor();
-}
-setInterval(function(){
-  var app = document.getElementById('camp-app'), c = campAtual();
-  if (!app || app.offsetParent === null || document.hidden || !c || c.status !== 'ativa') return;
-  campAtualizarProgresso(false);
-}, 20000);
-
-// ── Configuração ─────────────────────────────────────────────────────────────
+// ── Configuração (número, horários, ritmo) ──────────────────────────────────
 async function campCarregarContas(avisar) {
   try {
     var r = await fetch(SERVER + '/contas?t=' + Date.now(), { cache:'no-cache', signal:AbortSignal.timeout(15000) });
@@ -4645,12 +4770,12 @@ async function campCarregarContas(avisar) {
     CAMP_CONTAS = (j.extras || []).filter(function(x){ return CAMP_RE_CONTA.test(x.id); })
       .map(function(x){ return { id: x.id, conectado: !!x.conectado, numero: x.numero || '' }; });
     CAMP_CONTAS.principalConectada = !!(j.principal && j.principal.conectado);
-    if (avisar) campFb('camp-salvar-fb', '✓ Status dos números atualizado.', true);
+    if (avisar) campFb('camp-fb', '✓ Status dos números atualizado.', true);
   } catch(e) {
-    if (avisar) campFb('camp-salvar-fb', 'Não consegui ler os números: ' + e.message);
+    if (avisar) campFb('camp-fb', 'Não consegui ler os números: ' + e.message);
   }
   var c = campAtual();
-  if (c) { campRenderConta((document.getElementById('cfg-conta') || {}).value || (c.config||{}).conta || ''); campChecklist(); }
+  if (c && CAMP_VISTA !== 'lista') { campRenderConta((document.getElementById('cfg-conta') || {}).value || (c.config||{}).conta || ''); campResumos(); }
 }
 function campContaInfo(ap) {
   if (!ap) return { ok: !CAMP_CONTAS || CAMP_CONTAS.principalConectada !== false, conhecida: true };
@@ -4661,13 +4786,13 @@ function campRenderConta(atual) {
   var sel = document.getElementById('cfg-conta');
   if (!sel) return;
   atual = String(atual || '');
-  var ops = [{ v:'', t:'Principal (número de monitoramento)' }];
+  var ops = [{ v:'', t:'Principal (número de monitoramento) · máx. ' + CAMP_TETO_DIARIO + '/dia' }];
   var lista = (CAMP_CONTAS || []).slice().sort(function(a,b){ return a.id.localeCompare(b.id,'pt-BR'); });
   lista.forEach(function(k){
-    ops.push({ v:k.id, t:k.id + (k.numero ? ' · ' + k.numero : '') + (k.conectado ? ' — conectado' : ' — desconectado') });
+    ops.push({ v:k.id, t:k.id + (k.numero ? ' · ' + k.numero : '') + (k.conectado ? ' · 🟢 conectado' : ' · 🔴 desconectado') });
   });
   if (atual && !lista.some(function(k){ return k.id.toLowerCase() === atual.toLowerCase(); })) {
-    ops.push({ v:atual, t:atual + ' — ' + (CAMP_CONTAS ? 'não pareado' : 'carregando…') });
+    ops.push({ v:atual, t:atual + ' · ' + (CAMP_CONTAS ? 'não pareado' : 'carregando…') });
   }
   sel.innerHTML = ops.map(function(o){
     return '<option value="' + o.v.replace(/"/g,'&quot;') + '">' + o.t.replace(/</g,'&lt;') + '</option>';
@@ -4684,10 +4809,11 @@ function campAtualizarTeto() {
   var info = document.getElementById('cfg-conta-info');
   var st = campContaInfo(ap);
   info.innerHTML = ap
-    ? (st.ok ? '<span style="color:#22c55e">●</span> Envia só por este número — se ele cair, a campanha espera (nunca vai pela principal).'
+    ? (st.ok ? '<span style="color:#22c55e">●</span> Envia só por este número. Se ele cair, a campanha espera; nunca passa para a principal.'
              : '<span style="color:#f59e0b">●</span> ' + (st.conhecida ? 'Número desconectado.' : 'Número não pareado.')
-               + ' Pareie na aba ⚙️ Config → Números conectados com apelido começando em <code>camp-</code>.')
-    : 'Principal: teto de ' + CAMP_TETO_DIARIO + '/dia e divide o espaçamento com a fila de ofertas. Para a base que tem seu número salvo, pareie um número <code>camp-</code> na aba Config.';
+               + ' Pareie na aba ⚙️ Config → Números conectados, com apelido começando em <code>camp-</code>.')
+    : 'A principal fica travada em ' + CAMP_TETO_DIARIO + '/dia e divide o espaçamento com a fila de ofertas. Para a base que tem seu número salvo, use um número <code>camp-</code>.';
+  campRenderPresets();
 }
 function campContaMudou() {
   var inp = document.getElementById('cfg-diario');
@@ -4695,14 +4821,61 @@ function campContaMudou() {
   if (Number(inp.value) > Number(inp.max)) inp.value = inp.max;
   campSujo();
 }
+function campPresetAtual(g) {
+  g = g || {};
+  var conta = g.conta || '';
+  return CAMP_PRESETS.find(function(p) {
+    var k = p.cfg;
+    var lim = Math.min(k.limiteDiario, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
+    return g.intervaloMinSegundos === k.intervaloMinSegundos && g.intervaloMaxSegundos === k.intervaloMaxSegundos
+      && Number(g.limiteDiario) === lim && Number(g.pausaLongaACada || 0) === k.pausaLongaACada
+      && String(g.pausaLongaMinutos||'') === String(k.pausaLongaMinutos)
+      && String(g.delayEntreMensagensSegundos||'') === String(k.delayEntreMensagensSegundos);
+  }) || null;
+}
+function campCfgDoForm() {
+  var n = function(id){ return Number(document.getElementById(id).value) || 0; };
+  return {
+    conta: (document.getElementById('cfg-conta').value || '').trim(),
+    intervaloMinSegundos: n('cfg-int-min') * 60, intervaloMaxSegundos: n('cfg-int-max') * 60,
+    limiteDiario: n('cfg-diario'), pausaLongaACada: n('cfg-pausa-cada'),
+    pausaLongaMinutos: [n('cfg-pausa-min'), n('cfg-pausa-max')],
+    delayEntreMensagensSegundos: [n('cfg-delay-min'), n('cfg-delay-max')]
+  };
+}
+function campRenderPresets() {
+  var wrap = document.getElementById('camp-presets'); if (!wrap) return;
+  var atual = campPresetAtual(campCfgDoForm());
+  var conta = (document.getElementById('cfg-conta') || {}).value || '';
+  wrap.innerHTML = CAMP_PRESETS.map(function(p) {
+    var lim = Math.min(p.cfg.limiteDiario, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
+    var desc = p.desc.replace(/até \d+\/dia/, 'até ' + lim + '/dia');
+    return '<button type="button" class="camp-preset' + (atual && atual.id === p.id ? ' on' : '') + '" onclick="campAplicarPreset(\'' + p.id + '\')"><b>' + p.nome + '</b><span>' + desc + '</span></button>';
+  }).join('');
+  document.getElementById('cfg-ritmo-aviso').textContent = atual ? '' : 'Ritmo personalizado (valores em "Ajustar manualmente").';
+}
+function campAplicarPreset(id) {
+  var p = CAMP_PRESETS.find(function(x){ return x.id === id; }); if (!p) return;
+  var k = p.cfg, conta = document.getElementById('cfg-conta').value || '';
+  var v = function(id, val){ document.getElementById(id).value = val; };
+  v('cfg-int-min', Math.round(k.intervaloMinSegundos / 60 * 100) / 100);
+  v('cfg-int-max', Math.round(k.intervaloMaxSegundos / 60 * 100) / 100);
+  v('cfg-diario', Math.min(k.limiteDiario, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO));
+  v('cfg-pausa-cada', k.pausaLongaACada);
+  v('cfg-pausa-min', k.pausaLongaMinutos[0]); v('cfg-pausa-max', k.pausaLongaMinutos[1]);
+  v('cfg-delay-min', k.delayEntreMensagensSegundos[0]); v('cfg-delay-max', k.delayEntreMensagensSegundos[1]);
+  campRenderPresets();
+  campRenderPreview();
+  campSujo();
+}
+function campManualMudou() { campRenderPresets(); campRenderPreview(); campSujo(); }
 
 function campRenderConfig(c) {
   var g = c.config || {};
   campRenderConta(g.conta || '');
-  if (CAMP_CONTAS === null) campCarregarContas(false);
   var v = function(id, val){ document.getElementById(id).value = val; };
-  v('cfg-int-min',   Math.round((g.intervaloMinSegundos||180)/60));
-  v('cfg-int-max',   Math.round((g.intervaloMaxSegundos||480)/60));
+  v('cfg-int-min',   Math.round((g.intervaloMinSegundos||180)/60*100)/100);
+  v('cfg-int-max',   Math.round((g.intervaloMaxSegundos||480)/60*100)/100);
   v('cfg-diario',    g.limiteDiario || 15);
   v('cfg-pausa-cada',g.pausaLongaACada || 0);
   v('cfg-pausa-min', (g.pausaLongaMinutos||[20,30])[0]);
@@ -4710,32 +4883,35 @@ function campRenderConfig(c) {
   v('cfg-delay-min', (g.delayEntreMensagensSegundos||[20,40])[0]);
   v('cfg-delay-max', (g.delayEntreMensagensSegundos||[20,40])[1]);
   v('cfg-erros',     g.pararSeErrosSeguidos || 3);
-  v('cfg-janelas',   (g.janelas||[]).map(function(j){ return j[0]+'-'+j[1]; }).join('\n'));
+  v('cfg-janelas',   (g.janelas||[]).map(function(j){ return j[0]+'-'+j[1]; }).join(', '));
   document.getElementById('cfg-uteis').checked     = !!g.diasUteisApenas;
   document.getElementById('cfg-fup-ativo').checked = !!(g.followup && g.followup.ativo);
   v('cfg-fup-dias',  (g.followup && g.followup.aposDias) || 3);
   var fup = document.getElementById('cfg-fup-msg');
   fup.innerHTML = (c.mensagens||[]).slice().sort(function(a,b){
     return String(a.nome).localeCompare(String(b.nome),'pt-BR');
-  }).map(function(m){ return '<option value="'+m.id+'">'+m.nome+'</option>'; }).join('');
+  }).map(function(m){ return '<option value="'+m.id+'">'+campEsc(m.nome)+'</option>'; }).join('');
   fup.value = (g.followup && g.followup.variante) || '';
+  campRenderPresets();
 }
-
+// Aceita "09:00-12:00, 14:00-19:30" (vírgula, ponto e vírgula ou quebra de linha).
+function campLerJanelas(txt) {
+  return String(txt || '').split(/[,;\n]+/).map(function(l){ return l.trim().replace(/\s*[–—]\s*/g, '-'); }).filter(Boolean)
+    .map(function(l){ return l.split('-').map(function(x){ return x.trim().replace(/h$/i, '').replace(/^(\d{1,2})h(\d{2})$/i, '$1:$2'); }); })
+    .map(function(j){ return j.map(function(x){ return /^\d{1,2}$/.test(x) ? x + ':00' : x; }); })
+    .filter(function(j){ return j.length === 2 && /^\d{1,2}:\d{2}$/.test(j[0]) && /^\d{1,2}:\d{2}$/.test(j[1]); })
+    .map(function(j){ return j.map(function(x){ return x.length === 4 ? '0' + x : x; }); });
+}
 function campColetarConfig(c) {
   var n = function(id){ return Number(document.getElementById(id).value) || 0; };
-  var janelas = (document.getElementById('cfg-janelas').value || '')
-    .split('\n').map(function(l){ return l.trim(); }).filter(Boolean)
-    .map(function(l){ return l.split('-').map(function(x){ return x.trim(); }); })
-    .filter(function(j){ return j.length === 2 && /^\d{1,2}:\d{2}$/.test(j[0]) && /^\d{1,2}:\d{2}$/.test(j[1]); });
-
+  var janelas = campLerJanelas(document.getElementById('cfg-janelas').value);
   var conta = (document.getElementById('cfg-conta').value || '').trim();
   var diario = Math.min(n('cfg-diario') || 15, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
   document.getElementById('cfg-diario').value = diario;
-
   c.config = {
     conta: conta,
-    intervaloMinSegundos: Math.max(60, n('cfg-int-min') * 60),
-    intervaloMaxSegundos: Math.max(60, n('cfg-int-max') * 60),
+    intervaloMinSegundos: Math.max(30, Math.round(n('cfg-int-min') * 60)),
+    intervaloMaxSegundos: Math.max(30, Math.round(n('cfg-int-max') * 60)),
     limiteDiario: diario,
     janelas: janelas,
     diasUteisApenas: document.getElementById('cfg-uteis').checked,
@@ -4751,131 +4927,132 @@ function campColetarConfig(c) {
       variante: document.getElementById('cfg-fup-msg').value || ''
     }
   };
-  if (c.config.intervaloMaxSegundos < c.config.intervaloMinSegundos) {
-    c.config.intervaloMaxSegundos = c.config.intervaloMinSegundos;
-  }
+  if (c.config.intervaloMaxSegundos < c.config.intervaloMinSegundos) c.config.intervaloMaxSegundos = c.config.intervaloMinSegundos;
   return janelas.length > 0;
 }
 
-async function campSalvar() {
-  var c = campAtual(); if (!c) return;
-  var ok = campColetarConfig(c);
-  if (!ok) return campFb('camp-salvar-fb', 'Defina ao menos uma janela de horário válida (ex: 09:00-11:30).');
+// ── Salvar / iniciar / pausar / duplicar / excluir / nova ───────────────────
+async function campSalvar(silencioso) {
+  var c = campAtual(); if (!c) return false;
+  if (!campColetarConfig(c)) { campFb('camp-fb', 'Defina ao menos um horário de envio válido (ex.: 09:00-12:00).'); return false; }
   try {
     await campApi('/campanhas', { method:'POST', body:{ data: CAMP_DB } });
-    campFb('camp-salvar-fb', '✓ Salvo.', true);
     campLimpo();
-    campRenderContadores();
+    if (!silencioso) campFb('camp-fb', '✓ Salvo.', true);
+    return true;
   } catch(e) {
-    campFb('camp-salvar-fb', 'Erro: ' + e.message);
+    campFb('camp-fb', 'Erro ao salvar: ' + e.message);
+    return false;
   }
 }
-
+// Um botão só: salva se precisar, depois inicia/retoma; se está rodando, pausa.
+async function campAcao() {
+  var c = campAtual(); if (!c) return;
+  if (c.status === 'ativa') return campStatus('pausada');
+  if (CAMP_SUJO && !(await campSalvar(true))) return;
+  var n = campContar(c);
+  if (!n.fila) return campFb('camp-fb', 'Não há contatos na fila.');
+  var teto = Math.min(c.config.limiteDiario, c.config.conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
+  if (!confirm((c.status === 'pausada' ? 'Retomar' : 'Iniciar') + ' "' + c.nome + '"?\n\n' + n.fila + ' contato(s) na fila · até ' + teto + ' por dia · pelo número ' + (c.config.conta || 'principal') + '.\nQualquer outra campanha ativa será pausada.')) return;
+  campStatus('ativa');
+}
 async function campStatus(novo) {
   var c = campAtual(); if (!c) return;
-  if (novo === 'ativa') {
-    if (CAMP_SUJO) return campFb('camp-status-fb', 'Salve a campanha antes de iniciar.');
-    var fila = (c.contatos||[]).filter(function(x){ return x.status === 'fila'; }).length;
-    if (!fila) return campFb('camp-status-fb', 'Não há contatos na fila.');
-    if (!confirm('Iniciar "'+c.nome+'"?\n\n'+fila+' contato(s) na fila, até '+c.config.limiteDiario+' por dia, pelo número '+(c.config.conta||'principal')+'.\nQualquer outra campanha ativa será pausada.')) return;
-  }
   try {
     var d = await campApi('/campanhas/status', { method:'POST', body:{ campanhaId: c.id, status: novo } });
     c.status = d.status;
-    campFb('camp-status-fb', '✓ Campanha ' + d.status + '.', true);
-    campRenderSeletor();
-    setTimeout(function(){ campAtualizarProgresso(false); }, 2000);
+    if (novo === 'ativa') CAMP_DB.campanhas.forEach(function(x){ if (x.id !== c.id && x.status === 'ativa') x.status = 'pausada'; });
+    campFb('camp-fb', novo === 'ativa' ? '✓ Envio iniciado. O primeiro sai em até 1 minuto.' : '✓ Envio pausado.', true);
+    campVista(novo === 'ativa' ? 'acompanhar' : CAMP_VISTA);
+    setTimeout(function(){ campAtualizarProgresso(false); }, 3000);
   } catch(e) {
-    campFb('camp-status-fb', 'Erro: ' + e.message);
+    campFb('camp-fb', 'Erro: ' + e.message);
+    document.getElementById('camp-estado').textContent = 'Erro: ' + e.message;
   }
 }
-
-// Excluir e definitivo: leva junto o historico de envio da campanha. A exclusao
-// e imediata (sem confirmacao na interface); o servidor ainda exige o nome como
-// confirmacao, entao enviamos c.nome direto, e recusa campanha ativa.
+// Excluir é definitivo: leva junto o histórico de envio. O servidor exige o
+// nome como confirmação e recusa campanha ativa.
 async function campExcluir() {
   var c = campAtual(); if (!c) return;
-  if (c.status === 'ativa') return campFb('camp-status-fb', 'Pause a campanha antes de excluir.');
+  if (c.status === 'ativa') return campFb('camp-fb', 'Pause o envio antes de excluir.');
+  if (!confirm('Excluir "' + c.nome + '"?\n\nIsso apaga a campanha e o histórico de envio dela. Não dá para desfazer.')) return;
   try {
     await campApi('/campanhas/excluir', { method:'POST', body:{ campanhaId: c.id, confirmacao: c.nome } });
-    CAMP_ID = null;
-    await campRecarregar();
-    campFb('camp-status-fb', '✓ Campanha excluída.', true);
+    CAMP_ID = null; CAMP_SUJO = false;
+    var d = await campApi('/campanhas'); CAMP_DB = d.data;
+    campIrLista();
   } catch(e) {
-    campFb('camp-status-fb', 'Erro: ' + e.message);
+    campFb('camp-fb', 'Erro: ' + e.message);
   }
 }
-
 function campNova() {
   var nome = prompt('Nome da nova campanha:');
   if (!nome) return;
-  var base = campAtual();
-  var id = nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  var id = nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
               .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);
-  if (CAMP_DB.campanhas.some(function(c){ return c.id === id; })) return alert('Já existe campanha com esse id.');
+  if (!id) id = 'camp-' + Date.now().toString(36);
+  if (CAMP_DB.campanhas.some(function(c){ return c.id === id; })) return alert('Já existe campanha com esse nome.');
+  var padrao = CAMP_PRESETS[1].cfg;
   CAMP_DB.campanhas.push({
-    id: id, nome: nome, descricao: '', criadoEm: new Date().toISOString().slice(0,10),
+    id: id, nome: nome.trim(), descricao: '', criadoEm: new Date().toISOString().slice(0,10),
     status: 'rascunho',
-    config: base ? JSON.parse(JSON.stringify(base.config)) : {
-      intervaloMinSegundos:180, intervaloMaxSegundos:480, limiteDiario:15,
-      janelas:[['09:00','11:30'],['14:00','18:00']], diasUteisApenas:true,
-      pausaLongaACada:6, pausaLongaMinutos:[20,30], delayEntreMensagensSegundos:[20,40],
+    config: {
+      conta: (CAMP_CONTAS || []).some(function(k){ return k.conectado; }) ? CAMP_CONTAS.filter(function(k){ return k.conectado; })[0].id : '',
+      intervaloMinSegundos: padrao.intervaloMinSegundos, intervaloMaxSegundos: padrao.intervaloMaxSegundos, limiteDiario: padrao.limiteDiario,
+      janelas:[['09:00','12:00'],['14:00','18:00']], diasUteisApenas:true,
+      pausaLongaACada: padrao.pausaLongaACada, pausaLongaMinutos: padrao.pausaLongaMinutos.slice(), delayEntreMensagensSegundos: padrao.delayEntreMensagensSegundos.slice(),
       verificarNumeroAntes:true, pararSeErrosSeguidos:3,
       followup:{ ativo:false, aposDias:3, variante:'' }
     },
-    mensagens: [{ id:'padrao', nome:'Mensagem padrão', segmento:'*', blocos:[{ tipo:'texto', conteudo:'Oi, {primeiroNome}.' }] }],
+    mensagens: [{ id:'padrao', nome:'Mensagem padrão', segmento:'*', blocos:[{ tipo:'texto', conteudo:'Oi, {primeiroNome}! ' }] }],
     variaveis: ['primeiroNome','nome'],
     contatos: []
   });
-  CAMP_ID = id;
-  campRenderSeletor();
+  if (!CAMP_DB.campanhas[CAMP_DB.campanhas.length - 1].config.conta) CAMP_DB.campanhas[CAMP_DB.campanhas.length - 1].config.limiteDiario = CAMP_TETO_DIARIO;
+  campAbrir(id, 'preparar');
+  campSujo();
 }
-
-// Duplicar: copia mensagens, config, variaveis e contatos da campanha atual.
-// Contatos voltam para a fila (historico de envio nao acompanha a copia).
+// Duplicar: copia mensagens, config, variáveis e contatos. Contatos voltam
+// para a fila (histórico de envio não acompanha a cópia).
 function campDuplicar() {
   var base = campAtual(); if (!base) return;
-  var nome = base.nome + ' (cópia)';
-  var raiz = (base.id + '-copia').slice(0,36);
+  var nome = prompt('Nome da cópia:', base.nome + ' (cópia)');
+  if (!nome) return;
+  var raiz = nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,36) || (base.id + '-copia').slice(0,36);
   var id = raiz, n = 2;
   while (CAMP_DB.campanhas.some(function(c){ return c.id === id; })) { id = raiz + '-' + (n++); }
   var nova = JSON.parse(JSON.stringify(base));
-  nova.id = id;
-  nova.nome = nome;
-  nova.status = 'rascunho';
+  nova.id = id; nova.nome = nome.trim(); nova.status = 'rascunho';
   nova.criadoEm = new Date().toISOString().slice(0,10);
   (nova.contatos || []).forEach(function(ct){
-    ct.status = 'fila';
-    ct.enviadoEm = null;
-    ct.respondidoEm = null;
-    ct.followupEm = null;
-    if ('erro' in ct) ct.erro = null;
+    ct.status = 'fila'; ct.enviadoEm = null; ct.respondidoEm = null; ct.followupEm = null;
+    ct.erro = null; ct.respostaTexto = null; ct.tentativasEnvio = 0;
   });
   CAMP_DB.campanhas.push(nova);
-  CAMP_ID = id;
-  campRenderSeletor();
+  campAbrir(id, 'preparar');
   campSujo();
-  campFb('camp-status-fb', '✓ Campanha duplicada — salve para persistir.', true);
+  campFb('camp-fb', '✓ Cópia criada. Salve para valer.', true);
 }
 
-// ── Mensagens e blocos ───────────────────────────────────────────────────────
+// ── Mensagens (variantes) e blocos ──────────────────────────────────────────
 function campRenderMensagens(c) {
   var sel = document.getElementById('camp-msg-sel');
-  var lista = (c.mensagens||[]).slice().sort(function(a,b){
-    return String(a.nome).localeCompare(String(b.nome),'pt-BR');
-  });
-  sel.innerHTML = lista.map(function(m){ return '<option value="'+m.id+'">'+m.nome+'</option>'; }).join('');
+  var lista = (c.mensagens||[]).slice().sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome),'pt-BR'); });
+  sel.innerHTML = lista.map(function(m){ return '<option value="'+campEsc(m.id)+'">'+campEsc(m.nome)+' · segmento '+campEsc(m.segmento||'*')+'</option>'; }).join('');
   if (!CAMP_MSG || !lista.some(function(m){ return m.id === CAMP_MSG; })) {
-    CAMP_MSG = lista.length ? lista[0].id : null;
+    CAMP_MSG = (lista.find(function(m){ return m.segmento === '*'; }) || lista[0] || {}).id || null;
   }
   sel.value = CAMP_MSG || '';
-  campRenderPrevSel();
+  document.getElementById('camp-det-variantes').open = lista.length > 1;
   campRenderBlocos();
 }
 function campMsgAtual() {
   var c = campAtual(); if (!c) return null;
-  CAMP_MSG = document.getElementById('camp-msg-sel').value || CAMP_MSG;
   return (c.mensagens||[]).find(function(m){ return m.id === CAMP_MSG; }) || null;
+}
+function campTrocarMensagem() {
+  CAMP_MSG = document.getElementById('camp-msg-sel').value || CAMP_MSG;
+  campRenderBlocos();
 }
 function campMsgMeta() {
   var m = campMsgAtual(); if (!m) return;
@@ -4885,88 +5062,82 @@ function campMsgMeta() {
 }
 function campNovaMensagem() {
   var c = campAtual(); if (!c) return;
-  var nome = prompt('Nome da mensagem:'); if (!nome) return;
-  var id = nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
-             .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30);
-  if (c.mensagens.some(function(m){ return m.id === id; })) return alert('Já existe mensagem com esse id.');
-  c.mensagens.push({ id:id, nome:nome, segmento:'*', blocos:[{ tipo:'texto', conteudo:'' }] });
+  var nome = prompt('Nome da variante (ex.: "Cartão falhou"):'); if (!nome) return;
+  var id = nome.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,30);
+  if (c.mensagens.some(function(m){ return m.id === id; })) return alert('Já existe variante com esse nome.');
+  var seg = prompt('Segmento que recebe esta variante (valor da coluna "segmento" da planilha):', id) || '*';
+  c.mensagens.push({ id:id, nome:nome, segmento:seg.trim(), blocos:[{ tipo:'texto', conteudo:'' }] });
   CAMP_MSG = id;
   campRenderMensagens(c);
+  campRenderConfig(c);
   campSujo();
 }
-
 // Variáveis = tudo que existe no contato menos os campos de controle.
 function campVariaveis(c) {
   var chaves = {};
   (c.contatos || []).slice(0, 20).forEach(function(ct) {
-    Object.keys(ct).forEach(function(k) {
-      if (CAMP_RESERVADOS.indexOf(k) < 0) chaves[k] = 1;
-    });
+    Object.keys(ct).forEach(function(k) { if (CAMP_RESERVADOS.indexOf(k) < 0) chaves[k] = 1; });
   });
-  chaves['primeiroNome'] = 1;   // derivado do nome, sempre disponível
+  chaves['primeiroNome'] = 1;
   return Object.keys(chaves).sort();
 }
 function campRenderVars() {
-  var c = campAtual();
-  var el = document.getElementById('camp-vars');
+  var c = campAtual(); var el = document.getElementById('camp-vars');
   if (!el || !c) return;
   var vars = campVariaveis(c);
-  el.innerHTML = vars.length
-    ? '<span style="font-size:11px;color:var(--muted2);margin-right:6px">Disponíveis:</span>'
-      + vars.map(function(v) {
-          return '<span class="camp-pill" style="cursor:pointer" onclick="campCopiarVar(\'' + v + '\')">{' + v + '}</span>';
-        }).join(' ')
-    : '<span style="font-size:11px;color:var(--muted2)">Importe o público para gerar as variáveis.</span>';
+  el.innerHTML = '<span style="font-size:11px;color:var(--muted2)">Clique para copiar:</span>'
+    + vars.map(function(v){ return '<span class="camp-chip var" onclick="campCopiarVar(\'' + v + '\', this)">{' + v + '}</span>'; }).join('')
+    + (c.contatos && c.contatos.length ? '' : '<span style="font-size:11px;color:var(--muted2)">· importe a lista para ter mais variáveis</span>');
 }
-function campCopiarVar(v) {
-  navigator.clipboard.writeText('{' + v + '}').catch(function(){});
+function campCopiarVar(v, el) {
+  navigator.clipboard.writeText('{' + v + '}').then(function(){ if (el) { var t = el.textContent; el.textContent = 'copiado'; setTimeout(function(){ el.textContent = t; }, 900); } }).catch(function(){});
 }
-
 function campRenderBlocos() {
   var m = campMsgAtual();
   var wrap = document.getElementById('camp-blocos');
-  campRenderVars();
-  if (!m) { wrap.innerHTML = ''; return; }
+  if (!m) { wrap.innerHTML = ''; campRenderPreview(); return; }
   document.getElementById('camp-msg-nome').value = m.nome || '';
   document.getElementById('camp-msg-seg').value  = m.segmento || '*';
+  var n = (m.blocos||[]).length;
   wrap.innerHTML = (m.blocos||[]).map(function(b, i) {
-    var topo = '<div class="camp-bloco-top"><span style="font-size:10px;font-weight:800;letter-spacing:1px;color:var(--muted2)">'
-      + (b.tipo === 'imagem' ? '🖼️ IMAGEM' : b.tipo === 'audio' ? '🎙️ ÁUDIO' : '💬 TEXTO') + ' · BLOCO ' + (i+1) + '</span><span>'
-      + '<button class="camp-mini" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,-1)">↑</button> '
-      + '<button class="camp-mini" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,1)">↓</button> '
-      + '<button class="camp-mini" data-i="'+i+'" onclick="campRemoverBloco(this.dataset.i)">✕</button></span></div>';
+    var rot = b.tipo === 'imagem' ? '🖼️ Imagem' : b.tipo === 'audio' ? '🎙️ Áudio' : '💬 Texto';
+    var topo = '<div class="camp-bl-top"><span>' + rot + (n > 1 ? ' · ' + (i+1) + 'ª mensagem' : '') + '</span>'
+      + (i > 0 ? '<button class="camp-mini camp-ico" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,-1)" title="Subir">↑</button>' : '')
+      + (i < n - 1 ? '<button class="camp-mini camp-ico" data-i="'+i+'" onclick="campMoverBloco(this.dataset.i,1)" title="Descer">↓</button>' : '')
+      + '<button class="camp-mini camp-ico" data-i="'+i+'" onclick="campRemoverBloco(this.dataset.i)" title="Remover">✕</button></div>';
     if (b.tipo === 'audio') {
       var ehVoz = /\.(ogg|opus)$/i.test(b.arquivo || '');
-      return '<div class="camp-bloco">' + topo
-        + '<div class="field" style="margin-bottom:8px"><label>Arquivo</label>'
-        + '<input type="text" data-i="'+i+'" value="'+(b.arquivo||'').replace(/"/g,'&quot;')+'" oninput="campSetBloco(this.dataset.i,\'arquivo\',this.value)" placeholder="audio-volta.opus"/></div>'
-        + '<input type="file" accept=".ogg,.opus,.m4a,.mp3,.aac,audio/*" data-i="'+i+'" style="font-size:12px;padding:6px" onchange="campUploadMidia(this.dataset.i, this)"/>'
-        + (b.arquivo ? '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">'
+      return '<div class="camp-bl">' + topo
+        + (b.arquivo
+          ? '<div class="camp-arq">' + campEsc(b.arquivo) + '<small>' + (b.segundos ? Math.round(b.segundos) + ' s · ' : '') + (ehVoz ? 'chega como mensagem de voz' : 'chega como arquivo de áudio — para mensagem de voz, use .ogg/.opus') + '</small></div>'
+            + '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">'
             + '<button class="camp-mini" data-i="'+i+'" onclick="campOuvirAudio(this.dataset.i, this)">▶ Ouvir</button>'
-            + '<span style="font-size:11px;color:var(--muted2)">' + (b.segundos ? Math.round(b.segundos) + 's · ' : '')
-            + (ehVoz ? 'sai como mensagem de voz' : 'sai como arquivo de áudio (para mensagem de voz, use .ogg/.opus)') + '</span>'
-            + '<audio data-i="'+i+'" controls style="display:none;width:100%;margin-top:4px"></audio></div>' : '')
-        + '<div style="font-size:11px;color:var(--muted2);margin-top:8px">O mesmo áudio vai para todos (sem variáveis). Para gerar .opus: grave no WhatsApp numa conversa com você mesmo e exporte/compartilhe o áudio.</div>'
+            + '<label class="camp-mini" style="margin:0;text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer">Trocar arquivo<input type="file" accept=".ogg,.opus,.m4a,.mp3,.aac,audio/*" data-i="'+i+'" style="display:none" onchange="campUploadMidia(this.dataset.i, this)"/></label>'
+            + '<audio data-i="'+i+'" controls style="display:none;width:100%;margin-top:4px"></audio></div>'
+          : '<label class="camp-mini" style="display:inline-block;margin:0;text-transform:none;letter-spacing:0;font-weight:600;cursor:pointer;padding:8px 12px">📎 Escolher áudio (.opus, .ogg, .m4a, .mp3)<input type="file" accept=".ogg,.opus,.m4a,.mp3,.aac,audio/*" data-i="'+i+'" style="display:none" onchange="campUploadMidia(this.dataset.i, this)"/></label>'
+            + '<div style="font-size:11px;color:var(--muted2);margin-top:8px">O mesmo áudio vai para todos. Para gerar .opus: grave no WhatsApp numa conversa com você mesmo e exporte/compartilhe o áudio.</div>')
         + '</div>';
     }
     if (b.tipo === 'imagem') {
-      return '<div class="camp-bloco">' + topo
-        + '<div class="field" style="margin-bottom:8px"><label>Arquivo</label>'
-        + '<input type="text" data-i="'+i+'" value="'+(b.arquivo||'').replace(/"/g,'&quot;')+'" oninput="campSetBloco(this.dataset.i,\'arquivo\',this.value)" placeholder="painel-demo-1.png"/></div>'
-        + '<input type="file" accept="image/png,image/jpeg,image/webp" data-i="'+i+'" style="font-size:12px;padding:6px" onchange="campUploadImagem(this.dataset.i, this)"/>'
+      return '<div class="camp-bl">' + topo
+        + (b.arquivo
+          ? '<div class="camp-arq">' + campEsc(b.arquivo) + '</div>'
+            + '<label class="camp-mini" style="display:inline-block;margin-top:8px;text-transform:none;letter-spacing:0;font-weight:500;cursor:pointer">Trocar imagem<input type="file" accept="image/png,image/jpeg,image/webp" data-i="'+i+'" style="display:none" onchange="campUploadImagem(this.dataset.i, this)"/></label>'
+          : '<label class="camp-mini" style="display:inline-block;margin:0;text-transform:none;letter-spacing:0;font-weight:600;cursor:pointer;padding:8px 12px">📎 Escolher imagem (.png, .jpg, .webp)<input type="file" accept="image/png,image/jpeg,image/webp" data-i="'+i+'" style="display:none" onchange="campUploadImagem(this.dataset.i, this)"/></label>')
         + '<div class="field" style="margin-top:8px"><label>Legenda <span class="tag">opcional</span></label>'
-        + '<input type="text" data-i="'+i+'" value="'+(b.legenda||'').replace(/"/g,'&quot;')+'" oninput="campSetBloco(this.dataset.i,\'legenda\',this.value)"/></div>'
+        + '<input type="text" data-i="'+i+'" value="'+campEsc(b.legenda||'')+'" oninput="campSetBloco(this.dataset.i,\'legenda\',this.value)"/></div>'
         + '</div>';
     }
-    return '<div class="camp-bloco">' + topo
-      + '<textarea data-i="'+i+'" style="min-height:150px" oninput="campSetBloco(this.dataset.i,\'conteudo\',this.value)">'
-      + (b.conteudo||'').replace(/</g,'&lt;') + '</textarea></div>';
+    return '<div class="camp-bl">' + topo
+      + '<textarea data-i="'+i+'" placeholder="Escreva a mensagem. Use {primeiroNome} para o nome." oninput="campSetBloco(this.dataset.i,\'conteudo\',this.value)">' + campEsc(b.conteudo||'') + '</textarea></div>';
   }).join('');
+  campRenderPreview();
 }
 function campSetBloco(i, campo, valor) {
   var m = campMsgAtual(); if (!m) return;
   m.blocos[Number(i)][campo] = valor;
   campSujo();
+  campRenderPreview();
 }
 function campAddBloco(tipo) {
   var m = campMsgAtual(); if (!m) return;
@@ -5004,25 +5175,26 @@ function campDuracaoAudio(f) {
     } catch(e) { res(0); }
   });
 }
-async function campUploadMidia(i, input) {
-  var f = input.files && input.files[0]; if (!f) return;
-  if (f.size > 3 * 1024 * 1024) return alert('Áudio acima de 3MB. Um áudio de 40s em .opus tem uns 100KB.');
-  var seg = await campDuracaoAudio(f);
-  var b64 = await new Promise(function(res, rej) {
+function campLerBase64(f) {
+  return new Promise(function(res, rej) {
     var r = new FileReader();
     r.onload  = function(){ res(String(r.result).split(',')[1]); };
     r.onerror = function(){ rej(new Error('falha ao ler o arquivo')); };
     r.readAsDataURL(f);
   });
+}
+async function campUploadMidia(i, input) {
+  var f = input.files && input.files[0]; if (!f) return;
+  if (f.size > 3 * 1024 * 1024) return alert('Áudio acima de 3MB. Um áudio de 40 s em .opus tem uns 100KB.');
+  var seg = await campDuracaoAudio(f);
   try {
+    var b64 = await campLerBase64(f);
     var d = await campApi('/campanhas/midia', { method:'POST', body:{ arquivo: f.name, base64: b64 } });
     var m = campMsgAtual(); if (m) m.blocos[Number(i)].segundos = Math.round(seg);
     campSetBloco(i, 'arquivo', d.arquivo);
     campRenderBlocos();
-    campFb('camp-salvar-fb', '✓ Áudio enviado: ' + d.arquivo + '. Salve a campanha.', true);
-  } catch(e) {
-    alert('Erro no upload: ' + e.message);
-  }
+    campFb('camp-fb', '✓ Áudio enviado. Salve a campanha.', true);
+  } catch(e) { alert('Erro no upload: ' + e.message); }
 }
 async function campOuvirAudio(i, btn) {
   var m = campMsgAtual(); if (!m) return;
@@ -5042,27 +5214,20 @@ async function campOuvirAudio(i, btn) {
 }
 async function campUploadImagem(i, input) {
   var f = input.files && input.files[0]; if (!f) return;
-  var b64 = await new Promise(function(res, rej) {
-    var r = new FileReader();
-    r.onload  = function(){ res(String(r.result).split(',')[1]); };
-    r.onerror = function(){ rej(new Error('falha ao ler o arquivo')); };
-    r.readAsDataURL(f);
-  });
+  if (f.size > 3 * 1024 * 1024) return alert('Imagem acima de 3MB.');
   try {
+    var b64 = await campLerBase64(f);
     var d = await campApi('/campanhas/midia', { method:'POST', body:{ arquivo: f.name, base64: b64 } });
     campSetBloco(i, 'arquivo', d.arquivo);
     campRenderBlocos();
-    campFb('camp-salvar-fb', '✓ Imagem enviada: ' + d.arquivo + '. Salve a campanha.', true);
-  } catch(e) {
-    alert('Erro no upload: ' + e.message);
-  }
+    campFb('camp-fb', '✓ Imagem enviada. Salve a campanha.', true);
+  } catch(e) { alert('Erro no upload: ' + e.message); }
 }
 
-// ── Resolução de variáveis e spintax ─────────────────────────────────────────
-// Mesma regra que o worker do baileys vai aplicar no envio:
-// 1. {rotulo|opção A|opção B} sorteia entre as opções (o primeiro pedaço, se for
-//    um identificador simples e houver 2+ alternativas, é só rótulo e sai fora);
-// 2. {campo} vira o valor do contato — qualquer campo novo vira variável sozinho.
+// ── Prévia como no WhatsApp ─────────────────────────────────────────────────
+// Mesma regra que o worker do baileys aplica no envio:
+// 1. {rotulo|opção A|opção B} sorteia entre as opções;
+// 2. {campo} vira o valor do contato.
 function campResolver(txt, ct) {
   var t = String(txt || '');
   t = t.replace(/\{([^{}]*\|[^{}]*)\}/g, function(_, g) {
@@ -5075,16 +5240,15 @@ function campResolver(txt, ct) {
   });
   return t;
 }
-
 function campRenderPrevSel() {
   var c = campAtual(); if (!c) return;
   var sel = document.getElementById('camp-prev-sel');
-  var lista = (c.contatos||[]).slice().sort(function(a,b){
-    return String(a.nome).localeCompare(String(b.nome),'pt-BR');
-  });
-  sel.innerHTML = lista.map(function(x){
-    return '<option value="'+x.id+'">'+x.nome+' ('+x.segmento+')</option>';
-  }).join('');
+  var antes = sel.value;
+  var lista = (c.contatos||[]).slice(0, 300).sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome),'pt-BR'); });
+  sel.innerHTML = lista.length
+    ? lista.map(function(x){ return '<option value="'+campEsc(x.id)+'">para ' + campEsc((x.nome||'').split(' ')[0] || x.telefone) + (x.segmento && x.segmento !== '*' ? ' · ' + campEsc(x.segmento) : '') + '</option>'; }).join('')
+    : '<option value="">para um contato de exemplo</option>';
+  if (antes && lista.some(function(x){ return x.id === antes; })) sel.value = antes;
   campRenderPreview();
 }
 function campRenderPreview() {
@@ -5092,47 +5256,166 @@ function campRenderPreview() {
   var box = document.getElementById('camp-preview');
   if (!c || !m) { box.innerHTML = ''; return; }
   var id = document.getElementById('camp-prev-sel').value;
-  var ct = (c.contatos||[]).find(function(x){ return x.id === id; });
-  if (!ct) { box.innerHTML = '<p style="font-size:12px;color:var(--muted2)">Importe o público para ver a prévia com dados reais.</p>'; return; }
-  box.innerHTML = (m.blocos||[]).map(function(b) {
-    if (b.tipo === 'audio') {
-      return '<div class="camp-prev" style="color:var(--muted)">🎙️ ' + (b.arquivo || '(sem arquivo)')
-        + (b.segundos ? ' · ' + Math.round(b.segundos) + 's' : '') + '</div>';
-    }
+  var ct = (c.contatos||[]).find(function(x){ return x.id === id; }) || { nome:'Maria Silva', primeiroNome:'Maria', telefone:'5511999990000' };
+  var hora = new Date().toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
+  var d = (c.config && c.config.delayEntreMensagensSegundos) || [Number(document.getElementById('cfg-delay-min').value)||20, Number(document.getElementById('cfg-delay-max').value)||40];
+  var temSpintax = false, html = [];
+  (m.blocos||[]).forEach(function(b) {
     if (b.tipo === 'imagem') {
-      return '<div class="camp-prev" style="color:var(--muted)">🖼️ ' + (b.arquivo || '(sem arquivo)')
-        + (b.legenda ? '\n' + campResolver(b.legenda, ct) : '') + '</div>';
+      html.push('<div class="camp-bolha"><div style="background:#1f2c34;border-radius:7px;height:90px;display:flex;align-items:center;justify-content:center;color:#8696a0;font-size:12px;margin-bottom:4px">🖼️ ' + campEsc(b.arquivo || 'imagem') + '</div>' + (b.legenda ? campEsc(campResolver(b.legenda, ct)) : '') + '<span class="hora">' + hora + '</span></div>');
+    } else if (b.tipo === 'audio') {
+      var s = Math.round(b.segundos || 0), mm = Math.floor(s/60), ss = String(s%60).padStart(2,'0');
+      html.push('<div class="camp-bolha audio"><span class="play">▶</span><span class="onda"></span><span style="font-size:11px;color:#9fd3c7">' + (s ? mm + ':' + ss : '0:00') + '</span></div>');
+    } else {
+      if (/\{[^{}]*\|[^{}]*\}/.test(b.conteudo || '')) temSpintax = true;
+      var t = campResolver(b.conteudo, ct).trim();
+      if (!t) return;
+      html.push('<div class="camp-bolha">' + campEsc(t).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/_([^_\n]+)_/g, '<i>$1</i>') + '<span class="hora">' + hora + ' ✓✓</span></div>');
     }
-    return '<div class="camp-prev">' + campResolver(b.conteudo, ct).replace(/</g,'&lt;') + '</div>';
-  }).join('<div style="text-align:center;font-size:11px;color:var(--muted2);padding:6px 0">↓ delay entre blocos ↓</div>');
+  });
+  document.getElementById('camp-btn-spintax').style.display = temSpintax ? '' : 'none';
+  box.innerHTML = html.length
+    ? html.join('<div class="entre">' + d[0] + ' a ' + d[1] + ' s depois</div>')
+    : '<div class="vazio">Escreva a mensagem para ver como chega.</div>';
 }
 
-// ── Contatos ─────────────────────────────────────────────────────────────────
-function campRenderContatos() {
-  var c = campAtual();
-  var tb = document.getElementById('camp-contatos');
-  if (!c) { tb.innerHTML = ''; return; }
-  var filtro = document.getElementById('camp-filtro').value;
-  var lista = (c.contatos||[]).filter(function(x){ return !filtro || x.status === filtro; });
-  tb.innerHTML = lista.map(function(x) {
-    return '<tr>'
-      + '<td>' + (x.nome||'') + '</td>'
-      + '<td style="font-family:monospace;font-size:11px">' + (x.telefone||'') + '</td>'
-      + '<td>' + (x.segmento||'') + '</td>'
-      + '<td style="color:var(--muted)">' + (x.mensagemId||'') + '</td>'
-      + '<td><span class="camp-st st-' + (x.status||'fila') + '">' + (x.status||'fila') + '</span></td>'
-      + '<td style="color:var(--muted2);font-size:11px">' + (x.enviadoEm ? String(x.enviadoEm).slice(0,16).replace('T',' ') : '—') + '</td>'
-      + '</tr>';
-  }).join('') || '<tr><td colspan="6" style="color:var(--muted2);text-align:center;padding:16px">Nenhum contato.</td></tr>';
-  campRenderContadores();
-}
+// ── Acompanhar ──────────────────────────────────────────────────────────────
+function campRenderProgresso() {
+  var c = campAtual(); var tb = document.getElementById('camp-prog-lista');
+  if (!c || !tb) return;
+  var ct = c.contatos || [], n = campContar(c);
+  var pct = n.total ? Math.round(n.feitos * 100 / n.total) : 0;
+  document.getElementById('camp-prog-fill').style.width = pct + '%';
 
-function campToggleImport() {
-  var el = document.getElementById('camp-import');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  // KPIs
+  var hoje = ct.filter(function(x){ var ts = x.followupEm || x.enviadoEm; return ts && campHojeSP(ts); }).length;
+  var teto = Math.min((c.config||{}).limiteDiario || 0, (c.config||{}).conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
+  var errosMotivo = {};
+  ct.forEach(function(x){ if (x.status === 'erro' && x.erro) errosMotivo[x.erro] = (errosMotivo[x.erro]||0) + 1; });
+  var motivo = Object.keys(errosMotivo).sort(function(a,b){ return errosMotivo[b]-errosMotivo[a]; })[0];
+  document.getElementById('camp-kpis').innerHTML =
+    '<div class="camp-kpi"><b>' + hoje + '</b><span>enviados hoje · de ' + teto + '</span></div>'
+    + '<div class="camp-kpi"><b>' + n.fila + '</b><span>ainda na fila</span></div>'
+    + '<div class="camp-kpi"><b style="color:#6ee7a0">' + n.respondido + '</b><span>já responderam' + (n.enviado + n.respondido ? ' · ' + Math.round(n.respondido * 100 / (n.enviado + n.respondido)) + '%' : '') + '</span></div>'
+    + '<div class="camp-kpi"><b style="color:' + (n.erro ? '#ff9a9d' : 'var(--text)') + '">' + n.erro + '</b><span>' + (n.erro ? 'erro' + (n.erro > 1 ? 's' : '') + (motivo ? ' · ' + campEsc(motivo) : '') : 'erros') + '</span></div>';
+
+  // Previsão
+  var g = c.config || {}, prev = '';
+  if (n.fila && c.status === 'ativa') {
+    var med = ((g.intervaloMinSegundos||60) + (g.intervaloMaxSegundos||120)) / 2;
+    var pausas = g.pausaLongaACada ? Math.floor(n.fila / g.pausaLongaACada) * (((g.pausaLongaMinutos||[0,0])[0] + (g.pausaLongaMinutos||[0,0])[1]) / 2) * 60 : 0;
+    var restaHoje = Math.max(0, teto - hoje);
+    var min = Math.round((Math.min(n.fila, restaHoje) * med + pausas) / 60);
+    prev = restaHoje >= n.fila
+      ? ' · no ritmo atual, termina em ≈ ' + (min >= 60 ? Math.floor(min/60) + ' h ' + (min%60) + ' min' : min + ' min')
+      : ' · hoje saem mais ' + restaHoje + '; o resto continua amanhã';
+  }
+  document.getElementById('camp-prog-txt').textContent = n.total
+    ? n.feitos + ' de ' + n.total + ' processados (' + pct + '%)' + prev : 'Nenhum contato na campanha.';
+
+  // Filtros
+  var filtros = [['', 'Todos', n.total], ['fila', 'Na fila', n.fila], ['enviado', 'Enviados', n.enviado], ['respondido', 'Responderam', n.respondido], ['erro', 'Erros', n.erro]];
+  if (n.optout) filtros.push(['optout', 'Opt-out', n.optout]);
+  document.getElementById('camp-prog-filtros').innerHTML = filtros.map(function(f){
+    return '<button type="button" class="' + (CAMP_PROG_FILTRO === f[0] ? 'on' : '') + '" onclick="campProgFiltro(\'' + f[0] + '\')">' + f[1] + ' ' + f[2] + '</button>';
+  }).join('');
+
+  // Lista
+  var prox = ct.findIndex(function(x){ return (x.status || 'fila') === 'fila'; });
+  var linhas = [];
+  ct.forEach(function(x, i) {
+    var st = x.status || 'fila';
+    if (CAMP_PROG_FILTRO && st !== CAMP_PROG_FILTRO) return;
+    var quando = '', extra = '';
+    if (st === 'respondido') { quando = campHora(x.respondidoEm, !campHojeSP(x.respondidoEm)); extra = x.respostaTexto ? ' · "' + campEsc(x.respostaTexto) + '"' : ''; }
+    else if (x.enviadoEm) quando = campHora(x.enviadoEm, !campHojeSP(x.enviadoEm));
+    else if (i === prox) quando = c.status === 'ativa' ? 'próximo' : 'primeiro ao iniciar';
+    linhas.push('<tr' + (i === prox ? ' class="camp-prox"' : '') + '>'
+      + '<td style="color:var(--muted2);font-variant-numeric:tabular-nums">' + (i + 1) + '</td>'
+      + '<td><b>' + campEsc(x.nome || '(sem nome)') + '</b><small>' + campEsc(campFone(x.telefone)) + '</small></td>'
+      + '<td><span class="camp-st st-' + st + '">' + (i === prox && st === 'fila' ? 'próximo' : (CAMP_ROTULO[st] || st)) + '</span>'
+      + (x.erro && st === 'erro' ? '<div style="font-size:11px;color:#ff9a9d;margin-top:3px">' + campEsc(x.erro) + '</div>' : '') + '</td>'
+      + '<td style="font-size:12px;color:var(--muted)">' + quando + extra + '</td></tr>');
+  });
+  tb.innerHTML = linhas.join('') || '<tr><td colspan="4" style="color:var(--muted2);text-align:center;padding:16px">Nenhum contato' + (CAMP_PROG_FILTRO ? ' com esse status' : '') + '.</td></tr>';
+  campRenderEstado();
 }
-// Detecta o separador pela linha de cabecalho e respeita aspas: nome com
-// virgula dentro ("Silva, Joao") quebrava a coluna no split cru.
+function campProgFiltro(f) { CAMP_PROG_FILTRO = f; campRenderProgresso(); }
+function campRenderEstado() {
+  var c = campAtual(); var el = document.getElementById('camp-estado'); if (!c || !el) return;
+  var partes = [];
+  var s = CAMP_MOTOR, conta = (c.config||{}).conta || 'principal';
+  if (c.status !== 'ativa') {
+    partes.push('<i><span class="camp-dot" style="background:#8a9bbf"></span> ' + (c.status === 'pausada' ? 'Envio pausado' : c.status === 'concluida' ? 'Campanha concluída' : 'Ainda não iniciada') + ' — nada sendo enviado agora.</i>');
+  } else if (s && s.ok && s.ativa && s.ativa.id === c.id) {
+    partes.push('<i><span class="camp-dot" style="background:' + (s.contaConectada ? '#22c55e' : '#ff585e') + '"></span> ' + campEsc(s.conta) + (s.contaConectada ? ' conectado' : ' <b>desconectado — envio parado</b>') + '</i>');
+    partes.push('<i>' + (s.dentroDaJanela ? '🕘 dentro do horário' : '⏸ <b>fora do horário</b> · volta na próxima janela') + '</i>');
+    if (s.pausaLongaAte) partes.push('<i>☕ pausa longa até ' + campHora(s.pausaLongaAte) + '</i>');
+    if (s.enviosHoje >= s.limiteDiario) partes.push('<i>🛑 <b>limite do dia atingido</b> (' + s.limiteDiario + ')</i>');
+    if (s.errosSeguidos) partes.push('<i>⚠️ ' + s.errosSeguidos + ' erro(s) seguido(s)</i>');
+    var prox = (c.contatos||[]).find(function(x){ return (x.status||'fila') === 'fila'; });
+    if (prox && s.contaConectada && s.dentroDaJanela && !s.pausaLongaAte && s.enviosHoje < s.limiteDiario) {
+      var ult = (c.contatos||[]).map(function(x){ return Date.parse(x.followupEm || x.enviadoEm) || 0; }).reduce(function(a,b){ return Math.max(a,b); }, 0);
+      var g = c.config || {}, med = ((g.intervaloMinSegundos||60) + (g.intervaloMaxSegundos||120)) / 2;
+      var em = ult ? Math.round((ult + med * 1000 - Date.now()) / 60000) : 0;
+      partes.push('<i>⏱ próximo: <b>' + campEsc(prox.nome || prox.telefone) + '</b> ' + (em > 0 ? 'em ~' + em + ' min' : 'a qualquer momento') + '</i>');
+    }
+  } else if (s && s.ok && !s.ativa) {
+    partes.push('<i><span class="camp-dot" style="background:#f59e0b"></span> O servidor ainda não pegou esta campanha (leva até 1 min).</i>');
+  } else if (s && s.erro) {
+    partes.push('<i><span class="camp-dot" style="background:#ff585e"></span> Sem resposta do servidor de envio: ' + campEsc(s.erro) + '</i>');
+  } else {
+    partes.push('<i><span class="camp-dot" style="background:#8a9bbf"></span> Consultando o servidor…</i>');
+  }
+  var seg = CAMP_ATUALIZADO_EM ? Math.round((Date.now() - CAMP_ATUALIZADO_EM) / 1000) : null;
+  partes.push('<i style="margin-left:auto;color:var(--muted2)">' + (seg !== null ? 'atualizado há ' + (seg < 60 ? seg + ' s' : Math.round(seg/60) + ' min') : '') + ' <button class="camp-mini camp-ico" onclick="campAtualizarProgresso(true)" title="Atualizar agora">↻</button></i>');
+  el.innerHTML = partes.join('');
+}
+async function campAtualizarMotor() {
+  try {
+    var r = await fetch(SERVER + '/campanha/status?t=' + Date.now(), { headers: campHead(), cache:'no-cache', signal: AbortSignal.timeout(15000) });
+    CAMP_MOTOR = await r.json();
+  } catch(e) { CAMP_MOTOR = { ok:false, erro: e.message }; }
+  if (CAMP_VISTA === 'acompanhar') campRenderEstado();
+}
+// Puxa só os campos de execução (status, horários, erro, resposta) — edições
+// não salvas na tela não são tocadas.
+async function campAtualizarProgresso(manual) {
+  var c = campAtual(); if (!c) return;
+  try {
+    var d = await campApi('/campanhas');
+    var rem = (d.data.campanhas || []).find(function(x){ return x.id === c.id; });
+    if (rem) {
+      var mapa = {};
+      (rem.contatos || []).forEach(function(x){ mapa[x.id + '|' + x.telefone] = x; });
+      (c.contatos || []).forEach(function(x){
+        var o = mapa[x.id + '|' + x.telefone]; if (!o) return;
+        ['status','enviadoEm','respondidoEm','followupEm','erro','tentativasEnvio','respostaTexto'].forEach(function(k){ x[k] = o[k]; });
+      });
+      if (c.status !== rem.status) { c.status = rem.status; campRenderTopo(); }
+      // Outras campanhas também mudam de status pelo servidor (concluída, pausada).
+      (d.data.campanhas || []).forEach(function(r2){ var l = CAMP_DB.campanhas.find(function(x){ return x.id === r2.id; }); if (l && l.id !== c.id) l.status = r2.status; });
+    }
+    CAMP_ATUALIZADO_EM = Date.now();
+    if (CAMP_VISTA === 'acompanhar') campRenderProgresso(); else campResumos();
+  } catch(e) {
+    if (manual) campFb('camp-fb', 'Erro ao atualizar: ' + e.message);
+  }
+  await campAtualizarMotor();
+}
+setInterval(function() {
+  var app = document.getElementById('camp-app'), c = campAtual();
+  if (!app || app.offsetParent === null || document.hidden || !c) return;
+  if (CAMP_VISTA === 'acompanhar') { campRenderEstado(); }
+  if (c.status === 'ativa' && CAMP_VISTA !== 'lista') campAtualizarProgresso(false);
+}, 20000);
+setInterval(function() {
+  if (CAMP_VISTA === 'acompanhar' && campAtual()) campRenderEstado();
+}, 5000);
+
+// ── Importação de público ────────────────────────────────────────────────────
+// Detecta o separador pela linha de cabeçalho e respeita aspas: nome com
+// vírgula dentro ("Silva, Joao") quebrava a coluna no split cru.
 function campSeparador(cab) {
   if (cab.indexOf('\t') >= 0) return '\t';
   if (cab.indexOf(';')  >= 0) return ';';
@@ -5153,9 +5436,7 @@ function campSplitLinha(l, sep) {
   out.push(atual);
   return out;
 }
-
-// ── Modelo padrao do arquivo de publico ──────────────────────────────────────
-// Separador ';' e BOM UTF-8: e o que o Excel em portugues abre em colunas e com
+// Separador ';' e BOM UTF-8: é o que o Excel em português abre em colunas e com
 // acento certo sem o operador precisar mexer em nada.
 var CAMP_MODELO_COLS = ['nome','telefone','email','produto','valor','dataFalha','segmento','obs'];
 function campBaixarModelo() {
@@ -5164,7 +5445,7 @@ function campBaixarModelo() {
     'Maria Aparecida Souza;5531988887777;maria@exemplo.com;Clube do Viajante;297;07/01/2026;cartao;',
     'Joao Pedro Lima;31977776666;joao@exemplo.com;Clube do Viajante;297;22/02/2026;pix;cliente antigo'
   ];
-  var blob = new Blob(['\ufeff' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var blob = new Blob(['﻿' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'modelo-publico-campanha.csv';
@@ -5178,8 +5459,7 @@ function campLerArquivo(input) {
   if (f.size > 2 * 1024 * 1024) return alert('Arquivo acima de 2MB.');
   var r = new FileReader();
   r.onload = function() {
-    // Remove BOM: sobrevive ao Excel e viraria parte do nome da primeira coluna
-    document.getElementById('camp-import-txt').value = String(r.result || '').replace(/^\ufeff/, '');
+    document.getElementById('camp-import-txt').value = String(r.result || '').replace(/^﻿/, '');
     campAnalisarImport();
   };
   r.onerror = function(){ alert('Falha ao ler o arquivo.'); };
@@ -5193,7 +5473,6 @@ function campAnalisarImport() {
   var sep = campSeparador(linhas[0]);
   var cab = campSplitLinha(linhas[0], sep).map(function(x){ return x.trim(); });
   CAMP_IMPORT = { cab: cab, linhas: linhas.slice(1).map(function(l){ return campSplitLinha(l, sep); }) };
-  // Palpite de mapeamento pelo nome da coluna — o operador confere e corrige
   var palpite = function(h) {
     h = h.toLowerCase();
     if (/nome|cliente/.test(h))        return 'nome';
@@ -5207,22 +5486,21 @@ function campAnalisarImport() {
   };
   document.getElementById('camp-map').style.display = 'block';
   document.getElementById('camp-map').innerHTML =
-    '<div class="camp-sec" style="margin-top:0">Mapeamento — ' + CAMP_IMPORT.linhas.length + ' linha(s)</div>'
+    '<div class="camp-sec" style="margin-top:0">Colunas encontradas — ' + CAMP_IMPORT.linhas.length + ' linha(s)</div>'
     + '<div class="camp-grid">' + cab.map(function(h, i) {
-        return '<div class="field"><label>' + (h || 'coluna ' + (i+1)) + '</label>'
+        return '<div class="field"><label>' + campEsc(h || 'coluna ' + (i+1)) + '</label>'
           + '<select id="map-' + i + '" data-i="' + i + '" onchange="campMapMudou(this.dataset.i)">'
           + CAMP_CAMPOS_IMPORT.map(function(cp) {
               return '<option value="' + cp[0] + '"' + (cp[0] === palpite(h) ? ' selected' : '') + '>' + cp[1] + '</option>';
             }).join('') + '</select>'
-          + '<input type="text" id="mapn-' + i + '" style="display:none;margin-top:6px" placeholder="nome da variável (ex: cidade)" value="' + campNomeVar(h) + '"/>'
+          + '<input type="text" id="mapn-' + i + '" style="display:none;margin-top:6px" placeholder="nome da variável (ex: cidade)" value="' + campEsc(campNomeVar(h)) + '"/>'
           + '</div>';
       }).join('') + '</div>'
     + '<div class="camp-aviso" style="margin-top:14px">Importar <b>substitui</b> a lista de contatos desta campanha. Status já gravados se perdem.</div>'
-    + '<button class="btn btn-blue" onclick="campImportar()">Importar público</button>';
+    + '<button class="btn btn-blue" onclick="campImportar()">Importar contatos</button>';
 }
-// Cabeçalho da planilha vira nome de variável: sem acento, sem espaço, camelCase.
 function campNomeVar(h) {
-  var limpo = String(h || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  var limpo = String(h || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-zA-Z0-9 ]/g, ' ').trim().split(/\s+/);
   if (!limpo[0]) return '';
   return limpo[0].toLowerCase() + limpo.slice(1).map(function(x) {
@@ -5234,7 +5512,6 @@ function campMapMudou(i) {
   var inp = document.getElementById('mapn-' + i);
   inp.style.display = sel.value === '__novo__' ? 'block' : 'none';
 }
-
 function campTelefone(t) {
   var d = String(t || '').replace(/\D/g, '');
   if (!d) return '';
@@ -5257,7 +5534,6 @@ function campImportar() {
   if (mapa.indexOf('telefone') < 0) return alert('Mapeie a coluna de telefone.');
   var dups = mapa.filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) !== i; });
   if (dups.length) return alert('Duas colunas mapeadas para "' + dups[0] + '".');
-  var idsMsg = (c.mensagens||[]).map(function(m){ return m.id; });
   var novos = [], vistos = {};
   CAMP_IMPORT.linhas.forEach(function(cols, n) {
     var o = {}, extras = {};
@@ -5271,10 +5547,6 @@ function campImportar() {
     if (!tel || vistos[tel]) return;   // sem telefone ou duplicado: fora
     vistos[tel] = 1;
     var seg = o.segmento || '*';
-    // Casa com a mensagem do mesmo segmento; se não houver, cai na primeira '*'
-    var msg = idsMsg.indexOf(seg) >= 0 ? seg
-            : ((c.mensagens.find(function(m){ return m.segmento === seg; }) || {}).id
-               || (c.mensagens.find(function(m){ return m.segmento === '*'; }) || c.mensagens[0] || {}).id || '');
     novos.push({
       id: 'ct-' + String(n + 1).padStart(3, '0'),
       nome: o.nome || '',
@@ -5289,10 +5561,8 @@ function campImportar() {
       obs: o.obs || '',
       status: 'fila',
       enviadoEm: null, respondidoEm: null, followupEm: null, erro: null,
-      mensagemId: msg, tentativasEnvio: 0
+      mensagemId: campMsgParaSegmento(c, seg), tentativasEnvio: 0
     });
-    // Colunas personalizadas entram no contato como estão — o resolvedor de
-    // variáveis lê qualquer campo, então {cidade} passa a funcionar no texto.
     Object.keys(extras).forEach(function(k){ novos[novos.length - 1][k] = extras[k]; });
   });
   if (!novos.length) return alert('Nenhuma linha válida.');
@@ -5304,11 +5574,9 @@ function campImportar() {
   document.getElementById('camp-map').style.display = 'none';
   CAMP_IMPORT = null;
   campRenderContatos();
-  campRenderPrevSel();
   campSujo();
-  campFb('camp-salvar-fb', novos.length + ' contato(s) importado(s) — clique em Salvar campanha.', true);
+  campFb('camp-fb', novos.length + ' contato(s) importado(s). Salve para valer.', true);
 }
-
 
 // ════════════════════════════════════════════════════════════════════════════
 // ABA CONFIG — operação do CDV (GET/POST /config-cdv no baileys-server)
