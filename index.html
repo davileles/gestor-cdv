@@ -130,6 +130,10 @@ select[multiple] option:checked{background:var(--accent,#4a8dff);color:#fff}
 .camp-tab{width:100%;border-collapse:collapse;font-size:12px}
 .camp-tab th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted2);font-weight:800;padding:6px 8px;border-bottom:1px solid var(--border)}
 .camp-tab td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+.camp-prog-barra{height:8px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+#camp-prog-fill{height:100%;width:0;background:linear-gradient(90deg,#126eff,#22c55e);transition:width .4s}
+.camp-prox td{background:#126eff14}
+.camp-prox td:first-child{box-shadow:inset 3px 0 0 #126eff}
 .camp-st{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
 .st-fila{background:#3d4a66;color:#b9c7e2}
 .st-enviado{background:#126eff33;color:#7db0ff}
@@ -761,6 +765,18 @@ body[data-tema="light"] textarea.out{color:var(--text)}
       <div id="camp-status-fb" style="font-size:12px;margin-top:10px;text-align:center"></div>
       <div class="camp-sec">Andamento</div>
       <div id="camp-contadores" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div class="camp-sec" style="display:flex;align-items:center;gap:8px">Progresso
+        <span id="camp-prog-atual" style="font-size:10.5px;font-weight:600;color:var(--muted2);text-transform:none;letter-spacing:0"></span>
+        <button class="camp-mini" style="margin-left:auto" onclick="campAtualizarProgresso(true)">↻ Atualizar</button>
+      </div>
+      <div id="camp-prog-motor" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+      <div class="camp-prog-barra"><div id="camp-prog-fill"></div></div>
+      <div id="camp-prog-txt" style="font-size:11.5px;color:var(--muted2);margin:6px 0 10px"></div>
+      <div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:10px">
+        <table class="camp-tab"><thead><tr>
+          <th>#</th><th>Contato</th><th>Status</th><th>Quando</th>
+        </tr></thead><tbody id="camp-prog-lista"></tbody></table>
+      </div>
     </div>
 
   </div>
@@ -4521,6 +4537,7 @@ function campSelecionar(id) {
   campRenderContatos();
   campRenderContadores();
   campLimpo();
+  campAtualizarMotor();
 }
 function campRenderContadores() {
   var c = campAtual(); if (!c) return;
@@ -4535,7 +4552,89 @@ function campRenderContadores() {
     '<span class="camp-pill">Respondidos: <b style="color:#6ee7a0">'+por.respondido+'</b></span>' +
     '<span class="camp-pill">Erros: <b style="color:#ff9a9d">'+por.erro+'</b></span>' +
     (dias ? '<span class="camp-pill">≈ '+dias+' dia(s) de disparo</span>' : '');
+  campRenderProgresso();
 }
+
+// ── Progresso: lista na ordem de envio + estado do motor ────────────────────
+// A ordem é a da lista (o worker pega o primeiro "fila"). Enquanto a campanha
+// está ativa, atualiza sozinho a cada 20 s puxando só os campos de execução
+// (status, horários, erro) — edições não salvas na tela não são tocadas.
+function campEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function(ch){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch];
+  });
+}
+function campHora(iso) {
+  if (!iso) return '';
+  var d = new Date(iso); if (isNaN(d)) return '';
+  return d.toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+var CAMP_ROTULO = { fila:'na fila', enviado:'enviado', respondido:'respondeu', erro:'erro', optout:'opt-out' };
+function campRenderProgresso() {
+  var c = campAtual(); var tb = document.getElementById('camp-prog-lista');
+  if (!c || !tb) return;
+  var ct = c.contatos || [];
+  var feitos = ct.filter(function(x){ return x.status && x.status !== 'fila'; }).length;
+  var pct = ct.length ? Math.round(feitos * 100 / ct.length) : 0;
+  document.getElementById('camp-prog-fill').style.width = pct + '%';
+  document.getElementById('camp-prog-txt').textContent = ct.length
+    ? feitos + ' de ' + ct.length + ' processados (' + pct + '%)' : 'Nenhum contato na campanha.';
+  var prox = ct.findIndex(function(x){ return (x.status || 'fila') === 'fila'; });
+  tb.innerHTML = ct.map(function(x, i) {
+    var st = x.status || 'fila';
+    var quando = st === 'respondido' ? 'respondeu ' + campHora(x.respondidoEm)
+      : x.enviadoEm ? campHora(x.enviadoEm) : (i === prox ? (c.status === 'ativa' ? 'próximo' : 'próximo ao iniciar') : '');
+    return '<tr' + (i === prox ? ' class="camp-prox"' : '') + '>'
+      + '<td style="color:var(--muted2);font-variant-numeric:tabular-nums">' + (i + 1) + '</td>'
+      + '<td><b>' + campEsc(x.nome || '(sem nome)') + '</b><div style="font-size:11px;color:var(--muted2);font-family:monospace">' + campEsc(x.telefone || '') + '</div></td>'
+      + '<td><span class="camp-st st-' + st + '">' + (CAMP_ROTULO[st] || st) + '</span>'
+      + (x.erro ? '<div style="font-size:11px;color:#ff9a9d;margin-top:3px">' + campEsc(x.erro) + '</div>' : '') + '</td>'
+      + '<td style="font-size:11.5px;color:var(--muted)">' + campEsc(quando) + '</td></tr>';
+  }).join('') || '<tr><td colspan="4" style="color:var(--muted2);text-align:center;padding:16px">Nenhum contato.</td></tr>';
+}
+async function campAtualizarMotor() {
+  var el = document.getElementById('camp-prog-motor'); if (!el) return;
+  var c = campAtual();
+  if (!c || c.status !== 'ativa') { el.textContent = c ? 'Campanha ' + c.status + ' — nada sendo enviado agora.' : ''; return; }
+  try {
+    var r = await fetch(SERVER + '/campanha/status?t=' + Date.now(), { headers: campHead(), cache:'no-cache', signal: AbortSignal.timeout(15000) });
+    var s = await r.json();
+    if (!s.ok || !s.ativa) { el.textContent = 'O servidor não vê campanha ativa ainda (pode levar 1 min).'; return; }
+    var partes = [];
+    partes.push(s.contaConectada ? '🟢 ' + s.conta + ' conectado' : '🔴 ' + s.conta + ' desconectado — envio parado');
+    partes.push(s.dentroDaJanela ? 'dentro da janela' : '⏸ fora da janela de horário (volta na próxima janela)');
+    partes.push('hoje ' + s.enviosHoje + '/' + s.limiteDiario + (s.enviosHoje >= s.limiteDiario ? ' — teto do dia atingido' : ''));
+    if (s.pausaLongaAte) partes.push('pausa longa até ' + campHora(s.pausaLongaAte));
+    if (s.errosSeguidos) partes.push('⚠️ ' + s.errosSeguidos + ' erro(s) seguido(s)');
+    el.textContent = partes.join(' · ');
+  } catch(e) { el.textContent = 'Não consegui consultar o servidor de envio: ' + e.message; }
+}
+async function campAtualizarProgresso(manual) {
+  var c = campAtual(); if (!c) return;
+  try {
+    var d = await campApi('/campanhas');
+    var rem = (d.data.campanhas || []).find(function(x){ return x.id === c.id; });
+    if (rem) {
+      var mapa = {};
+      (rem.contatos || []).forEach(function(x){ mapa[x.id + '|' + x.telefone] = x; });
+      (c.contatos || []).forEach(function(x){
+        var o = mapa[x.id + '|' + x.telefone]; if (!o) return;
+        ['status','enviadoEm','respondidoEm','followupEm','erro','tentativasEnvio'].forEach(function(k){ x[k] = o[k]; });
+      });
+      c.status = rem.status;
+    }
+    document.getElementById('camp-prog-atual').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    campRenderContatos();   // também redesenha contadores e progresso
+  } catch(e) {
+    if (manual) campFb('camp-status-fb', 'Erro ao atualizar progresso: ' + e.message);
+  }
+  campAtualizarMotor();
+}
+setInterval(function(){
+  var app = document.getElementById('camp-app'), c = campAtual();
+  if (!app || app.offsetParent === null || document.hidden || !c || c.status !== 'ativa') return;
+  campAtualizarProgresso(false);
+}, 20000);
 
 // ── Configuração ─────────────────────────────────────────────────────────────
 async function campCarregarContas(avisar) {
@@ -4685,6 +4784,7 @@ async function campStatus(novo) {
     c.status = d.status;
     campFb('camp-status-fb', '✓ Campanha ' + d.status + '.', true);
     campRenderSeletor();
+    setTimeout(function(){ campAtualizarProgresso(false); }, 2000);
   } catch(e) {
     campFb('camp-status-fb', 'Erro: ' + e.message);
   }
