@@ -5473,17 +5473,26 @@ function campAnalisarImport() {
   var sep = campSeparador(linhas[0]);
   var cab = campSplitLinha(linhas[0], sep).map(function(x){ return x.trim(); });
   CAMP_IMPORT = { cab: cab, linhas: linhas.slice(1).map(function(l){ return campSplitLinha(l, sep); }) };
+  // Ordem importa: exportações (Hubla etc.) têm "Telefone do cliente",
+  // "Nome do produto" — os campos específicos vêm antes de "nome". E cada campo
+  // só é sugerido para a primeira coluna que casar: duas colunas no mesmo campo
+  // travavam a importação.
+  var usados = {};
   var palpite = function(h) {
     h = h.toLowerCase();
-    if (/nome|cliente/.test(h))        return 'nome';
-    if (/tel|fone|whats|celular/.test(h)) return 'telefone';
-    if (/mail/.test(h))                return 'email';
-    if (/produto|plano/.test(h))       return 'produto';
-    if (/valor|preco|preço/.test(h))   return 'valor';
-    if (/data|venc|falha/.test(h))     return 'dataFalha';
-    if (/segmento|motivo/.test(h))     return 'segmento';
-    return '';
+    var p = '';
+    if (/mail/.test(h))                         p = 'email';
+    else if (/tel|fone|whats|celular/.test(h))  p = 'telefone';
+    else if (/produto|plano|oferta/.test(h))    p = 'produto';
+    else if (/valor|preco|preço/.test(h))       p = 'valor';
+    else if (/data|venc|falha/.test(h))         p = 'dataFalha';
+    else if (/segmento|motivo/.test(h))         p = 'segmento';
+    else if (/nome|cliente/.test(h))            p = 'nome';
+    if (!p || usados[p]) return '';
+    usados[p] = 1;
+    return p;
   };
+  var palpites = cab.map(function(h){ return palpite(h); });
   document.getElementById('camp-map').style.display = 'block';
   document.getElementById('camp-map').innerHTML =
     '<div class="camp-sec" style="margin-top:0">Colunas encontradas — ' + CAMP_IMPORT.linhas.length + ' linha(s)</div>'
@@ -5491,13 +5500,14 @@ function campAnalisarImport() {
         return '<div class="field"><label>' + campEsc(h || 'coluna ' + (i+1)) + '</label>'
           + '<select id="map-' + i + '" data-i="' + i + '" onchange="campMapMudou(this.dataset.i)">'
           + CAMP_CAMPOS_IMPORT.map(function(cp) {
-              return '<option value="' + cp[0] + '"' + (cp[0] === palpite(h) ? ' selected' : '') + '>' + cp[1] + '</option>';
+              return '<option value="' + cp[0] + '"' + (cp[0] === palpites[i] ? ' selected' : '') + '>' + cp[1] + '</option>';
             }).join('') + '</select>'
           + '<input type="text" id="mapn-' + i + '" style="display:none;margin-top:6px" placeholder="nome da variável (ex: cidade)" value="' + campEsc(campNomeVar(h)) + '"/>'
           + '</div>';
       }).join('') + '</div>'
     + '<div class="camp-aviso" style="margin-top:14px">Importar <b>substitui</b> a lista de contatos desta campanha. Status já gravados se perdem.</div>'
-    + '<button class="btn btn-blue" onclick="campImportar()">Importar contatos</button>';
+    + '<button class="btn btn-blue" onclick="campImportar()">Importar contatos</button>'
+    + '<div id="camp-import-fb" style="font-size:12.5px;margin-top:8px;min-height:18px"></div>';
 }
 function campNomeVar(h) {
   var limpo = String(h || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -5519,8 +5529,24 @@ function campTelefone(t) {
   if (d.length === 10 || d.length === 11) return '55' + d;
   return d;
 }
+// Nunca sai calado: cada saída deixa um aviso ao lado do botão (o alert pode
+// estar bloqueado pelo navegador, e o feedback do rodapé fica fora da tela).
+function campImportFb(msg, ok) {
+  var el = document.getElementById('camp-import-fb');
+  if (el) { el.style.color = ok ? '#4ade80' : '#ff585e'; el.textContent = msg; }
+  campFb('camp-fb', msg, ok);
+}
 function campImportar() {
-  var c = campAtual(); if (!c || !CAMP_IMPORT) return;
+  try { campImportarExec(); }
+  catch (e) {
+    console.error('[campanha] importar', e);
+    campImportFb('Erro ao importar: ' + (e && e.message || e));
+  }
+}
+function campImportarExec() {
+  var c = campAtual();
+  if (!c) return campImportFb('Campanha não encontrada. Volte à lista e abra a campanha de novo.');
+  if (!CAMP_IMPORT) return campImportFb('A análise das colunas se perdeu. Clique em "Analisar colunas" de novo.');
   var erroMapa = null;
   var mapa = CAMP_IMPORT.cab.map(function(_, i) {
     var v = document.getElementById('map-' + i).value;
@@ -5530,10 +5556,10 @@ function campImportar() {
     else if (CAMP_RESERVADOS.indexOf(nome) >= 0) erroMapa = '"' + nome + '" é um campo interno do sistema. Escolha outro nome.';
     return nome;
   });
-  if (erroMapa) return alert(erroMapa);
-  if (mapa.indexOf('telefone') < 0) return alert('Mapeie a coluna de telefone.');
+  if (erroMapa) return campImportFb(erroMapa);
+  if (mapa.indexOf('telefone') < 0) return campImportFb('Escolha qual coluna é o Telefone.');
   var dups = mapa.filter(Boolean).filter(function(v, i, a){ return a.indexOf(v) !== i; });
-  if (dups.length) return alert('Duas colunas mapeadas para "' + dups[0] + '".');
+  if (dups.length) return campImportFb('Duas colunas estão como "' + dups[0] + '". Deixe só uma (as outras: "— ignorar —").');
   var novos = [], vistos = {};
   CAMP_IMPORT.linhas.forEach(function(cols, n) {
     var o = {}, extras = {};
@@ -5565,8 +5591,14 @@ function campImportar() {
     });
     Object.keys(extras).forEach(function(k){ novos[novos.length - 1][k] = extras[k]; });
   });
-  if (!novos.length) return alert('Nenhuma linha válida.');
-  if (!confirm('Importar ' + novos.length + ' contato(s)? A lista atual (' + (c.contatos||[]).length + ') será substituída.')) return;
+  if (!novos.length) return campImportFb('Nenhuma linha com telefone válido. Confira se a coluna Telefone está certa.');
+  var t0 = Date.now();
+  if (!confirm('Importar ' + novos.length + ' contato(s)? A lista atual (' + (c.contatos||[]).length + ') será substituída.')) {
+    // Resposta instantânea = o Chrome está bloqueando as janelas desta página.
+    return campImportFb(Date.now() - t0 < 80
+      ? 'O navegador bloqueou a janela de confirmação. Recarregue a página (F5) e tente de novo.'
+      : 'Importação cancelada.');
+  }
   c.contatos = novos;
   c.variaveis = campVariaveis(c);
   document.getElementById('camp-import').style.display = 'none';
