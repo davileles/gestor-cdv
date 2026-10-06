@@ -967,6 +967,38 @@ body[data-tema="light"] textarea.out{color:var(--text)}
       </div>
       <p class="cfg-ajuda">Grupo interno do CDV para falhas de envio. Vazio: os avisos vão só para os admins com o papel Avisos.</p>
 
+      <div class="camp-sec">Grupos por estado</div>
+      <p class="cfg-ajuda">
+        Toda emissão do grupo de Emissão também sai no grupo do <b>estado de origem</b>, com o mesmo texto.
+        Se for ida e volta e as datas fecharem, sai <b>invertida</b> no grupo do <b>estado de destino</b>
+        (BH → São Paulo vira São Paulo → BH em SP, com ida e volta trocadas). Só-ida e tarifa pagante vão só
+        para a origem. Um estado pode ter mais de um grupo e um grupo pode cobrir mais de um estado.
+        Desmarcar é reversível — o cadastro fica. O número de envio do CDV precisa estar em cada grupo.
+      </p>
+      <div id="cfg-estados"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:8px">
+        <div class="field" style="margin:0;flex:0 0 190px">
+          <label>Estado</label>
+          <select id="cfg-est-uf"></select>
+        </div>
+        <div class="field" style="margin:0;flex:1 1 240px">
+          <label>Grupo</label>
+          <select id="cfg-est-grupo"></select>
+        </div>
+        <button class="camp-mini" style="padding:10px 14px" onclick="cfgAddEstado()">+ Vincular</button>
+      </div>
+      <details style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">Testar para onde uma passagem iria</summary>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <div class="field" style="margin:0;flex:1 1 140px"><label>Origem</label><input id="cfg-sim-ori" type="text" placeholder="Belo Horizonte"/></div>
+          <div class="field" style="margin:0;flex:1 1 140px"><label>Destino</label><input id="cfg-sim-des" type="text" placeholder="São Paulo"/></div>
+          <div class="field" style="margin:0;flex:1 1 160px"><label>🛫 Datas de ida</label><input id="cfg-sim-ida" type="text" placeholder="Nov/26: 3, 5, 18"/></div>
+          <div class="field" style="margin:0;flex:1 1 160px"><label>🛬 Datas de volta</label><input id="cfg-sim-volta" type="text" placeholder="Nov/26: 10, 25 (vazio = só ida)"/></div>
+        </div>
+        <button class="camp-mini" style="padding:8px 12px;margin-top:8px" onclick="cfgSimularEstados()">Simular (não envia nada)</button>
+        <div id="cfg-sim-res" style="font-size:12.5px;margin-top:8px"></div>
+      </details>
+
       <div class="camp-sec">Grupos monitorados</div>
       <p class="cfg-ajuda">De onde o radar de milhas captura. Desligar é reversível — o cadastro fica.</p>
       <div id="cfg-monitorados"></div>
@@ -5635,6 +5667,17 @@ var CFG_CATEGORIAS = [
   { id:'cartao', emoji:'💳', rotulo:'Cartão de crédito' },
   { id:'geral', emoji:'📰', rotulo:'Geral / não classificada' },
 ];
+// Estados para os grupos por estado. O servidor manda a lista (ufs) ja em
+// ordem alfabetica pelo nome; esta e so a reserva se ele nao mandar.
+var CFG_UFS = [
+  ['AC','Acre'],['AL','Alagoas'],['AP','Amapá'],['AM','Amazonas'],['BA','Bahia'],['CE','Ceará'],
+  ['DF','Distrito Federal'],['ES','Espírito Santo'],['GO','Goiás'],['MA','Maranhão'],['MT','Mato Grosso'],
+  ['MS','Mato Grosso do Sul'],['MG','Minas Gerais'],['PA','Pará'],['PB','Paraíba'],['PR','Paraná'],
+  ['PE','Pernambuco'],['PI','Piauí'],['RJ','Rio de Janeiro'],['RN','Rio Grande do Norte'],
+  ['RS','Rio Grande do Sul'],['RO','Rondônia'],['RR','Roraima'],['SC','Santa Catarina'],['SP','São Paulo'],
+  ['SE','Sergipe'],['TO','Tocantins']
+].map(function(u){ return { sigla:u[0], nome:u[1] }; })
+ .sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
 var CFG_PAPEL_ROTULO = { config:'Config', aprovar:'Aprovar', disparar:'Disparar', avisos:'Avisos' };
 
 function cfgEsc(s) {
@@ -5667,6 +5710,9 @@ async function cfgCarregar() {
     CFG_PRINCIPAL = j.principal || null;
     if (Array.isArray(j.papeis) && j.papeis.length) CFG_PAPEIS = j.papeis;
     if (Array.isArray(j.categoriasOferta) && j.categoriasOferta.length) CFG_CATEGORIAS = j.categoriasOferta;
+    if (Array.isArray(j.ufs) && j.ufs.length) {
+      CFG_UFS = j.ufs.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
+    }
     cfgRender();
     carregando.style.display = 'none';
     app.style.display = 'block';
@@ -5678,6 +5724,7 @@ async function cfgCarregar() {
 
 function cfgRender() {
   cfgRenderSelectsGrupo();
+  cfgRenderEstados();
   cfgRenderMonitorados();
   cfgRenderCategorias();
   cfgRenderEntrada();
@@ -5883,6 +5930,127 @@ function cfgToggleCategoria(id, aceita) {
 // Mesma mecanica dos monitorados: cadastro com liga/desliga e um seletor
 // multiplo filtravel para adicionar. Servidor antigo (sem a secao) devolve
 // config sem `entrada` — sem este default a tela quebraria no primeiro render.
+// ── Grupos por estado ──
+function cfgNomeUf(sigla) {
+  for (var i = 0; i < CFG_UFS.length; i++) if (CFG_UFS[i].sigla === sigla) return CFG_UFS[i].nome;
+  return sigla;
+}
+
+function cfgOpcoesUf(selecionada) {
+  return CFG_UFS.map(function(u) {
+    return '<option value="' + u.sigla + '"' + (u.sigla === selecionada ? ' selected' : '') + '>'
+         + cfgEsc(u.nome) + ' (' + u.sigla + ')</option>';
+  }).join('');
+}
+
+function cfgRenderEstados() {
+  if (!Array.isArray(CFG_CDV.estados)) CFG_CDV.estados = [];
+  var lista = CFG_CDV.estados;
+  var alvo = document.getElementById('cfg-estados');
+  if (!alvo) return;
+  // Ordem de exibicao: estado (nome), depois grupo (nome). O indice original
+  // vai nos botoes para editar o item certo.
+  var ordem = lista.map(function(e, i){ return { e:e, i:i }; }).sort(function(a, b) {
+    var u = cfgNomeUf(a.e.uf).localeCompare(cfgNomeUf(b.e.uf), 'pt-BR');
+    return u || cfgNomeDe(a.e.jid, a.e.nome).localeCompare(cfgNomeDe(b.e.jid, b.e.nome), 'pt-BR');
+  });
+  if (!ordem.length) {
+    alvo.innerHTML = '<p class="cfg-ajuda">Nenhum estado vinculado — as emissões saem só no grupo de Emissão.</p>';
+  } else {
+    var ligados = lista.filter(function(e){ return e.ativo !== false; }).length;
+    var html = '<p class="cfg-ajuda">' + ligados + ' de ' + lista.length + ' vínculo(s) ligado(s).</p>';
+    ordem.forEach(function(o) {
+      var e = o.e, i = o.i, on = e.ativo !== false;
+      html += '<div class="cfg-linha' + (on ? '' : ' off') + '">'
+            + '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="cfgToggleEstado(' + i + ',this.checked)"/>'
+            + '<select onchange="cfgUfEstado(' + i + ',this.value)" style="font-size:11px;padding:4px 6px;max-width:170px">'
+            +   cfgOpcoesUf(e.uf) + '</select>'
+            + '<div style="flex:1;min-width:0">'
+            +   '<div class="cfg-nome">' + cfgEsc(cfgNomeDe(e.jid, e.nome)) + '</div>'
+            +   '<div class="cfg-jid">' + cfgEsc(e.jid) + '</div>'
+            + '</div>'
+            + '<button class="camp-mini" style="color:#ff9a9d" onclick="cfgRemoverEstado(' + i + ')" title="Remover o vínculo">🗑️</button>'
+            + '</div>';
+    });
+    alvo.innerHTML = html;
+  }
+  var selUf = document.getElementById('cfg-est-uf');
+  if (selUf) selUf.innerHTML = cfgOpcoesUf(selUf.value || 'MG');
+  var selG = document.getElementById('cfg-est-grupo');
+  if (selG) selG.innerHTML = cfgOpcoesGrupo('', true).replace('— nenhum —', '— escolha o grupo —');
+}
+
+function cfgAddEstado() {
+  var uf  = document.getElementById('cfg-est-uf').value;
+  var jid = document.getElementById('cfg-est-grupo').value;
+  if (!uf || !jid) { alert('Escolha o estado e o grupo.'); return; }
+  var g = CFG_CDV.grupos || {};
+  if ([g.ofertas, g.emissao, g.executiva, g.operador].indexOf(jid) >= 0) {
+    alert('Esse grupo já é um destino fixo (Ofertas, Emissão, Executiva ou Avisos) — a emissão sairia duas vezes nele.');
+    return;
+  }
+  if (CFG_CDV.estados.some(function(e){ return e.uf === uf && e.jid === jid; })) {
+    alert('Esse grupo já está vinculado a ' + cfgNomeUf(uf) + '.');
+    return;
+  }
+  CFG_CDV.estados.push({ uf: uf, jid: jid, nome: CFG_NOMES[jid] || '', ativo: true });
+  cfgRenderEstados();
+  cfgSujo();
+}
+
+function cfgToggleEstado(i, on) { CFG_CDV.estados[i].ativo = !!on; cfgRenderEstados(); cfgSujo(); }
+function cfgUfEstado(i, uf) { CFG_CDV.estados[i].uf = uf; cfgRenderEstados(); cfgSujo(); }
+function cfgRemoverEstado(i) {
+  var e = CFG_CDV.estados[i];
+  if (!confirm('Remover o vínculo de “' + cfgNomeDe(e.jid, e.nome) + '” com ' + cfgNomeUf(e.uf) + '?')) return;
+  CFG_CDV.estados.splice(i, 1);
+  cfgRenderEstados();
+  cfgSujo();
+}
+
+// Usa a config SALVA no servidor: vinculo novo so aparece aqui depois de Salvar.
+async function cfgSimularEstados() {
+  var res = document.getElementById('cfg-sim-res');
+  var dados = {
+    origem:  document.getElementById('cfg-sim-ori').value.trim(),
+    destino: document.getElementById('cfg-sim-des').value.trim(),
+    datasIda:   document.getElementById('cfg-sim-ida').value.trim(),
+    datasVolta: document.getElementById('cfg-sim-volta').value.trim() || '-',
+    programa: 'Smiles', cia: 'GOL', cabine: 'Economica', tipoVoo: 'nacional', pontos: '10000',
+  };
+  if (!dados.origem || !dados.destino) { res.textContent = 'Informe origem e destino.'; return; }
+  res.style.color = 'var(--muted)';
+  res.textContent = 'Simulando…';
+  try {
+    var r = await fetch(SERVER + '/cdv/estados/simular', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ dados: dados }), signal: AbortSignal.timeout(15000),
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'falha');
+    var html = '<div>Origem: <b>' + cfgEsc(j.ufOrigem || 'fora do Brasil / não reconhecida') + '</b> · Destino: <b>'
+             + cfgEsc(j.ufDestino || 'fora do Brasil / não reconhecido') + '</b></div>';
+    if (!j.copias || !j.copias.length) {
+      html += '<div style="margin-top:4px">Nenhuma cópia — sem grupo ligado para esses estados.</div>';
+    } else {
+      j.copias.forEach(function(c) {
+        html += '<div style="margin-top:6px">' + (c.tipo === 'invertida' ? '🔁 Invertida' : '➡️ Original') + ' em '
+              + cfgEsc(cfgNomeUf(c.uf)) + ' — ' + cfgEsc(c.nome || c.jid) + '</div>'
+              + '<pre style="white-space:pre-wrap;font-size:11.5px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;margin:4px 0 0">'
+              + cfgEsc(String(c.mensagem || '')) + '</pre>';
+      });
+    }
+    if (j.inversao && !j.inversao.ok && j.inversao.motivo) {
+      html += '<div style="margin-top:6px;color:var(--muted2)">Sem versão invertida: ' + cfgEsc(j.inversao.motivo) + '.</div>';
+    }
+    res.style.color = '';
+    res.innerHTML = html;
+  } catch (e) {
+    res.style.color = '#ff9a9d';
+    res.textContent = 'Não simulou: ' + e.message;
+  }
+}
+
 function cfgRenderEntrada() {
   if (!Array.isArray(CFG_CDV.entrada)) CFG_CDV.entrada = [];
   var lista = CFG_CDV.entrada;
@@ -6426,6 +6594,7 @@ async function cfgSalvar() {
     },
     monitorados: CFG_CDV.monitorados,
     entrada: CFG_CDV.entrada || [],
+    estados: CFG_CDV.estados || [],
     redirect: cfgRedirect(),
     ofertas: { categoriasBloqueadas: (CFG_CDV.ofertas && CFG_CDV.ofertas.categoriasBloqueadas) || [] },
     admins: CFG_CDV.admins,
