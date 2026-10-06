@@ -6759,29 +6759,19 @@ async function reAdicionar() {
     return;
   }
 
-  // Trava da inclusao (16/09/2026): a pessoa precisa ter escrito para um numero
-  // nosso antes. O servidor tambem confere — aqui e so para avisar cedo.
+  // Sem trava de mensagem previa (decisao do Davi, 06/10/2026: a pessoa ja e
+  // orientada a mandar "oi" e ele controla isso). A consulta so informa por qual
+  // conta deve sair; se falhar, segue mesmo assim.
   fb.style.color = 'var(--muted)';
-  fb.textContent = 'Conferindo se a pessoa já mandou mensagem…';
-  var c;
+  fb.textContent = 'Preparando…';
+  var c = null;
   try {
     var rc = await fetch(SERVER + '/grupos-gestao/contato?telefone=' + tel + '&t=' + Date.now(), { cache:'no-cache', signal: AbortSignal.timeout(30000) });
     c = await rc.json();
-    if (!c.ok) throw new Error(c.erro || 'resposta inválida');
-  } catch (e) {
-    fb.style.color = '#ff9a9d';
-    fb.textContent = 'Não consegui verificar: ' + e.message;
-    return;
-  }
-  if (!c.recebida) {
-    fb.style.color = '#ffc46b';
-    fb.innerHTML = 'Ainda não chegou mensagem desse número nas últimas ' + c.janelaHoras + 'h. Peça para a pessoa salvar e mandar um "oi" para '
-      + (c.contas || []).map(function(x){ return '<b>' + cfgEsc(reTelFmt(x.numero)) + '</b> (' + cfgEsc(x.id) + ')'; }).join(' ou ')
-      + ' e tente de novo.';
-    return;
-  }
+  } catch (e) { c = null; }
+  var porConta = (c && c.recebida && c.conta) ? 'pela conta ' + c.conta : 'pela principal (ou um tico admin do grupo)';
 
-  if (!confirm('Adicionar ' + reTelFmt(tel) + ' em ' + jids.length + ' grupo(s) pela conta ' + c.conta + '?\n\n'
+  if (!confirm('Adicionar ' + reTelFmt(tel) + ' em ' + jids.length + ' grupo(s) ' + porConta + '?\n\n'
     + 'Um grupo por vez, com pausa de 45–90s — cerca de ' + Math.max(1, Math.round((jids.length - 1) * 70 / 60))
     + ' minuto(s). A tarefa continua no servidor mesmo se você fechar a aba.')) return;
 
