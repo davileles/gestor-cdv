@@ -908,10 +908,12 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     <div id="re-grupos"></div>
 
     <p class="cfg-ajuda" style="margin-top:12px;color:#ffc46b">
-      ⚠️ Antes de adicionar, peça para a pessoa <b>salvar o número do clube e mandar uma mensagem</b>. Sem essa
-      mensagem o servidor recusa — adicionar quem não tem o número salvo foi o que bloqueou a conta principal.
-      A inclusão sai pela conta que recebeu a mensagem, um grupo por vez, com pausa de 45–90s, e nada é enviado
-      no privado: se o WhatsApp não deixar incluir direto, o link aparece aqui para você mandar pelo celular.
+      ⚠️ Antes de adicionar, peça para a pessoa <b>salvar um número do clube e mandar um "oi"</b> para ele
+      (vale por 3 dias). Sem essa mensagem o servidor recusa: incluir quem não escreveu foi o que bloqueou a
+      principal em 16/09 e a deslogou em 07/10. A inclusão sai só pela conta que recebeu a mensagem, um grupo por
+      vez, com pausa de 45–90s. Se a privacidade da pessoa não deixar incluir direto, o <b>convite do grupo</b>
+      vai sozinho na conversa dela com esse número — é o mesmo convite do app, o único que funciona para quem foi
+      removido (o link comum do grupo não funciona).
     </p>
 
     <button class="btn btn-blue" style="margin-top:14px" onclick="reAdicionar()">➕ Adicionar aos grupos marcados</button>
@@ -6639,8 +6641,8 @@ async function cfgSalvar() {
 // ══ REENTRADA DE EX-ALUNO ══
 // Quem foi removido de um grupo nao entra por link: precisa ser ADICIONADO por
 // um admin. Esta aba so junta telefone + lista de grupos e chama o servidor —
-// a execucao (quem e admin de que grupo, pausa entre chamadas, convite quando o
-// WhatsApp recusa a adicao direta) e toda do baileys-server.
+// a execucao (quem e admin de que grupo, pausa entre chamadas, convite
+// particular quando o WhatsApp recusa a adicao direta) e toda do baileys-server.
 var RE_GRUPOS = [];
 var RE_MARCADOS = {};
 var RE_CARREGADO = false;
@@ -6759,17 +6761,33 @@ async function reAdicionar() {
     return;
   }
 
-  // Sem trava de mensagem previa (decisao do Davi, 06/10/2026: a pessoa ja e
-  // orientada a mandar "oi" e ele controla isso). A consulta so informa por qual
-  // conta deve sair; se falhar, segue mesmo assim.
+  // Trava da inclusao: a pessoa precisa ter escrito para um numero nosso antes.
+  // Saiu em 06/10/2026 e voltou em 07/10 — sem ela a principal tentou incluir
+  // quem nao a tinha salva e o WhatsApp deslogou a conta 11 s depois. O servidor
+  // tambem confere (412); aqui e so para avisar cedo. Numero da casa (conta
+  // nossa ou admin cadastrado) passa sem mensagem.
   fb.style.color = 'var(--muted)';
-  fb.textContent = 'Preparando…';
-  var c = null;
+  fb.textContent = 'Conferindo se a pessoa já mandou mensagem…';
+  var c;
   try {
     var rc = await fetch(SERVER + '/grupos-gestao/contato?telefone=' + tel + '&t=' + Date.now(), { cache:'no-cache', signal: AbortSignal.timeout(30000) });
     c = await rc.json();
-  } catch (e) { c = null; }
-  var porConta = (c && c.recebida && c.conta) ? 'pela conta ' + c.conta : 'pela principal (ou um tico admin do grupo)';
+    if (!c.ok) throw new Error(c.erro || 'resposta inválida');
+  } catch (e) {
+    fb.style.color = '#ff9a9d';
+    fb.textContent = 'Não consegui verificar: ' + e.message;
+    return;
+  }
+  if (!c.recebida && !c.casa) {
+    var nums = (c.contas || []).map(function(x){ return '<b>' + cfgEsc(reTelFmt(x.numero)) + '</b> (' + cfgEsc(x.id) + ')'; }).join(' ou ');
+    fb.style.color = '#ffc46b';
+    fb.innerHTML = (c.contaCampanha ? 'A pessoa só escreveu para ' + cfgEsc(c.contaCampanha) + ', que é conta de campanha e não inclui em grupos. '
+        : c.contaDesconectada ? 'A pessoa escreveu para ' + cfgEsc(c.contaDesconectada) + ', que está desconectada agora. '
+        : 'Ainda não chegou mensagem desse número nos últimos ' + Math.max(1, Math.round((c.janelaHoras || 72) / 24)) + ' dias. ')
+      + 'Peça para a pessoa salvar e mandar um "oi" para ' + nums + ' e tente de novo.';
+    return;
+  }
+  var porConta = c.recebida ? 'pela conta ' + c.conta : 'pela principal (número da casa)';
 
   if (!confirm('Adicionar ' + reTelFmt(tel) + ' em ' + jids.length + ' grupo(s) ' + porConta + '?\n\n'
     + 'Um grupo por vez, com pausa de 45–90s — cerca de ' + Math.max(1, Math.round((jids.length - 1) * 70 / 60))
@@ -6822,21 +6840,22 @@ async function reAcompanhar(id, fb, saida) {
     }
     if (t.estado === 'erro') throw new Error(t.erro || 'tarefa interrompida');
     fb.style.color = 'var(--green, #3ddc84)';
-    fb.textContent = '✓ ' + t.feitos + ' adicionado(s), ' + t.pulados + ' já estava(m), ' + t.falhas + ' pendente(s).'
-      + (t.resultados.some(function(x){ return x.link; }) ? ' Mande os links pelo seu celular.' : '');
+    fb.textContent = '✓ ' + t.feitos + ' adicionado(s), ' + t.pulados + ' já estava(m), '
+      + (t.convites ? t.convites + ' convite(s) enviado(s) no privado, ' : '') + t.falhas + ' pendente(s).';
     return;
   }
 }
 
 function reHtmlResultado(j) {
-  var cor = { ok:'var(--green,#3ddc84)', pulado:'var(--muted2)', convite:'#ffc46b', bloqueado:'#ff9a9d', falha:'#ff9a9d' };
+  var cor = { ok:'var(--green,#3ddc84)', pulado:'var(--muted2)', convite:'#ffc46b', 'convite-enviado':'var(--green,#3ddc84)', bloqueado:'#ff9a9d', falha:'#ff9a9d' };
+  var rot = { 'convite-enviado':'convite enviado' };
   var html = '<div class="camp-sec">Resultado</div>';
   (j.resultados || []).forEach(function(x) {
     html += '<div class="cfg-linha">'
           + '<div style="flex:1;min-width:0">'
           +   '<div class="cfg-nome">' + cfgEsc(x.nome || x.jid) + '</div>'
           +   '<div class="cfg-jid" style="color:' + (cor[x.estado] || 'var(--muted2)') + '">'
-          +     cfgEsc(x.estado) + ' — ' + cfgEsc(x.detalhe || '')
+          +     cfgEsc(rot[x.estado] || x.estado) + ' — ' + cfgEsc(x.detalhe || '')
           +     (x.por ? ' (por ' + cfgEsc(x.por) + ')' : '')
           +   '</div>'
           +   (x.link ? '<div class="cfg-jid"><a href="' + cfgEsc(x.link) + '" target="_blank" rel="noopener">'
