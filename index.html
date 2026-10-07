@@ -2702,6 +2702,7 @@ function blocoCamposAlerta(o) {
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">'
     +'<button class="btn" style="padding:8px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;font-weight:700" onclick="regerarAlerta('+o.id+')">↻ Regerar mensagem com estes campos</button>'
+    +'<button class="btn" style="padding:8px 14px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;font-weight:700" title="Troca origem com destino e as datas de ida com as de volta, e regera a mensagem" onclick="inverterAlerta('+o.id+')">🔄 Inverter ida e volta</button>'
     +'<span class="ac-aviso" id="ac-aviso-'+o.id+'"></span>'
     +'</div>'
     +'<div class="ac-sanidade" id="ac-sanidade-'+o.id+'" style="margin-top:6px">'+((d.origem&&d.destino)?textoSanidade({origem:d.origem,destino:d.destino,programa:d.programa||'',cabine:d.cabine||'',cia:d.cia||'',pontos:d.pontos||0}):'')+'</div>'
@@ -2714,6 +2715,37 @@ function marcarAlertaSujo(id) {
   aplicarModoTarifa(id);
   atualizarValorAlerta(id);
   atualizarAvisoSanidade(id);
+}
+
+// Inverte o sentido da emissao do alerta: origem <-> destino e, quando ha volta,
+// datas de ida <-> datas de volta (so-ida mantem as datas e troca apenas a rota).
+// Pontos no formato "102000 (ida) / 86600 (volta)" acompanham a troca. Em
+// seguida regera a mensagem no servidor, que tambem corrige dadosExtraidos na fila.
+function inverterPontosAlerta(v) {
+  var s = String(v == null ? '' : v);
+  if (!/\(\s*ida\s*\)/i.test(s) || !/\(\s*volta\s*\)/i.test(s)) return s;
+  var partes = s.split(/\s*\/\s*/).map(function(t){
+    return t.replace(/\(\s*(ida|volta)\s*\)/i, function(m, w){
+      return '(' + (w.toLowerCase() === 'ida' ? 'volta' : 'ida') + ')';
+    });
+  });
+  return partes.reverse().join(' / ');
+}
+async function inverterAlerta(id) {
+  var el = function(campo){ return document.getElementById('ac-'+campo+'-'+id); };
+  var o = el('origem'), d = el('destino');
+  if (!o || !d) return;
+  var tmp = o.value; o.value = d.value; d.value = tmp;
+  var di = el('datasIda'), dv = el('datasVolta');
+  if (di && dv && dv.value.replace(/[-\s]/g, '')) {
+    tmp = di.value; di.value = dv.value; dv.value = tmp;
+  }
+  var p = el('pontos');
+  if (p) p.value = inverterPontosAlerta(p.value);
+  marcarAlertaSujo(id);
+  var rota = document.querySelector('#alerta-card-'+id+' .alerta-rota');
+  if (rota && o.value.trim() && d.value.trim()) rota.textContent = o.value.trim()+' → '+d.value.trim();
+  await regerarAlerta(id);
 }
 
 function coletarEdicoesAlerta(id) {

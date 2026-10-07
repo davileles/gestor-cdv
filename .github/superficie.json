@@ -16,6 +16,7 @@
         "async function ensureHistorico(",
         "async function enviarEmissao(",
         "async function enviarWA(",
+        "async function inverterAlerta(",
         "async function limparFila(",
         "async function limparTodasOfertasPendentes(",
         "async function regerarAlerta(",
