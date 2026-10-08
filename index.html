@@ -803,7 +803,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
             <div class="camp-grid" style="margin-bottom:12px">
               <div class="field">
                 <label>Pelo número</label>
-                <div style="display:flex;gap:6px"><select id="cfg-conta" onchange="campContaMudou()"></select>
+                <div style="display:flex;gap:6px"><select id="camp-cfg-conta" onchange="campContaMudou()"></select>
                   <button class="camp-mini" style="padding:0 12px" onclick="campCarregarContas(true)" title="Atualizar status dos números">↻</button></div>
                 <div id="cfg-conta-info" style="font-size:11.5px;color:var(--muted);margin-top:4px"></div>
               </div>
@@ -4841,7 +4841,7 @@ async function campCarregarContas(avisar) {
     if (avisar) campFb('camp-fb', 'Não consegui ler os números: ' + e.message);
   }
   var c = campAtual();
-  if (c && CAMP_VISTA !== 'lista') { campRenderConta((document.getElementById('cfg-conta') || {}).value || (c.config||{}).conta || ''); campResumos(); }
+  if (c && CAMP_VISTA !== 'lista') { campRenderConta((document.getElementById('camp-cfg-conta') || {}).value || (c.config||{}).conta || ''); campResumos(); }
 }
 function campContaInfo(ap) {
   if (!ap) return { ok: !CAMP_CONTAS || CAMP_CONTAS.principalConectada !== false, conhecida: true };
@@ -4849,7 +4849,7 @@ function campContaInfo(ap) {
   return { ok: !!(x && x.conectado), conhecida: !!x, numero: x ? x.numero : '' };
 }
 function campRenderConta(atual) {
-  var sel = document.getElementById('cfg-conta');
+  var sel = document.getElementById('camp-cfg-conta');
   if (!sel) return;
   atual = String(atual || '');
   var ops = [{ v:'', t:'Principal (número de monitoramento) · máx. ' + CAMP_TETO_DIARIO + '/dia' }];
@@ -4867,7 +4867,7 @@ function campRenderConta(atual) {
   campAtualizarTeto();
 }
 function campAtualizarTeto() {
-  var ap = (document.getElementById('cfg-conta') || {}).value || '';
+  var ap = (document.getElementById('camp-cfg-conta') || {}).value || '';
   var teto = ap ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO;
   var inp = document.getElementById('cfg-diario');
   inp.max = teto;
@@ -4902,7 +4902,7 @@ function campPresetAtual(g) {
 function campCfgDoForm() {
   var n = function(id){ return Number(document.getElementById(id).value) || 0; };
   return {
-    conta: (document.getElementById('cfg-conta').value || '').trim(),
+    conta: (document.getElementById('camp-cfg-conta').value || '').trim(),
     intervaloMinSegundos: n('cfg-int-min') * 60, intervaloMaxSegundos: n('cfg-int-max') * 60,
     limiteDiario: n('cfg-diario'), pausaLongaACada: n('cfg-pausa-cada'),
     pausaLongaMinutos: [n('cfg-pausa-min'), n('cfg-pausa-max')],
@@ -4912,7 +4912,7 @@ function campCfgDoForm() {
 function campRenderPresets() {
   var wrap = document.getElementById('camp-presets'); if (!wrap) return;
   var atual = campPresetAtual(campCfgDoForm());
-  var conta = (document.getElementById('cfg-conta') || {}).value || '';
+  var conta = (document.getElementById('camp-cfg-conta') || {}).value || '';
   wrap.innerHTML = CAMP_PRESETS.map(function(p) {
     var lim = Math.min(p.cfg.limiteDiario, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
     var desc = p.desc.replace(/até \d+\/dia/, 'até ' + lim + '/dia');
@@ -4922,7 +4922,7 @@ function campRenderPresets() {
 }
 function campAplicarPreset(id) {
   var p = CAMP_PRESETS.find(function(x){ return x.id === id; }); if (!p) return;
-  var k = p.cfg, conta = document.getElementById('cfg-conta').value || '';
+  var k = p.cfg, conta = document.getElementById('camp-cfg-conta').value || '';
   var v = function(id, val){ document.getElementById(id).value = val; };
   v('cfg-int-min', Math.round(k.intervaloMinSegundos / 60 * 100) / 100);
   v('cfg-int-max', Math.round(k.intervaloMaxSegundos / 60 * 100) / 100);
@@ -4971,7 +4971,7 @@ function campLerJanelas(txt) {
 function campColetarConfig(c) {
   var n = function(id){ return Number(document.getElementById(id).value) || 0; };
   var janelas = campLerJanelas(document.getElementById('cfg-janelas').value);
-  var conta = (document.getElementById('cfg-conta').value || '').trim();
+  var conta = (document.getElementById('camp-cfg-conta').value || '').trim();
   var diario = Math.min(n('cfg-diario') || 15, conta ? CAMP_TETO_CONTA : CAMP_TETO_DIARIO);
   document.getElementById('cfg-diario').value = diario;
   c.config = {
