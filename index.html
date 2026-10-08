@@ -2040,6 +2040,22 @@ async function ensureHistorico(force) {
 }
 
 // normaliza p/ comparação: sem acento, minúsculo, sem espaços extras
+// Grafias que a mesma companhia recebe na digitacao/extracao -> nome unico.
+// A tabela completa e o ALIAS_CIA do proxy (painel-cdv/index.js) e do
+// baileys-server; aqui ficam so os casos que ja apareceram duplicados na aba
+// Emissao, para a mensagem e o historico sairem com o mesmo nome.
+var ALIAS_CIA_GESTOR = {
+  'air maroc':'Royal Air Maroc', 'royal air maroc':'Royal Air Maroc', 'royal maroc':'Royal Air Maroc',
+  'royal air marroc':'Royal Air Maroc', 'air marroc':'Royal Air Maroc',
+  'royal air morocco':'Royal Air Maroc', 'air morocco':'Royal Air Maroc', 'ram':'Royal Air Maroc'
+};
+function normalizarCiaGestor(cia) {
+  var bruto = String(cia == null ? '' : cia).trim();
+  if (!bruto) return bruto;
+  var chave = bruto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.]/g, '').replace(/\s+/g, ' ').trim();
+  return ALIAS_CIA_GESTOR[chave] || bruto;
+}
+
 function _normHist(s) {
   return (s == null ? '' : String(s)).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 }
@@ -2236,7 +2252,7 @@ function coletarEdicoesEmissao(idx) {
     destino:     v('-destino').trim(),
     pontos:      parseInt(v('-pontos'))||0,
     programa:    v('-programa'),
-    cia:         v('-cia').trim(),
+    cia:         normalizarCiaGestor(v('-cia')),
     tipo:        v('-tipo'),
     classe:      v('-classe'),
     datas_ida:   v('-datas-ida').trim(),
