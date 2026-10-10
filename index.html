@@ -388,6 +388,37 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 
 .tema-btn{background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.5px;padding:6px 14px;cursor:pointer;transition:background .15s,color .15s}
 .tema-btn:hover{background:var(--border);color:var(--text)}
+/* ══ DASH DE EMISSÕES ══ */
+.dash-filtros{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.dash-grupo-chips{display:flex;gap:6px;flex-wrap:wrap}
+.dash-chip{font-family:var(--font);font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer}
+.dash-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.dash-custom{display:none;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.dash-custom input{font-family:var(--font);font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:6px}
+.dash-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.dash-kpi-t{font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;color:var(--muted)}
+.dash-kpi-v{font-size:26px;font-weight:800;color:var(--text);margin:4px 0 2px}
+.dash-kpi-s{font-size:11px;color:var(--muted2)}
+.dash-kpi.nac{border-left:4px solid var(--blue)}
+.dash-kpi.int{border-left:4px solid var(--accent)}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.dash-leg{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-bottom:10px;align-items:center}
+.dash-sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.dash-sw.nac,.dash-seg.nac{background:var(--blue)}
+.dash-sw.int,.dash-seg.int{background:var(--accent)}
+.dash-barras{display:flex;gap:2px;align-items:stretch;height:180px;overflow-x:auto}
+.dash-col{flex:1 0 6px;display:flex;flex-direction:column;min-width:6px}
+.dash-pilha{flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden}
+.dash-col:hover .dash-pilha{opacity:.75}
+.dash-rot{height:16px;font-size:9px;color:var(--muted2);white-space:nowrap;overflow:visible;padding-top:3px}
+.dash-hl{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px}
+.dash-hl-nome{width:170px;flex-shrink:0;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-hl-barra{flex:1;display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface2)}
+.dash-hl-n{width:48px;text-align:right;font-weight:800;color:var(--text)}
+.dash-nota{font-size:11px;color:var(--muted2);margin-top:10px;line-height:1.5}
+.dash-est{color:var(--muted2);font-weight:800}
+@media (max-width:600px){.dash-hl-nome{width:110px}.dash-filtros #dash-escopos{margin-left:0!important}}
 </style>
 </head>
 <body>
@@ -419,6 +450,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
   <button class="main-tab" id="tab-milhas">🎟️ Emissão</button>
   <button class="main-tab" id="tab-alertas">🔔 Alertas<span class="alerta-badge" id="alertas-badge" style="display:none">0</span></button>
   <button class="main-tab" id="tab-enviadas">✅ Enviadas hoje</button>
+  <button class="main-tab" id="tab-dash">📊 Dash Emissões</button>
   <button class="main-tab" id="tab-ofertas">📡 Aprovar Ofertas<span class="alerta-badge" id="ofertas-badge" style="display:none">0</span></button>
   <button class="main-tab" id="tab-campanha">📣 Campanha</button>
   <button class="main-tab" id="tab-entrada">👥 Reentrada</button>
@@ -634,6 +666,35 @@ body[data-tema="light"] textarea.out{color:var(--text)}
   <div id="env-programadas"></div>
   <div class="env-sub">✅ Já enviadas hoje</div>
   <div id="env-lista"></div>
+</div>
+
+<!-- ══ PAINEL DASH DE EMISSÕES ══ -->
+<div class="main-panel" id="panel-dash">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--muted2)">Emissões publicadas no período <strong style="color:var(--muted)" id="dash-intervalo">—</strong>: nacionais × internacionais, por grupo e por dia.</div>
+    <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="dashAtualizar()">↻ Atualizar</button>
+  </div>
+  <div class="dash-filtros">
+    <div class="dash-grupo-chips" id="dash-periodos">
+      <button class="dash-chip" data-p="hoje" onclick="dashPeriodo('hoje')">Hoje</button>
+      <button class="dash-chip" data-p="ontem" onclick="dashPeriodo('ontem')">Ontem</button>
+      <button class="dash-chip" data-p="7" onclick="dashPeriodo('7')">7 dias</button>
+      <button class="dash-chip" data-p="15" onclick="dashPeriodo('15')">15 dias</button>
+      <button class="dash-chip on" data-p="30" onclick="dashPeriodo('30')">30 dias</button>
+      <button class="dash-chip" data-p="90" onclick="dashPeriodo('90')">90 dias</button>
+      <button class="dash-chip" data-p="mes" onclick="dashPeriodo('mes')">Este mês</button>
+      <button class="dash-chip" data-p="custom" onclick="dashPeriodo('custom')">Personalizado</button>
+    </div>
+    <div class="dash-custom" id="dash-custom">
+      de <input type="date" id="dash-de" onchange="dashCustom()"/> até <input type="date" id="dash-ate" onchange="dashCustom()"/>
+    </div>
+    <div class="dash-grupo-chips" id="dash-escopos" style="margin-left:auto">
+      <button class="dash-chip on" data-e="todas" onclick="dashEscopo('todas')">Todas</button>
+      <button class="dash-chip" data-e="nacional" onclick="dashEscopo('nacional')">Nacionais</button>
+      <button class="dash-chip" data-e="internacional" onclick="dashEscopo('internacional')">Internacionais</button>
+    </div>
+  </div>
+  <div id="dash-corpo"></div>
 </div>
 
 <!-- ══ PAINEL APROVAR OFERTAS ══ -->
@@ -1314,12 +1375,13 @@ document.getElementById('logo-img').src = "data:image/png;base64,/9j/4AAQSkZJRgA
 
 // ══ TABS ══
 function switchMain(name) {
-  ['oferta','milhas','alertas','enviadas','ofertas','campanha','entrada','gradm','config'].forEach(function(id) {
+  ['oferta','milhas','alertas','enviadas','dash','ofertas','campanha','entrada','gradm','config'].forEach(function(id) {
     document.getElementById('tab-'+id).classList.toggle('active', id===name);
     document.getElementById('panel-'+id).classList.toggle('active', id===name);
   });
   if (name === 'alertas') carregarAlertas();
   if (name === 'enviadas') carregarEnviadasHoje();
+  if (name === 'dash') carregarDashEmissoes();
   if (name === 'ofertas') carregarOfertasPendentes();
   if (name === 'campanha') campAoAbrir();
   if (name === 'entrada') reAoAbrir();
@@ -3190,6 +3252,376 @@ async function carregarEnviadasHoje() {
   } catch(e) {
     lista.innerHTML = '<div class="alerta-empty">⚠️ Falha ao carregar: ' + escapeHtml(e.message) + '</div>';
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASH DE EMISSÕES — aba "📊 Dash Emissões"
+// Fonte: /passagens/listar (o que foi publicado no grupo Emissões CDV; mesma
+// whitelist de fontes da aba "Enviadas hoje": 'alerta', 'emissao' e registro
+// antigo sem fonte). Tarifa pagante não é gravada em passagens.json, então não
+// entra na conta.
+// Nacional = as duas pontas com estado brasileiro (mesma tabela do
+// baileys-server/estados-cdv.js — ESPELHO: mudou lá, muda aqui).
+// Por grupo:
+//   - Emissões CDV: todas.
+//   - Executiva: cabine executiva (toda executiva é replicada no grupo dela).
+//   - Grupos por estado: as cópias NÃO são registradas, então a contagem é
+//     estimada pela regra de roteamento (planejarCopiasEstado) com a
+//     configuração atual, só para envios a partir de DASH_ATIVACAO_ESTADOS.
+// ══════════════════════════════════════════════════════════════════════════════
+
+var DASH_ATIVACAO_ESTADOS = '2026-10-06';
+var DASH_FONTES = ['alerta', 'emissao'];
+var DASH_LIMITE_QUENTE = 175;   // dias cobertos pela janela padrão do /passagens/listar (180)
+var DASH = { cache: {}, cfg: null, periodo: '30', escopo: 'todas', de: '', ate: '' };
+
+var DASH_AEROPORTOS = {
+  RBR:['AC','Rio Branco'], CZS:['AC','Cruzeiro do Sul'],
+  MCZ:['AL','Maceió'],
+  MCP:['AP','Macapá'],
+  MAO:['AM','Manaus'], TFF:['AM','Tefé'], TBT:['AM','Tabatinga'], PIN:['AM','Parintins'],
+  SSA:['BA','Salvador'], BPS:['BA','Porto Seguro'], IOS:['BA','Ilhéus'], VDC:['BA','Vitória da Conquista'], LEC:['BA','Lençóis'], BRA:['BA','Barreiras'], TXF:['BA','Teixeira de Freitas'], PAV:['BA','Paulo Afonso'], FEC:['BA','Feira de Santana'], UNA:['BA','Una','Comandatuba'],
+  FOR:['CE','Fortaleza'], JDO:['CE','Juazeiro do Norte'], JJD:['CE','Jericoacoara','Cruz'],
+  BSB:['DF','Brasília'],
+  VIX:['ES','Vitória'],
+  GYN:['GO','Goiânia'], CLV:['GO','Caldas Novas'], RVD:['GO','Rio Verde'],
+  SLZ:['MA','São Luís'], IMP:['MA','Imperatriz'], BRB:['MA','Barreirinhas'],
+  CGB:['MT','Cuiabá'], ROO:['MT','Rondonópolis'], SMT:['MT','Sorriso'], OPS:['MT','Sinop'], AFL:['MT','Alta Floresta'], BPG:['MT','Barra do Garças'],
+  CGR:['MS','Campo Grande'], BYO:['MS','Bonito'], CMG:['MS','Corumbá'], DOU:['MS','Dourados'],
+  CNF:['MG','Belo Horizonte','Confins'], PLU:['MG','Belo Horizonte','Pampulha'], UDI:['MG','Uberlândia'], UBA:['MG','Uberaba'], MOC:['MG','Montes Claros'], IPN:['MG','Ipatinga','Vale do Aço'], IZA:['MG','Juiz de Fora','Zona da Mata'], JDF:['MG','Juiz de Fora'], GVR:['MG','Governador Valadares'], VAG:['MG','Varginha'], POJ:['MG','Patos de Minas'], POO:['MG','Poços de Caldas'], DIQ:['MG','Divinópolis'],
+  BEL:['PA','Belém'], STM:['PA','Santarém'], MAB:['PA','Marabá'], ATM:['PA','Altamira'], CKS:['PA','Parauapebas','Carajás'], ITB:['PA','Itaituba'],
+  JPA:['PB','João Pessoa'], CPV:['PB','Campina Grande'],
+  REC:['PE','Recife'], PNZ:['PE','Petrolina'], FEN:['PE','Fernando de Noronha','Noronha'], CAU:['PE','Caruaru'],
+  THE:['PI','Teresina'], PHB:['PI','Parnaíba'],
+  CWB:['PR','Curitiba'], IGU:['PR','Foz do Iguaçu'], LDB:['PR','Londrina'], MGF:['PR','Maringá'], CAC:['PR','Cascavel'], PGZ:['PR','Ponta Grossa'], GPB:['PR','Guarapuava'], TOW:['PR','Toledo'],
+  GIG:['RJ','Rio de Janeiro','Rio','Galeão'], SDU:['RJ','Rio de Janeiro','Santos Dumont'], CFB:['RJ','Cabo Frio'], MEA:['RJ','Macaé'], CAW:['RJ','Campos dos Goytacazes'],
+  NAT:['RN','Natal'], MVF:['RN','Mossoró'],
+  POA:['RS','Porto Alegre'], CXJ:['RS','Caxias do Sul'], PFB:['RS','Passo Fundo'], RIA:['RS','Santa Maria'], PET:['RS','Pelotas'], URG:['RS','Uruguaiana'], GEL:['RS','Santo Ângelo'],
+  PVH:['RO','Porto Velho'], JPR:['RO','Ji-Paraná'], OAL:['RO','Cacoal'], BVH:['RO','Vilhena'],
+  BVB:['RR','Boa Vista'],
+  FLN:['SC','Florianópolis','Floripa'], NVT:['SC','Navegantes'], JOI:['SC','Joinville'], XAP:['SC','Chapecó'], JJG:['SC','Jaguaruna'], CCM:['SC','Criciúma'], LAJ:['SC','Lages'],
+  GRU:['SP','São Paulo','Guarulhos'], CGH:['SP','São Paulo','Congonhas'], VCP:['SP','Campinas','Viracopos'], RAO:['SP','Ribeirão Preto'], SJP:['SP','São José do Rio Preto'], JTC:['SP','Bauru'], PPB:['SP','Presidente Prudente'], MII:['SP','Marília'], AQA:['SP','Araraquara'], SJK:['SP','São José dos Campos'], ARU:['SP','Araçatuba'],
+  AJU:['SE','Aracaju'],
+  PMW:['TO','Palmas'], AUX:['TO','Araguaína'],
+};
+var DASH_APELIDOS = {'bh':'MG','belo horizonte confins':'MG','sp':'SP','sao paulo guarulhos':'SP','sao paulo congonhas':'SP','rj':'RJ','rio de janeiro galeao':'RJ','brasilia df':'DF','florianopolis navegantes':'SC','floripa navegantes':'SC','joao pessoa campina grande':'PB','caixias do sul':'RS'};
+
+function _dashNorm(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[.]/g, '').replace(/[\/()\-–]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+var _DASH_UF_CIDADE = null;
+function dashUf(nome) {
+  if (!_DASH_UF_CIDADE) {
+    var m = {};
+    Object.keys(DASH_APELIDOS).forEach(function(k){ m[k] = DASH_APELIDOS[k]; });
+    Object.keys(DASH_AEROPORTOS).forEach(function(cod) {
+      var v = DASH_AEROPORTOS[cod];
+      for (var i = 1; i < v.length; i++) { var k = _dashNorm(v[i]); if (!m[k]) m[k] = v[0]; }
+    });
+    _DASH_UF_CIDADE = m;
+  }
+  var bruto = String(nome || '').trim();
+  if (/^[A-Z]{3}$/.test(bruto) && DASH_AEROPORTOS[bruto]) return DASH_AEROPORTOS[bruto][0];
+  var k = _dashNorm(bruto);
+  if (!k) return null;
+  if (_DASH_UF_CIDADE[k]) return _DASH_UF_CIDADE[k];
+  var cods = bruto.toUpperCase().match(/\b([A-Z]{3})\b/g);
+  if (cods) for (var j = 0; j < cods.length; j++) if (DASH_AEROPORTOS[cods[j]]) return DASH_AEROPORTOS[cods[j]][0];
+  return null;
+}
+
+var _DASH_MESES = { jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
+
+// "Nov/26: 4, 5; Dez/26: 1" -> ['2026-11-04','2026-11-05','2026-12-01'] (ordenado)
+function _dashDatasISO(txt) {
+  var out = [];
+  _parseDatasDisp(txt).forEach(function(g) {
+    var m = String(g.mes || '').match(/^([A-Za-zÀ-ÿ]{3})[A-Za-zÀ-ÿ]*\.?\/(\d{2,4})$/);
+    if (!m) return;
+    var mes = _DASH_MESES[_dashNorm(m[1]).slice(0, 3)];
+    if (!mes) return;
+    var ano = m[2].length === 2 ? 2000 + Number(m[2]) : Number(m[2]);
+    g.dias.forEach(function(d) {
+      var n = parseInt(d, 10);
+      if (n >= 1 && n <= 31) out.push(ano + '-' + String(mes).padStart(2, '0') + '-' + String(n).padStart(2, '0'));
+    });
+  });
+  return out.sort();
+}
+
+// Espelho de podeInverter (estados-cdv.js) para quem só tem passagens.json.
+function _dashInverte(p, domestico) {
+  var volta = String(p.datas_volta || '').trim();
+  if (!volta || volta === '-') return false;
+  if (domestico) return true;
+  var idas = _dashDatasISO(p.datas_ida), voltas = _dashDatasISO(p.datas_volta);
+  if (!idas.length || !voltas.length) return false;
+  return !(idas[idas.length - 1] < voltas[0]);
+}
+
+function _dashExecutiva(p) { return /execut/.test(_dashNorm(p.cabine)); }
+
+function _dashSomaDias(iso, n) {
+  var d = new Date(iso + 'T12:00:00-03:00');
+  d.setUTCDate(d.getUTCDate() + n);
+  return _diaSP(d);
+}
+
+function _dashFmtDia(iso) { var p = String(iso).split('-'); return p[2] + '/' + p[1]; }
+function _dashPct(a, b) { return b ? Math.round(a * 100 / b) + '%' : '—'; }
+function _dashN(n) { return Number(n || 0).toLocaleString('pt-BR'); }
+
+function dashIntervalo() {
+  var hoje = _diaSP(new Date());
+  if (DASH.periodo === 'custom') {
+    var de = DASH.de || hoje, ate = DASH.ate || hoje;
+    if (de > ate) { var t = de; de = ate; ate = t; }
+    return { de: de, ate: ate };
+  }
+  if (DASH.periodo === 'hoje') return { de: hoje, ate: hoje };
+  if (DASH.periodo === 'ontem') { var o = _dashSomaDias(hoje, -1); return { de: o, ate: o }; }
+  if (DASH.periodo === 'mes') return { de: hoje.slice(0, 8) + '01', ate: hoje };
+  var n = parseInt(DASH.periodo, 10) || 30;
+  return { de: _dashSomaDias(hoje, -(n - 1)), ate: hoje };
+}
+
+async function _dashCarregarItens(de) {
+  var hoje = _diaSP(new Date());
+  var precisaHist = de < _dashSomaDias(hoje, -DASH_LIMITE_QUENTE);
+  var chave = precisaHist ? 'desde:' + de : 'quente';
+  var c = DASH.cache[chave];
+  if (c && Date.now() - c.ts < 5 * 60000) return c.items;
+  var url = CDV_PROXY + '/passagens/listar?' + (precisaHist ? 'desde=' + encodeURIComponent(de) + '&' : '') + 't=' + Date.now();
+  var r = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(precisaHist ? 45000 : 20000) });
+  var d = await r.json();
+  if (d && d.ok === false) throw new Error(d.erro || 'resposta inválida do proxy');
+  var items = Array.isArray(d.items) ? d.items : [];
+  DASH.cache[chave] = { ts: Date.now(), items: items };
+  return items;
+}
+
+async function _dashCarregarCfg() {
+  if (DASH.cfg) return DASH.cfg;
+  try {
+    var r = await fetch(SERVER + '/config-cdv?t=' + Date.now(), { cache: 'no-cache', signal: AbortSignal.timeout(15000) });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'resposta inválida');
+    DASH.cfg = { config: j.config || {}, nomes: j.nomes || {} };
+  } catch (e) {
+    console.warn('[Dash] config-cdv indisponível:', e.message);
+    DASH.cfg = { config: {}, nomes: {}, erro: e.message };
+  }
+  return DASH.cfg;
+}
+
+function dashPeriodo(p) {
+  DASH.periodo = p;
+  document.querySelectorAll('#dash-periodos .dash-chip').forEach(function(b) {
+    b.classList.toggle('on', b.getAttribute('data-p') === p);
+  });
+  var box = document.getElementById('dash-custom');
+  if (box) box.style.display = p === 'custom' ? 'flex' : 'none';
+  if (p === 'custom') {
+    var iv = dashIntervalo();
+    var de = document.getElementById('dash-de'), ate = document.getElementById('dash-ate');
+    if (de && !de.value) de.value = iv.de;
+    if (ate && !ate.value) ate.value = iv.ate;
+    DASH.de = de ? de.value : ''; DASH.ate = ate ? ate.value : '';
+  }
+  carregarDashEmissoes();
+}
+
+function dashCustom() {
+  DASH.de = document.getElementById('dash-de').value;
+  DASH.ate = document.getElementById('dash-ate').value;
+  if (DASH.de && DASH.ate) carregarDashEmissoes();
+}
+
+function dashEscopo(e) {
+  DASH.escopo = e;
+  document.querySelectorAll('#dash-escopos .dash-chip').forEach(function(b) {
+    b.classList.toggle('on', b.getAttribute('data-e') === e);
+  });
+  carregarDashEmissoes();
+}
+
+function dashAtualizar() { DASH.cache = {}; DASH.cfg = null; carregarDashEmissoes(); }
+
+async function carregarDashEmissoes() {
+  var alvo = document.getElementById('dash-corpo');
+  var info = document.getElementById('dash-intervalo');
+  if (!alvo) return;
+  var iv = dashIntervalo();
+  if (info) info.textContent = iv.de === iv.ate ? _dashFmtDia(iv.de) + '/' + iv.de.slice(0, 4)
+    : _dashFmtDia(iv.de) + '/' + iv.de.slice(0, 4) + ' a ' + _dashFmtDia(iv.ate) + '/' + iv.ate.slice(0, 4);
+  alvo.innerHTML = '<div class="alerta-empty">Carregando...</div>';
+  var token = (DASH._token = (DASH._token || 0) + 1);
+  try {
+    var res = await Promise.all([_dashCarregarItens(iv.de), _dashCarregarCfg()]);
+    if (token !== DASH._token) return;   // clicou em outro filtro no meio
+    alvo.innerHTML = _dashMontar(res[0], res[1], iv);
+  } catch (e) {
+    if (token !== DASH._token) return;
+    alvo.innerHTML = '<div class="alerta-empty">⚠️ Falha ao carregar: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function _dashMontar(items, cfg, iv) {
+  // 1. Recorte: só o que foi publicado, dentro do período (dia em SP) e do escopo.
+  var lista = [];
+  items.forEach(function(p) {
+    if (p.fonte && DASH_FONTES.indexOf(p.fonte) < 0) return;
+    var t = Date.parse(p.enviadoEm);
+    if (!isFinite(t)) return;
+    var dia = _diaSP(new Date(t));
+    if (dia < iv.de || dia > iv.ate) return;
+    var ufO = dashUf(p.origem), ufD = dashUf(p.destino);
+    var esc = (ufO && ufD) ? 'nacional' : 'internacional';
+    if (DASH.escopo !== 'todas' && esc !== DASH.escopo) return;
+    lista.push({ p: p, dia: dia, ufO: ufO, ufD: ufD, esc: esc, exe: _dashExecutiva(p) });
+  });
+
+  var total = lista.length;
+  if (!total) {
+    return '<div class="alerta-empty">📭 Nenhuma emissão publicada nesse período'
+      + (DASH.escopo !== 'todas' ? ' com o filtro ' + (DASH.escopo === 'nacional' ? 'Nacionais' : 'Internacionais') : '')
+      + '.</div>';
+  }
+  var nNac = lista.filter(function(x){ return x.esc === 'nacional'; }).length;
+  var nInt = total - nNac;
+  var nExe = lista.filter(function(x){ return x.exe; }).length;
+  var nDias = Math.round((Date.parse(iv.ate + 'T12:00:00Z') - Date.parse(iv.de + 'T12:00:00Z')) / 86400000) + 1;
+
+  var html = '<div class="dash-kpis">'
+    + _dashKpi('Emissões publicadas', _dashN(total), _dashN(Math.round(total / nDias * 10) / 10) + ' por dia em média')
+    + _dashKpi('Nacionais', _dashN(nNac), _dashPct(nNac, total) + ' do total', 'nac')
+    + _dashKpi('Internacionais', _dashN(nInt), _dashPct(nInt, total) + ' do total', 'int')
+    + _dashKpi('Executiva', _dashN(nExe), _dashPct(nExe, total) + ' do total')
+    + '</div>';
+
+  // 2. Por dia (barras empilhadas nacional/internacional)
+  var porDia = {};
+  lista.forEach(function(x) {
+    var d = porDia[x.dia] || (porDia[x.dia] = { nac: 0, int: 0 });
+    d[x.esc === 'nacional' ? 'nac' : 'int']++;
+  });
+  if (nDias > 1 && nDias <= 400) {
+    var dias = [], cur = iv.de, guarda = 0;
+    while (cur <= iv.ate && guarda++ < 401) { dias.push(cur); cur = _dashSomaDias(cur, 1); }
+    var max = 1;
+    dias.forEach(function(d) { var v = porDia[d]; if (v && v.nac + v.int > max) max = v.nac + v.int; });
+    var passoRotulo = Math.max(1, Math.ceil(dias.length / 12));
+    html += '<div class="env-sub">📅 Por dia</div>'
+      + '<div class="dash-card"><div class="dash-leg"><span><i class="dash-sw nac"></i>Nacionais</span><span><i class="dash-sw int"></i>Internacionais</span><span style="margin-left:auto">pico: ' + _dashN(max) + '/dia</span></div>'
+      + '<div class="dash-barras">'
+      + dias.map(function(d, i) {
+          var v = porDia[d] || { nac: 0, int: 0 }, tot = v.nac + v.int;
+          return '<div class="dash-col" title="' + _dashFmtDia(d) + ': ' + tot + ' (' + v.nac + ' nac · ' + v.int + ' int)">'
+            + '<div class="dash-pilha">'
+            +   '<div class="dash-seg int" style="height:' + (v.int * 100 / max) + '%"></div>'
+            +   '<div class="dash-seg nac" style="height:' + (v.nac * 100 / max) + '%"></div>'
+            + '</div>'
+            + '<div class="dash-rot">' + (i % passoRotulo === 0 ? _dashFmtDia(d) : '') + '</div>'
+            + '</div>';
+        }).join('')
+      + '</div></div>';
+  }
+
+  // 3. Por grupo
+  var conf = (cfg && cfg.config) || {}, nomes = (cfg && cfg.nomes) || {}, grupos = conf.grupos || {};
+  var nomeG = function(jid, fallback) { return nomes[jid] || fallback || String(jid || '').split('@')[0]; };
+  var linhas = [];
+  var contar = function(arr) {
+    var n = arr.filter(function(x){ return x.esc === 'nacional'; }).length;
+    return { tot: arr.length, nac: n, int: arr.length - n };
+  };
+  var cTodas = contar(lista);
+  linhas.push({ nome: grupos.emissao ? nomeG(grupos.emissao, 'Emissões CDV') : 'Emissões CDV', tipo: 'Principal', c: cTodas, det: 'todas as emissões' });
+  var cExe = contar(lista.filter(function(x){ return x.exe; }));
+  linhas.push({ nome: grupos.executiva ? nomeG(grupos.executiva, 'Emissões em executiva - CDV') : 'Emissões em executiva - CDV', tipo: 'Executiva', c: cExe, det: 'cabine executiva' });
+
+  var reservados = [grupos.emissao, grupos.executiva, grupos.ofertas, grupos.operador].filter(Boolean);
+  var vinculos = (Array.isArray(conf.estados) ? conf.estados : []).filter(function(e) {
+    return e && e.jid && e.ativo !== false && reservados.indexOf(e.jid) < 0;
+  });
+  var porJid = {};
+  var desdeEstados = lista.filter(function(x){ return x.dia >= DASH_ATIVACAO_ESTADOS; });
+  vinculos.forEach(function(v) {
+    var g = porJid[v.jid] || (porJid[v.jid] = { jid: v.jid, nome: nomeG(v.jid, v.nome), ufs: [], orig: [], inv: [] });
+    if (g.ufs.indexOf(v.uf) < 0) g.ufs.push(v.uf);
+  });
+  Object.keys(porJid).forEach(function(jid) {
+    var g = porJid[jid];
+    desdeEstados.forEach(function(x) {
+      if (x.ufO && g.ufs.indexOf(x.ufO) >= 0) { g.orig.push(x); return; }
+      if (x.ufD && g.ufs.indexOf(x.ufD) >= 0 && x.ufD !== x.ufO && _dashInverte(x.p, !!x.ufO)) g.inv.push(x);
+    });
+  });
+  var linhasEstado = Object.keys(porJid).map(function(jid) {
+    var g = porJid[jid], arr = g.orig.concat(g.inv);
+    return { nome: g.nome, tipo: 'Estado · ' + g.ufs.sort().join(', '), c: contar(arr), estado: true,
+             det: _dashN(g.orig.length) + ' com origem no estado · ' + _dashN(g.inv.length) + ' invertidas' };
+  }).sort(function(a, b) { return (b.c.tot - a.c.tot) || a.nome.localeCompare(b.nome, 'pt-BR'); });
+
+  var linhaHtml = function(l) {
+    return '<tr>'
+      + '<td class="env-rota">' + escapeHtml(l.nome) + '</td>'
+      + '<td style="color:var(--muted)">' + escapeHtml(l.tipo) + (l.estado ? ' <span class="dash-est" title="Estimado pela regra de roteamento; as cópias não ficam registradas">≈</span>' : '') + '</td>'
+      + '<td class="env-pts" style="text-align:right">' + _dashN(l.c.tot) + '</td>'
+      + '<td style="text-align:right">' + _dashN(l.c.nac) + '</td>'
+      + '<td style="text-align:right">' + _dashN(l.c.int) + '</td>'
+      + '<td style="color:var(--muted);font-size:12px">' + escapeHtml(l.det) + '</td>'
+      + '</tr>';
+  };
+  html += '<div class="env-sub">👥 Por grupo</div>'
+    + '<div class="env-wrap"><table class="env-tab"><thead><tr>'
+    + '<th>Grupo</th><th>Tipo</th><th style="text-align:right">Total</th><th style="text-align:right">Nacionais</th><th style="text-align:right">Internacionais</th><th>Detalhe</th>'
+    + '</tr></thead><tbody>'
+    + linhas.map(linhaHtml).join('')
+    + linhasEstado.map(linhaHtml).join('')
+    + '</tbody></table></div>';
+  var notas = [];
+  if (linhasEstado.length) {
+    notas.push('≈ Grupos por estado: estimativa pela regra de roteamento com a configuração atual, contando só envios a partir de '
+      + _dashFmtDia(DASH_ATIVACAO_ESTADOS) + '/' + DASH_ATIVACAO_ESTADOS.slice(0, 4) + ' (início do recurso). As cópias para os estados não ficam registradas.');
+    if (iv.de < DASH_ATIVACAO_ESTADOS) notas.push('O período começa antes disso, então os estados mostram só a parte a partir de ' + _dashFmtDia(DASH_ATIVACAO_ESTADOS) + '.');
+  } else if (cfg && cfg.erro) {
+    notas.push('Não consegui ler os grupos por estado (' + cfg.erro + ').');
+  } else {
+    notas.push('Nenhum grupo por estado ligado na aba Config.');
+  }
+  html += '<div class="dash-nota">' + notas.map(escapeHtml).join('<br>') + '</div>';
+
+  // 4. Programas (nacional x internacional)
+  var porProg = {};
+  lista.forEach(function(x) {
+    var k = String(x.p.programa || '—').trim() || '—';
+    var g = porProg[k] || (porProg[k] = { nac: 0, int: 0 });
+    g[x.esc === 'nacional' ? 'nac' : 'int']++;
+  });
+  var progs = Object.keys(porProg).map(function(k){ return { k: k, nac: porProg[k].nac, int: porProg[k].int, tot: porProg[k].nac + porProg[k].int }; })
+    .sort(function(a, b){ return (b.tot - a.tot) || a.k.localeCompare(b.k, 'pt-BR'); });
+  var maxP = progs.length ? progs[0].tot : 1;
+  html += '<div class="env-sub">🎟️ Por programa</div><div class="dash-card">'
+    + progs.slice(0, 12).map(function(g) {
+        return '<div class="dash-hl"><div class="dash-hl-nome">' + escapeHtml(g.k) + '</div>'
+          + '<div class="dash-hl-barra" title="' + g.nac + ' nacionais · ' + g.int + ' internacionais">'
+          +   '<div class="dash-seg nac" style="width:' + (g.nac * 100 / maxP) + '%"></div>'
+          +   '<div class="dash-seg int" style="width:' + (g.int * 100 / maxP) + '%"></div>'
+          + '</div><div class="dash-hl-n">' + _dashN(g.tot) + '</div></div>';
+      }).join('')
+    + (progs.length > 12 ? '<div class="dash-nota" style="margin-top:8px">+ ' + (progs.length - 12) + ' programa(s) com menos emissões.</div>' : '')
+    + '</div>';
+
+  html += '<div class="dash-nota">Fonte: emissões publicadas no grupo Emissões CDV (auto, aprovação e aba Emissão). Tarifas pagantes não são registradas e ficam de fora. Nacional = origem e destino no Brasil.</div>';
+  return html;
+}
+
+function _dashKpi(titulo, valor, sub, cls) {
+  return '<div class="dash-kpi' + (cls ? ' ' + cls : '') + '"><div class="dash-kpi-t">' + escapeHtml(titulo) + '</div>'
+    + '<div class="dash-kpi-v">' + valor + '</div><div class="dash-kpi-s">' + escapeHtml(sub) + '</div></div>';
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -6959,6 +7391,7 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('tab-milhas').addEventListener('click', function(){ switchMain('milhas'); });
   document.getElementById('tab-alertas').addEventListener('click', function(){ switchMain('alertas'); });
   document.getElementById('tab-enviadas').addEventListener('click', function(){ switchMain('enviadas'); });
+  document.getElementById('tab-dash').addEventListener('click', function(){ switchMain('dash'); });
   document.getElementById('tab-ofertas').addEventListener('click', function(){ switchMain('ofertas'); });
   document.getElementById('tab-campanha').addEventListener('click', function(){ switchMain('campanha'); });
   document.getElementById('tab-entrada').addEventListener('click', function(){ switchMain('entrada'); });

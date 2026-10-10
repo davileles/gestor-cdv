@@ -9,6 +9,7 @@
         "async function aprovarAlerta(",
         "async function aprovarOfertaPendente(",
         "async function carregarAlertas(",
+        "async function carregarDashEmissoes(",
         "async function carregarHistoricoTransferencias(",
         "async function carregarOfertasPendentes(",
         "async function chamarIA(",
