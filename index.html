@@ -2621,6 +2621,7 @@ function renderAlertas(data) {
     lista.innerHTML = '<div class="alerta-empty">🔔 Nenhuma oferta pendente.<br><span style="font-size:12px;color:var(--muted2)">Os alertas capturados dos grupos monitorados aparecerão aqui.</span></div>';
   } else {
     lista.innerHTML = pendentes.map(renderAlertaCard).join('');
+    _alertasSujo = false;
     autoGrowAlertasTodos();
   }
 
@@ -3869,6 +3870,8 @@ async function aprovarAlerta(id) {
       // no worker de envio, quando a mensagem sai de fato no grupo (inclusive
       // para agendamentos). Registrar aqui duplicava o histórico.
       setTimeout(carregarAlertas, 1500);
+    } else if (d.jaResolvida) {
+      marcarAlertaResolvidaFora(id, d.status);
     } else {
       fb.style.color='#ff585e'; fb.textContent='Erro: '+(d.erro||'falha');
     }
@@ -3905,11 +3908,80 @@ async function rejeitarAlerta(id, salvar) {
         }
       }
       setTimeout(carregarAlertas, 1500);
+    } else if (d.jaResolvida) {
+      marcarAlertaResolvidaFora(id, d.status);
     } else {
       fb.style.color='#ff585e'; fb.textContent='Erro: '+(d.erro||'falha (status '+r.status+')');
     }
   } catch(e) { fb.style.color='#ff585e'; fb.textContent='Erro: '+e.message; }
 }
+
+/* ══════ SINCRONIA COM O BOT DO TELEGRAM ══════
+   A mesma passagem aparece aqui e no bot de passagens do Telegram. Decidida
+   lá, o card daqui ficava com os botões vivos até recarregar a aba — e aprovar
+   de novo duplicava o envio. Com a aba Alertas aberta, a fila é relida a cada
+   20 s: card que não está mais pendente esmaece com o desfecho e sai da lista;
+   item novo só redesenha a lista se nada estiver sendo editado (redesenhar
+   apagaria o texto em edição). O servidor também recusa aprovar/descartar o
+   que já foi decidido (jaResolvida), que cai em marcarAlertaResolvidaFora. */
+var ALERTA_DESFECHO_FORA = {
+  aprovado:'✓ Aprovada em outro lugar', enviando:'✓ Aprovada em outro lugar',
+  enviado:'✓ Enviada (aprovada em outro lugar)', agendado:'🕐 Agendada em outro lugar',
+  rejeitado:'✕ Descartada em outro lugar', mesclado:'🔗 Mesclada', expirado:'⌛ Expirou'
+};
+var _alertasSujo = false;
+document.addEventListener('input', function(ev){
+  if (ev.target && ev.target.closest && ev.target.closest('#alertas-lista')) _alertasSujo = true;
+});
+document.addEventListener('change', function(ev){
+  if (ev.target && ev.target.closest && ev.target.closest('#alertas-lista')) _alertasSujo = true;
+});
+
+function marcarAlertaResolvidaFora(id, status) {
+  var card = document.getElementById('alerta-card-'+id);
+  if (!card || card.getAttribute('data-fora')) return;
+  card.setAttribute('data-fora', '1');
+  card.style.opacity='.35'; card.style.pointerEvents='none';
+  var fb = document.getElementById('alerta-fb-'+id);
+  var txt = ALERTA_DESFECHO_FORA[status] || (status ? '✓ Resolvida em outro lugar ('+status+')' : '✓ Saiu da fila');
+  if (fb) { fb.style.color='var(--muted2)'; fb.textContent = txt; }
+  setTimeout(function(){
+    var c2 = document.getElementById('alerta-card-'+id);
+    if (c2) c2.remove();
+    var lista = document.getElementById('alertas-lista');
+    if (lista && !lista.querySelector('.alerta-card')) carregarAlertas();
+  }, 4000);
+}
+
+async function sincronizarAlertasSilencioso() {
+  var painel = document.getElementById('panel-alertas');
+  if (!painel || !painel.classList.contains('active') || document.hidden) return;
+  try {
+    var r = await fetch(SERVER+'/painel-json', {signal:AbortSignal.timeout(15000)});
+    if (!r.ok) return;
+    var data = await r.json();
+    var ofertas = (data.ofertas || []).filter(ehAlertaGerador);
+    var porId = {};
+    ofertas.forEach(function(o){ porId[String(o.id)] = o; });
+    // Cards na tela que deixaram de estar pendentes
+    document.querySelectorAll('#alertas-lista .alerta-card[id^="alerta-card-"]').forEach(function(card){
+      var id = card.id.replace('alerta-card-', '');
+      if (card.style.pointerEvents === 'none' && !card.getAttribute('data-fora')) return; // ação local em andamento
+      var o = porId[id];
+      if (!o || o.status !== 'pendente') marcarAlertaResolvidaFora(id, o ? o.status : null);
+    });
+    alertasData = data.ofertas || [];
+    window._alertasCache = alertasData;
+    atualizarBadge();
+    // Item novo: redesenha só se nada estiver em edição
+    var novos = ofertas.some(function(o){
+      return o.status === 'pendente' && !document.getElementById('alerta-card-'+o.id);
+    });
+    var foco = document.activeElement && document.activeElement.closest && document.activeElement.closest('#alertas-lista');
+    if (novos && !_alertasSujo && !foco) { renderAlertas(data); }
+  } catch(e) { /* silencioso: a próxima rodada tenta de novo */ }
+}
+setInterval(sincronizarAlertasSilencioso, 20000);
 
 function programaCompraOptionsHtml(sel) {
   return '<option value="">—</option>' + PROGRAMA_COMPRA_BONIFICADA_OPTIONS.map(function(v){
