@@ -1195,6 +1195,52 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 
 </div>
 <script>
+// ══ CHAVE DE OPERADOR NAS ROTAS DE ENVIO (desde 13/10/2026) ══
+// O proxy passou a exigir X-CDV-Op (= CAMPANHAS_KEY, a mesma chave da aba
+// Campanha) para aprovar, rejeitar, editar, enviar e publicar ofertas. Este
+// wrapper injeta a chave nessas chamadas; se ainda não houver chave salva neste
+// navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
+(function(){
+  var PROXY = 'https://cdv-proxy-production.up.railway.app';
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir'];
+  var _orig = window.fetch.bind(window);
+  function lerChave(){
+    var k = '';
+    try { k = localStorage.getItem('cdv_op_key') || sessionStorage.getItem('cdv_camp_key') || ''; } catch(e){}
+    return k;
+  }
+  window.cdvOpChave = function(forcar){
+    var k = forcar ? '' : lerChave();
+    if (!k) {
+      k = (prompt('Chave de operador do CDV (a mesma da aba Campanha):') || '').trim();
+      if (k) { try { localStorage.setItem('cdv_op_key', k); } catch(e){} }
+    }
+    return k;
+  };
+  window.fetch = function(input, init){
+    var url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (url.indexOf(PROXY) !== 0) return _orig(input, init);
+    var metodo = String((init && init.method) || (typeof input !== 'string' && input.method) || 'GET').toUpperCase();
+    var caminho = url.slice(PROXY.length).split('?')[0];
+    var precisa = metodo === 'POST' && ROTAS.some(function(r){ return r.slice(-1) === '/' ? caminho.indexOf(r) === 0 : caminho === r; });
+    if (!precisa) return _orig(input, init);
+    var opts = Object.assign({}, init || {});
+    var h = new Headers(opts.headers || (typeof input !== 'string' && input.headers) || {});
+    if (!h.get('X-CDV-Op')) {
+      var k = window.cdvOpChave(false);
+      if (k) h.set('X-CDV-Op', k);
+    }
+    opts.headers = h;
+    return _orig(input, opts).then(function(r){
+      if (r.status === 401) {
+        try { localStorage.removeItem('cdv_op_key'); } catch(e){}
+        alert('Chave de operador inválida ou ausente. Tente a ação de novo e informe a chave correta.');
+      }
+      return r;
+    });
+  };
+})();
+
 // ══ CONSTANTES ══
 var LOJA_TODAS = 'Todas as disponíveis no ato da compra são válidas.';
 var RODAPE_OFERTA = '`Faça parte do Clube do Viajante e economize até 90% nas suas passagens: https://clubedoviajante.com.br/`';
@@ -4976,7 +5022,7 @@ function campFone(n) {
 function campAoAbrir() {
   if (CAMP_KEY) { campAtualizarMotor(); return; }
   var salva = '';
-  try { salva = sessionStorage.getItem('cdv_camp_key') || ''; } catch(e) {}
+  try { salva = sessionStorage.getItem('cdv_camp_key') || localStorage.getItem('cdv_op_key') || ''; } catch(e) {}
   if (salva) { CAMP_KEY = salva; campCarregar(); }
 }
 async function campDestravar() {
@@ -4985,7 +5031,7 @@ async function campDestravar() {
   campFb('camp-gate-fb', 'Verificando...', true);
   try {
     await campApi('/campanhas');
-    try { sessionStorage.setItem('cdv_camp_key', CAMP_KEY); } catch(e) {}
+    try { sessionStorage.setItem('cdv_camp_key', CAMP_KEY); localStorage.setItem('cdv_op_key', CAMP_KEY); } catch(e) {}
     campFb('camp-gate-fb', '');
     campCarregar();
   } catch(e) {
