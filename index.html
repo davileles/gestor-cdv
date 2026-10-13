@@ -1203,17 +1203,21 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
   var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir'];
+  // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/passagens/listar'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
     try { k = localStorage.getItem('cdv_op_key') || sessionStorage.getItem('cdv_camp_key') || ''; } catch(e){}
     return k;
   }
+  var _recusou = false, _avisou = false;
   window.cdvOpChave = function(forcar){
     var k = forcar ? '' : lerChave();
-    if (!k) {
+    if (!k && (forcar || !_recusou)) {
       k = (prompt('Chave de operador do CDV (a mesma da aba Campanha):') || '').trim();
-      if (k) { try { localStorage.setItem('cdv_op_key', k); } catch(e){} }
+      if (k) { try { localStorage.setItem('cdv_op_key', k); } catch(e){} _avisou = false; }
+      else _recusou = true; // não pergunta de novo até recarregar a página
     }
     return k;
   };
@@ -1222,7 +1226,8 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     if (url.indexOf(PROXY) !== 0) return _orig(input, init);
     var metodo = String((init && init.method) || (typeof input !== 'string' && input.method) || 'GET').toUpperCase();
     var caminho = url.slice(PROXY.length).split('?')[0];
-    var precisa = metodo === 'POST' && ROTAS.some(function(r){ return r.slice(-1) === '/' ? caminho.indexOf(r) === 0 : caminho === r; });
+    function casa(lista){ return lista.some(function(r){ return r.slice(-1) === '/' ? caminho.indexOf(r) === 0 : caminho === r; }); }
+    var precisa = (metodo === 'POST' && casa(ROTAS)) || (metodo === 'GET' && casa(ROTAS_GET));
     if (!precisa) return _orig(input, init);
     var opts = Object.assign({}, init || {});
     var h = new Headers(opts.headers || (typeof input !== 'string' && input.headers) || {});
@@ -1233,8 +1238,11 @@ body[data-tema="light"] textarea.out{color:var(--text)}
     opts.headers = h;
     return _orig(input, opts).then(function(r){
       if (r.status === 401) {
-        try { localStorage.removeItem('cdv_op_key'); } catch(e){}
-        alert('Chave de operador inválida ou ausente. Tente a ação de novo e informe a chave correta.');
+        try { localStorage.removeItem('cdv_op_key'); sessionStorage.removeItem('cdv_camp_key'); } catch(e){}
+        if (!_avisou) {
+          _avisou = true;
+          alert('Chave de operador inválida ou ausente. Recarregue a página e informe a chave correta.');
+        }
       }
       return r;
     });
@@ -1397,7 +1405,7 @@ var ORIGEM_TRANSFERENCIA_OPTIONS = ['Todos','Alloyal','Azul Fidelidade','BRB','B
 var DESTINO_TRANSFERENCIA_OPTIONS = ['AAdvantage','ALL Accor','Azul Fidelidade','Connect Miles','Flying Blue','Hilton Honors','Iberia Plus','IHG','LATAM Pass','Livelo','Smiles','TAP Miles&Go'];
 var PROGRAMA_COMPRA_BONIFICADA_OPTIONS = ['Azul Fidelidade','Banco do Brasil','Esfera','Inter','LATAM Pass','Livelo','Méliuz','PicPay','PortoPlus','Smiles'];
 var CLASSIFICACAO_LABELS = { acima_padrao:'📈 Acima do padrão', dentro_padrao:'➡️ Dentro do padrão', abaixo_padrao:'📉 Abaixo do padrão' };
-var HISTORICO_TRANSFERENCIAS_URL = 'https://davileles.github.io/painel-cdv/historico-transferencias.json';
+var HISTORICO_TRANSFERENCIAS_URL = 'https://cdv-proxy-production.up.railway.app/conteudo/historico-transferencias.json';
 var historicoTransferenciasData = null;
 
 // ══ ESTADO ══
@@ -4805,7 +4813,7 @@ function fallbackCopy(texto,done){
 // ══ SERVIDOR ══
 var SERVER = 'https://baileys-server-production-ebfe.up.railway.app';
 var CDV_PROXY = 'https://cdv-proxy-production.up.railway.app';
-var OFERTAS_PENDENTES_URL = 'https://davileles.github.io/painel-cdv/ofertas-pendentes.json';
+var OFERTAS_PENDENTES_URL = 'https://cdv-proxy-production.up.railway.app/conteudo/ofertas-pendentes.json';
 var wsConectado = false;
 var GRUPO_OFERTA  = 'cdv_ofertas';
 var GRUPO_EMISSAO = 'cdv_emissao';
