@@ -4828,28 +4828,16 @@ function escapeHtml(str) {
 // ══ UTIL ══
 // Converte o valor de datetime-local (sem timezone) para ISO string interpretado como horário de SP
 function isoParaSP(dtLocal) {
-  // dtLocal = "2026-06-15T08:30" — interpretar como se fosse horário de Brasília/SP
-  // Calcula o offset de SP em relação a UTC no momento informado
-  var date = new Date(dtLocal); // interpreta como local do browser
-  // Reinterpretar como SP: formatar a string e criar com offset explícito
-  // SP usa UTC-3 (BRT) ou UTC-2 (BRST no verão, atualmente suspenso)
-  // Solução robusta: usar Intl para descobrir o offset no instante
-  var utc = new Date(dtLocal + 'Z'); // trata como UTC puro
-  var spStr = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Sao_Paulo',
-    year:'numeric', month:'2-digit', day:'2-digit',
-    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
-  }).format(utc);
-  // spStr = "2026-06-15, 08:30:00" — offset entre UTC e SP nesse instante
-  var utcMs = utc.getTime();
-  var spDate = new Date(spStr.replace(', ',' ').replace(/(\d{2}):(\d{2}):(\d{2})$/, '$1:$2:$3'));
-  var offsetMs = utcMs - spDate.getTime(); // offset SP→UTC em ms
-  // Hora local digitada deve ser SP, então o UTC equivalente é:
-  var localMs = new Date(dtLocal).getTime(); // ms ignorando timezone
-  // Recriar como UTC ajustado para SP
-  var spOffset = -3 * 3600000; // SP é UTC-3 (simplificado, sem BRST)
-  var isoFinal = new Date(localMs - spOffset).toISOString();
-  return isoFinal;
+  // dtLocal = "2026-06-15T08:30" (datetime-local, sem fuso) — é SEMPRE horário de
+  // Brasília (-03:00 fixo, sem horário de verão), independente do fuso do navegador.
+  // Antes: new Date(dtLocal) lia como hora local do navegador e ainda somava +3h,
+  // então 20:15 virava 23:15 quando o navegador já estava em São Paulo.
+  if (!dtLocal) return null;
+  var base = String(dtLocal).trim();
+  if (/T\d{2}:\d{2}$/.test(base)) base += ':00';
+  var d = new Date(base + '-03:00');
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
 }
 
 function hoje(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
