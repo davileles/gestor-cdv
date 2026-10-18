@@ -515,6 +515,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
       <div class="field">
         <label>Prazo <span class="tag">opcional</span></label>
         <input type="date" id="o-prazo"/>
+        <label class="chk-box" style="margin-top:8px;padding:8px 10px;font-size:12px"><input type="checkbox" id="o-lembrete" checked/><span>⏰ Reenviar "ACABA HOJE" no último dia do prazo</span></label>
       </div>
       <div class="field">
         <label>Loja / Plataforma <span class="tag">opcional</span></label>
@@ -4341,7 +4342,8 @@ function renderOfertaPendenteCard(o) {
       +'<div class="field" id="of-progcomprarow-'+o.id+'" style="'+mostrarCompra+'"><label>Programa (histórico)</label><select id="of-programacompra-'+o.id+'" onchange="atualizarPrevia(\''+o.id+'\')">'+programaCompraOptionsHtml(programaCompraGuess)+'</select></div>'
       +'<div id="of-histcomprarow-'+o.id+'" style="'+mostrarCompra+'">'+historicoCompraHtml+'</div>'
       +'<div class="g2">'
-        +'<div class="field"><label>Prazo</label><input id="of-prazo-'+o.id+'" value="'+escapeAttr(o.prazo)+'" placeholder="ex: 30/06/2026 ou vazio" oninput="atualizarPrevia(\''+o.id+'\')"/></div>'
+        +'<div class="field"><label>Prazo</label><input id="of-prazo-'+o.id+'" value="'+escapeAttr(o.prazo)+'" placeholder="ex: 30/06/2026 ou vazio" oninput="atualizarPrevia(\''+o.id+'\')"/>'
+          +'<label class="chk-box" style="margin-top:8px;padding:8px 10px;font-size:12px"><input type="checkbox" id="of-lembrete-'+o.id+'"'+(o.lembrete===false?'':' checked')+'/><span>⏰ Reenviar "ACABA HOJE" no último dia do prazo</span></label></div>'
         +'<div class="field"><label>Link da oferta</label><input id="of-link-'+o.id+'" value="'+escapeAttr(o.link)+'" placeholder="https://..." oninput="atualizarPrevia(\''+o.id+'\')"/></div>'
       +'</div>'
       +'<div class="g2">'
@@ -4446,6 +4448,8 @@ function coletarEdicoesOferta(id) {
   return {
     semHistorico: !!(semHistEl && semHistEl.checked),
     campanhaNova: !!(campNovaEl && campNovaEl.checked),
+    // Desmarcado = a oferta nao ganha o lembrete "⏰ ACABA HOJE" no ultimo dia.
+    lembrete: !(document.getElementById('of-lembrete-'+id) && !document.getElementById('of-lembrete-'+id).checked),
     titulo: get('titulo'),
     categoria: get('categoria'),
     programa: get('programa'),
@@ -4963,6 +4967,7 @@ async function enviarWA(msgId,statusId,fileKey) {
             milheiro:  (document.getElementById('o-milheiro')||{value:''}).value.trim(),
             tetoTransferencia:(document.getElementById('o-teto')||{value:''}).value.trim(),
             link:      (document.getElementById('o-link')||{value:''}).value.trim(),
+            lembrete:  !(document.getElementById('o-lembrete') && !document.getElementById('o-lembrete').checked),
             restricoes: restricoesTxtR ? restricoesTxtR.split('\n').map(function(x){return x.trim();}).filter(Boolean) : []
           };
           if (ofertaPayload.titulo) {
@@ -4974,8 +4979,8 @@ async function enviarWA(msgId,statusId,fileKey) {
                 s.textContent='✓ Enviado e publicado no Radar!';
                 // Envio manual nao passa pela filaRadar: registra o texto
                 // enviado para o lembrete "⏰ ACABA HOJE" no ultimo dia do prazo
-                // (o baileys decide pela categoria/prazo de ofertas.json).
-                if (dp.id) {
+                // (o baileys decide pelo prazo de ofertas.json; qualquer categoria).
+                if (dp.id && ofertaPayload.lembrete !== false) {
                   fetch(SERVER+'/radar/lembretes/registrar', {
                     method:'POST', headers:{'Content-Type':'application/json'},
                     body: JSON.stringify({ id: dp.id, grupo: grupo, mensagem: texto })
