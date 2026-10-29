@@ -421,12 +421,19 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-sinc{font-size:12px;color:var(--muted2)}
 .as-sinc strong{color:var(--muted)}
 .as-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.as-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:var(--font);color:var(--text)}
+.as-kpi{width:100%;margin:0;min-height:74px;display:flex;flex-direction:column;justify-content:space-between;font-size:inherit;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:var(--font);color:var(--text)}
 .as-kpi:hover{border-color:var(--accent)}
 .as-kpi.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .as-kpi-t{font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;color:var(--muted)}
 .as-kpi-v{font-size:24px;font-weight:800;margin:4px 0 0}
-.as-kpi.ok{border-left:4px solid #2fb37a}.as-kpi.alerta{border-left:4px solid #f0a020}.as-kpi.perigo{border-left:4px solid var(--accent)}.as-kpi.info{border-left:4px solid var(--blue)}
+.as-kpi.k-ok{border-left:4px solid #2fb37a}.as-kpi.k-alerta{border-left:4px solid #f0a020}.as-kpi.k-perigo{border-left:4px solid var(--accent)}.as-kpi.k-info{border-left:4px solid var(--blue)}.as-kpi.k-neutro{border-left:4px solid var(--border)}
+.as-prod-btn{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:var(--font);font-size:12px;cursor:pointer;white-space:nowrap}
+.as-prod-painel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+.as-prod-acoes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.as-prod-acoes button{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-family:var(--font);font-size:11px;cursor:pointer}
+.as-prod-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 14px;max-height:320px;overflow:auto}
+.as-prod-lista label{display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:4px 2px;cursor:pointer}
+.as-prod-lista label span.n{color:var(--muted);margin-left:auto;white-space:nowrap}
 .as-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .as-filtros select,.as-filtros input[type=search]{width:auto;min-width:180px;padding:8px 10px;font-size:13px}
 .as-filtros label.chk-box{padding:7px 10px;font-size:12px}
@@ -952,9 +959,18 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   </div>
   <div class="as-kpis" id="as-kpis"></div>
   <div class="as-filtros">
-    <select id="as-produto" onchange="asRender()"></select>
+    <button type="button" class="as-prod-btn" id="as-prod-btn" onclick="asTogglePainelProdutos()">Produtos: todos ▾</button>
     <input type="search" id="as-busca" placeholder="Buscar nome, e-mail ou telefone" oninput="asRender()"/>
     <label class="chk-box" title="Ofertas que liberam o painel + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga (grátis, convite, vitalício)"><input type="checkbox" id="as-so-painel" onchange="asRender()" checked/> Só o painel</label>
+    <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
+  </div>
+  <div class="as-prod-painel" id="as-prod-painel" style="display:none">
+    <div class="as-prod-acoes">
+      <button type="button" onclick="asMarcarProdutos(true)">Marcar todos</button>
+      <button type="button" onclick="asMarcarProdutos(false)">Desmarcar todos</button>
+      <button type="button" onclick="asMarcarProdutos('pagos')">Só produtos com assinatura paga</button>
+    </div>
+    <div class="as-prod-lista" id="as-prod-lista"></div>
   </div>
   <div class="card" style="padding:0;overflow:hidden">
     <div id="as-lista"></div>
@@ -1824,27 +1840,63 @@ function asCarregar() {
   });
 }
 
+// Seleção de produtos: guarda os DESMARCADOS (produto novo entra marcado).
+var AS_FILTRO_CHAVE = 'cdv_assin_filtro';
+function asLerFiltro() {
+  try { var f = JSON.parse(localStorage.getItem(AS_FILTRO_CHAVE) || '{}'); return { fora: f.fora || [], semGratis: !!f.semGratis }; }
+  catch (e) { return { fora: [], semGratis: false }; }
+}
+function asSalvarFiltro() {
+  var fora = [];
+  document.querySelectorAll('#as-prod-lista input[type=checkbox]').forEach(function(i){ if (!i.checked) fora.push(i.value); });
+  if (!document.getElementById('as-prod-lista').children.length) fora = asLerFiltro().fora;
+  try { localStorage.setItem(AS_FILTRO_CHAVE, JSON.stringify({ fora: fora, semGratis: document.getElementById('as-sem-gratis').checked })); } catch (e) {}
+}
+function asTogglePainelProdutos() {
+  var p = document.getElementById('as-prod-painel');
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+}
+// Produto "pago" = tem ao menos uma assinatura que não é vitalícia nem acesso sem fatura.
+function asProdutoPago(nome) {
+  return (AS.dados.assinaturas || []).some(function(a){ return a.produtoNome === nome && a.fonte !== 'acesso' && a.situacao !== 'vitalicio'; });
+}
+function asMarcarProdutos(modo) {
+  document.querySelectorAll('#as-prod-lista input[type=checkbox]').forEach(function(i){
+    i.checked = modo === 'pagos' ? asProdutoPago(i.value) : !!modo;
+  });
+  asSalvarFiltro(); asRender();
+}
 function asMontarProdutos() {
-  var sel = document.getElementById('as-produto');
-  var atual = sel.value;
-  var nomes = {};
-  (AS.dados.assinaturas || []).forEach(function(a){ if (a.produtoNome) nomes[a.produtoNome] = 1; });
-  var lista = Object.keys(nomes).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
-  sel.innerHTML = '<option value="">Todos os produtos</option>' + lista.map(function(n){
-    return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+  var f = asLerFiltro();
+  document.getElementById('as-sem-gratis').checked = f.semGratis;
+  var cont = {};
+  (AS.dados.assinaturas || []).forEach(function(a){ if (a.produtoNome) cont[a.produtoNome] = (cont[a.produtoNome] || 0) + 1; });
+  var lista = Object.keys(cont).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+  document.getElementById('as-prod-lista').innerHTML = lista.map(function(n){
+    return '<label><input type="checkbox" value="' + escapeHtml(n) + '"' + (f.fora.indexOf(n) >= 0 ? '' : ' checked') +
+      ' onchange="asSalvarFiltro();asRender()"/> <span>' + escapeHtml(n) + '</span><span class="n">' + cont[n] + '</span></label>';
   }).join('');
-  if (atual && nomes[atual]) sel.value = atual;
+}
+function asProdutosFora() {
+  var fora = {};
+  document.querySelectorAll('#as-prod-lista input[type=checkbox]').forEach(function(i){ if (!i.checked) fora[i.value] = 1; });
+  var total = document.querySelectorAll('#as-prod-lista input[type=checkbox]').length;
+  var n = Object.keys(fora).length;
+  document.getElementById('as-prod-btn').textContent = 'Produtos: ' + (n === 0 ? 'todos' : (total - n) + ' de ' + total) + ' ▾';
+  return fora;
 }
 
 // Base filtrada (produto, painel, busca) — os cartões contam sobre ela.
 function asBase() {
-  var prod = document.getElementById('as-produto').value;
+  var fora = asProdutosFora();
+  var semGratis = document.getElementById('as-sem-gratis').checked;
   var soPainel = document.getElementById('as-so-painel').checked;
   var q = (document.getElementById('as-busca').value || '').toLowerCase().trim();
   var qNum = q.replace(/\D/g, '');
   return (AS.dados.assinaturas || []).filter(function(a) {
     if (soPainel && !a.liberaPainel && a.fonte !== 'acesso') return false;
-    if (prod && a.produtoNome !== prod) return false;
+    if (a.produtoNome && fora[a.produtoNome]) return false;
+    if (semGratis && (a.fonte === 'acesso' || a.situacao === 'vitalicio')) return false;
     if (q) {
       var txt = ((a.nome || '') + ' ' + (a.email || '')).toLowerCase();
       var tel = String(a.telefone || '').replace(/\D/g, '');
@@ -1855,13 +1907,13 @@ function asBase() {
 }
 
 var AS_VISOES = {
-  vencendo:  { t: 'Vencem em 30 dias', c: 'alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.diasRestantes !== null && a.diasRestantes <= 30; }, ord: 'fimAsc' },
-  venceram:  { t: 'Venceram (60 dias)', c: 'perigo', f: function(a){ return a.situacao === 'encerrada' && a.fim && (Date.now() - new Date(a.fim).getTime()) <= 60 * AS_DIA; }, ord: 'fimDesc' },
-  vigentes:  { t: 'Vigentes', c: 'ok', f: function(a){ return a.situacao === 'vigente'; }, ord: 'fimAsc' },
-  teste:     { t: 'Em teste', c: 'info', f: function(a){ return a.situacao === 'teste'; }, ord: 'fimAsc' },
-  vitalicio: { t: 'Vitalícios', c: 'info', f: function(a){ return a.situacao === 'vitalicio'; }, ord: 'inicioDesc' },
-  semRenov:  { t: 'Renovação desligada', c: 'alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.renovacaoAutomatica === false; }, ord: 'fimAsc' },
-  todas:     { t: 'Todas', c: '', f: function(){ return true; }, ord: 'inicioDesc' }
+  vencendo:  { t: 'Vencem em 30 dias', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.diasRestantes !== null && a.diasRestantes <= 30; }, ord: 'fimAsc' },
+  venceram:  { t: 'Venceram (60 dias)', c: 'k-perigo', f: function(a){ return a.situacao === 'encerrada' && a.fim && (Date.now() - new Date(a.fim).getTime()) <= 60 * AS_DIA; }, ord: 'fimDesc' },
+  vigentes:  { t: 'Vigentes', c: 'k-ok', f: function(a){ return a.situacao === 'vigente'; }, ord: 'fimAsc' },
+  teste:     { t: 'Em teste', c: 'k-info', f: function(a){ return a.situacao === 'teste'; }, ord: 'fimAsc' },
+  vitalicio: { t: 'Vitalícios', c: 'k-info', f: function(a){ return a.situacao === 'vitalicio'; }, ord: 'inicioDesc' },
+  semRenov:  { t: 'Renovação desligada', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.renovacaoAutomatica === false; }, ord: 'fimAsc' },
+  todas:     { t: 'Todas', c: 'k-neutro', f: function(){ return true; }, ord: 'inicioDesc' }
 };
 
 function asVisao(v) { AS.visao = v; AS.limite = 100; asRender(); }
