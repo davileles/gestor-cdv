@@ -34,6 +34,10 @@ input[type="checkbox"]{appearance:auto!important;-webkit-appearance:auto!importa
 .chk-box{display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--text);background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;transition:border-color .15s,background .15s}
 .chk-box:hover{border-color:var(--accent)}
 .chk-box.on{border-color:#f59e0b;background:rgba(245,158,11,.10)}
+.of-bancos{display:flex;flex-wrap:wrap;gap:6px}
+.of-banco{display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:500;color:var(--text);background:var(--surface2);border:1px solid var(--border2);border-radius:999px;padding:5px 10px 5px 8px;transition:border-color .15s,background .15s}
+.of-banco input[type="checkbox"]{width:14px;height:14px;margin:0}
+.of-banco.on{border-color:var(--accent);background:rgba(255,88,94,.12)}
 .chk-status{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:20px;white-space:nowrap;text-transform:uppercase}
 .chk-status.on{background:#f59e0b;color:#1a1200}
 .chk-status.off{background:var(--surface);color:var(--muted2);border:1px solid var(--border2)}
@@ -1754,7 +1758,10 @@ function linkParceiroCb(o) {
 // Listas fixas (dropdown) para o histórico de transferências bonificadas — evita erro de grafia
 // que quebraria o match de "chave" no historico-transferencias.json
 // Espelhada em painel-cdv/transferencia-deducao.js (deducao no proxy) — ajuste nos DOIS.
-var ORIGEM_TRANSFERENCIA_OPTIONS = ['Todos','Alloyal','Azul Fidelidade','Banco do Brasil','BRB','BTG','BV','C6','Caixa','Esfera','Inter','Itaú','LATAM Pass','Livelo','Nubank','Porto Seguro','Premmia','Revolut','Sicoob','Sicredi','Smiles','Unicred','XP'];
+// 'Todos' e 'Bancos selecionados' ficam no topo; o resto em ordem alfabetica.
+// Espelho de painel-cdv/transferencia-deducao.js — mudou um, muda o outro.
+var ORIGEM_ESPECIAIS = ['Todos','Bancos selecionados'];
+var ORIGEM_TRANSFERENCIA_OPTIONS = ['Todos','Bancos selecionados','Alloyal','Azul Fidelidade','Banco do Brasil','Banco do Nordeste','Banco Industrial','Banco Mercantil','Banestes','Banpará','Banrisul','BRB','BTG','BV','C6','Caixa','Credicard','Esfera','Inter','Itaú','LATAM Pass','Livelo','Nubank','PicPay','Porto Seguro','Premmia','Revolut','Sicoob','Sicredi','Sisprime','Smiles','Unicred','XP'];
 var DESTINO_TRANSFERENCIA_OPTIONS = ['AAdvantage','ALL Accor','Azul Fidelidade','Connect Miles','Flying Blue','Hilton Honors','Iberia Plus','IHG','LATAM Pass','Livelo','Smiles','TAP Miles&Go'];
 var PROGRAMA_COMPRA_BONIFICADA_OPTIONS = ['Azul Fidelidade','Banco do Brasil','Esfera','Inter','LATAM Pass','Livelo','Méliuz','PicPay','PortoPlus','Smiles'];
 var CLASSIFICACAO_LABELS = { acima_padrao:'📈 Acima do padrão', dentro_padrao:'➡️ Dentro do padrão', abaixo_padrao:'📉 Abaixo do padrão' };
@@ -4777,7 +4784,11 @@ var ALIAS_PROGRAMAS = {
   'Premmia': ['petrobras premmia','premmia'],
   'Alloyal': ['alloyal'],
   'Banco do Brasil': ['banco do brasil','bb empresas','bb'],
-  'BV': ['banco bv','bv']
+  'BV': ['banco bv','bv'],
+  'Banco do Nordeste': ['banco do nordeste','bnb'],
+  'Banco Mercantil': ['banco mercantil','mercantil'],
+  'Banpará': ['banpara'],
+  'PicPay': ['picpay','pic pay']
 };
 function aliasesDe(op) { return ALIAS_PROGRAMAS[op] || [normalizarBusca(op)]; }
 function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -4797,7 +4808,7 @@ function posPrograma(txt, op) {
 function matchPosicional(txt, opcoes, excluir) {
   var melhor = '', pos = Infinity;
   (opcoes || []).forEach(function(op){
-    if (!op || op === 'Todos' || op === excluir) return;
+    if (!op || ORIGEM_ESPECIAIS.indexOf(op) !== -1 || op === excluir) return;
     var i = posPrograma(txt, op);
     if (i < pos) { pos = i; melhor = op; }
   });
@@ -4828,6 +4839,15 @@ function destinoPorPreposicao(txt) {
 // e Esfera" cair em Livelo, porque 'Livelo' vem antes de 'Smiles' na lista
 // (oferta 1f1yp3f). O bonusMax deixou de varrer o resumo inteiro, que costuma
 // citar percentuais de cupom/desconto que nao sao o bonus da transferencia.
+// Linhas de condicao que NEGAM um banco nao entram na lista de bancos.
+var RE_NEGACAO_ORIGEM = /(^|[^a-z])(nao|exceto|excluid|exclusao|fora da campanha)([^a-z]|$)/;
+// Todas as origens da lista citadas no texto, na ordem da lista (alfabetica).
+function origensCitadas(txt, excluir) {
+  return ORIGEM_TRANSFERENCIA_OPTIONS.filter(function(op){
+    return ORIGEM_ESPECIAIS.indexOf(op) === -1 && op !== excluir && posPrograma(txt, op) !== Infinity;
+  });
+}
+
 function deduzirTransferencia(o) {
   var titulo   = normalizarBusca(o.titulo || '');
   var programa = normalizarBusca(o.programa || '');
@@ -4851,16 +4871,29 @@ function deduzirTransferencia(o) {
     'todos os parceiros','bancos participantes','parceiros bancarios','bancos selecionados',
     'cartoes de credito e programas','bancos e programas','diversos bancos','principais bancos',
     'varios parceiros','diversos parceiros'];
+  // "todos os bancos" com todas as letras continua sendo Todos.
+  var gatilhosTodosLiteral = ['todos os bancos','quase todos os parceiros','todos os parceiros'];
+  // As condicoes (restricoes) costumam trazer a lista de bancos participantes.
+  var condicoes = (Array.isArray(o.restricoes) ? o.restricoes : [])
+    .map(normalizarBusca).filter(function(l){ return l && !RE_NEGACAO_ORIGEM.test(l); }).join(' \n ');
   var origem = '';
-  if (gatilhosTodos.some(function(g){ return texto.indexOf(g) !== -1; })) {
-    origem = 'Todos';
-  } else {
+  var origens = [];
+  var ampla = gatilhosTodos.some(function(g){ return texto.indexOf(g) !== -1; });
+  if (!ampla) {
     origem = matchPosicional(titulo, ORIGEM_TRANSFERENCIA_OPTIONS, destino)
           || matchPosicional(programa, ORIGEM_TRANSFERENCIA_OPTIONS, destino)
           || matchPosicional(corpo, ORIGEM_TRANSFERENCIA_OPTIONS, destino);
     // Slug "bancos-" da Smiles indica campanha ampla — so vale se nenhum banco
     // especifico foi citado, senao rotula errado campanha de banco unico.
-    if (!origem && link.indexOf('/bancos-') !== -1) origem = 'Todos';
+    if (!origem && link.indexOf('/bancos-') !== -1) ampla = true;
+  }
+  if (ampla) {
+    origem = 'Todos';
+    var literal = gatilhosTodosLiteral.some(function(g){ return texto.indexOf(g) !== -1; });
+    var lista = origensCitadas([texto, condicoes].join(' \n '), destino);
+    // Dois ou mais bancos nomeados numa campanha "de varios bancos" = lista
+    // fechada (Bancos selecionados), nao todos — oferta 17dsmmp, 15 bancos.
+    if (!literal && lista.length >= 2) { origem = 'Bancos selecionados'; origens = lista; }
   }
 
   var bonusMax = null;
@@ -4872,7 +4905,32 @@ function deduzirTransferencia(o) {
       if (nums.length) bonusMax = Math.max.apply(null, nums);
     }
   }
-  return { origem: origem, destino: destino, bonusMax: bonusMax, combo: combo };
+  return { origem: origem, origens: origens, destino: destino, bonusMax: bonusMax, combo: combo };
+}
+
+// Lista de bancos da opcao "Bancos selecionados" (chips marcaveis).
+function origensChipsHtml(id, marcados, destino) {
+  return ORIGEM_TRANSFERENCIA_OPTIONS.filter(function(op){ return ORIGEM_ESPECIAIS.indexOf(op) === -1; }).map(function(op){
+    var on = (marcados || []).indexOf(op) !== -1;
+    return '<label class="of-banco'+(on?' on':'')+'"><input type="checkbox" class="of-origens-'+id+'" value="'+escapeAttr(op)+'"'+(on?' checked':'')
+      +' onchange="this.parentNode.className=\'of-banco\'+(this.checked?\' on\':\'\'); atualizarContaOrigens(\''+id+'\')"/>'+escapeHtml(op)+'</label>';
+  }).join('');
+}
+function origensMarcadas(id) {
+  return Array.prototype.slice.call(document.querySelectorAll('.of-origens-'+id))
+    .filter(function(el){ return el.checked; }).map(function(el){ return el.value; });
+}
+function atualizarContaOrigens(id) {
+  var el = document.getElementById('of-origens-conta-'+id);
+  if (el) { var n = origensMarcadas(id).length; el.textContent = n ? n + (n===1?' banco marcado':' bancos marcados') : 'Nenhum banco marcado'; }
+}
+function marcarOrigens(id, on) {
+  document.querySelectorAll('.of-origens-'+id).forEach(function(el){ el.checked = on; el.parentNode.className = 'of-banco'+(on?' on':''); });
+  atualizarContaOrigens(id);
+}
+function ofOrigemMudou(id) {
+  toggleCamposHistorico(id);
+  atualizarPrevia(id);
 }
 function origemOptionsHtml(sel) {
   return '<option value="">—</option>' + ORIGEM_TRANSFERENCIA_OPTIONS.map(function(v){
@@ -4905,6 +4963,9 @@ function toggleCamposHistorico(id) {
   var row3 = document.getElementById('of-progcomprarow-'+id);
   var row4 = document.getElementById('of-histcomprarow-'+id);
   var row5 = document.getElementById('of-semhistrow-'+id);
+  var row6 = document.getElementById('of-origensrow-'+id);
+  var origemSel = document.getElementById('of-origem-'+id);
+  if (row6) row6.style.display = (mostrarTransf && origemSel && origemSel.value === 'Bancos selecionados') ? '' : 'none';
   if (row1) row1.style.display = mostrarTransf ? '' : 'none';
   if (row2) row2.style.display = mostrarTransf ? '' : 'none';
   if (row5) row5.style.display = mostrarTransf ? '' : 'none';
@@ -5082,8 +5143,15 @@ function renderOfertaPendenteCard(o) {
         +'<div class="field"><label>Bônus / Ganho</label><input id="of-bonus-'+o.id+'" value="'+escapeAttr(o.bonus)+'"/></div>'
       +'</div>'
       +'<div class="g2" id="of-histrow-'+o.id+'" style="'+mostrarHist+'">'
-        +'<div class="field"><label>Origem (histórico)</label><select id="of-origem-'+o.id+'" onchange="atualizarPrevia(\''+o.id+'\')">'+origemOptionsHtml(guess.origem)+'</select></div>'
+        +'<div class="field"><label>Origem (histórico)</label><select id="of-origem-'+o.id+'" onchange="ofOrigemMudou(\''+o.id+'\')">'+origemOptionsHtml(guess.origem)+'</select></div>'
         +'<div class="field"><label>Destino (histórico)</label><select id="of-destino-'+o.id+'" onchange="atualizarPrevia(\''+o.id+'\')">'+destinoOptionsHtml(guess.destino)+'</select></div>'
+      +'</div>'
+      +'<div class="field" id="of-origensrow-'+o.id+'" style="'+(o.categoria === 'transferencia' && guess.origem === 'Bancos selecionados' ? '' : 'display:none')+'">'
+        +'<label style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Bancos da campanha <span class="tag" id="of-origens-conta-'+o.id+'">'+((guess.origens||[]).length ? guess.origens.length+' bancos marcados' : 'Nenhum banco marcado')+'</span>'
+          +'<span style="margin-left:auto;display:flex;gap:6px"><button type="button" class="btn" style="background:var(--surface2);color:var(--muted);font-size:11px;padding:3px 9px;border:1px solid var(--border2);white-space:nowrap" onclick="marcarOrigens(\''+o.id+'\', true)">Marcar todos</button>'
+          +'<button type="button" class="btn" style="background:var(--surface2);color:var(--muted);font-size:11px;padding:3px 9px;border:1px solid var(--border2)" onclick="marcarOrigens(\''+o.id+'\', false)">Limpar</button></span></label>'
+        +'<div class="of-bancos">'+origensChipsHtml(o.id, guess.origens, guess.destino)+'</div>'
+        +'<div style="font-size:11px;color:var(--muted2);margin-top:6px">Cada banco marcado vira um registro no histórico e casa com os alertas desse banco.</div>'
       +'</div>'
       +'<div class="field" id="of-bonusmaxrow-'+o.id+'" style="'+mostrarHist+'"><label>Bônus máximo % (histórico)</label><input type="number" min="0" max="500" id="of-bonusmax-'+o.id+'" value="'+(guess.bonusMax!=null?guess.bonusMax:'')+'" oninput="atualizarPrevia(\''+o.id+'\')"/></div>'
       +'<div class="field" id="of-semhistrow-'+o.id+'" style="'+mostrarHist+'">'
@@ -5342,6 +5410,8 @@ function coletarEdicoesOferta(id) {
     restricoes: restricoes,
     importante: get('importante'),
     origem: get('origem'),
+    // So vai quando a origem e "Bancos selecionados" (um registro por banco).
+    origens: get('origem') === 'Bancos selecionados' ? origensMarcadas(id) : undefined,
     destino: get('destino'),
     bonusMax: bonusMaxRaw !== '' ? Number(bonusMaxRaw) : null,
     programaCompra: get('programacompra')
@@ -5450,6 +5520,10 @@ async function aprovarOfertaPendente(id, enviarWhats) {
   fb.style.color='var(--muted)'; fb.textContent = enviarWhats ? 'Aprovando...' : 'Aprovando (só Radar)...';
   try {
     var edits = coletarEdicoesOferta(id);
+    if (edits.categoria === 'transferencia' && edits.origem === 'Bancos selecionados' && !edits.semHistorico && !(edits.origens||[]).length) {
+      fb.style.color = '#f87171'; fb.textContent = 'Marque pelo menos um banco em "Bancos da campanha".';
+      return;
+    }
     var r = await fetch(CDV_PROXY+'/ofertas/aprovar', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({id:id, edits:edits})
