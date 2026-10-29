@@ -31,7 +31,9 @@
         "function _tsPassagem(",
         "function abrirMesclar(",
         "function acInput(",
-        "function acSelect("
+        "function acSelect(",
+        "function asCarregar(",
+        "id=\"panel-assin\""
       ]
     },
     "index.js": {
