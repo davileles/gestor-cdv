@@ -1047,6 +1047,14 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <button id="btn-limpar-ofertas" class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px" onclick="limparTodasOfertasPendentes()">🗑️ Limpar todas</button>
     <button id="btn-refresh-ofertas" class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px" onclick="carregarOfertasPendentes()">↻ Atualizar</button>
   </div>
+  <div class="card" id="ofap-card" style="margin-bottom:14px;padding:12px 14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn" id="ofap-toggle" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:7px 12px" onclick="ofapAlternar()">📋 Já aprovadas <span id="ofap-qtd" style="color:var(--muted2)"></span></button>
+      <input type="text" id="ofap-busca" placeholder="Buscar nas aprovadas (programa, banco, bônus…)" oninput="ofapAbrir(true);renderOfertasAprovadas()" style="flex:1 1 220px;font-size:12px;padding:7px 10px"/>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer"><input type="checkbox" id="ofap-auto" onchange="renderOfertasAprovadas()"/> Incluir automáticas (Méliuz etc.)</label>
+    </div>
+    <div id="ofap-lista" style="display:none;margin-top:10px"></div>
+  </div>
   <div id="ofertas-lista"></div>
 </div>
 
@@ -5001,6 +5009,7 @@ async function carregarOfertasPendentes() {
     ofertasPendentesData = data.items || [];
     renderOfertasPendentes();
     atualizarBadgeOfertas();
+    carregarOfertasAprovadas();
   } catch(e) {
     lista.innerHTML = '<div class="alerta-empty">⚠️ Não foi possível carregar as ofertas pendentes.</div>';
   }
@@ -5029,6 +5038,7 @@ function renderOfertasPendentes() {
   }
   lista.innerHTML = ofertasPendentesData.map(renderOfertaPendenteCard).join('');
   ofertasPendentesData.forEach(function(o){ atualizarSemHist(o.id); });
+  if (ofertasAprovadasData.length) marcarParecidasAprovadas();
 }
 
 function ofCatOptions(sel) {
@@ -5059,7 +5069,7 @@ function renderOfertaPendenteCard(o) {
   return '<div class="alerta-card" id="oferta-card-'+o.id+'"'+cardStyle+'>'
     +'<div class="alerta-header">'
     +'<span class="alerta-id">'+(o.emoji||'📰')+'</span>'
-    +'<span class="alerta-rota">'+escapeHtml(o.titulo||'')+'</span>'    +badgeEncerrada    +badgeSituacaoHistorico(o)    +badgeOrigemOferta(o)    +'<span class="alerta-time">'+data+'</span>'
+    +'<span class="alerta-rota">'+escapeHtml(o.titulo||'')+'</span>'    +badgeEncerrada    +badgeSituacaoHistorico(o)    +badgeOrigemOferta(o)    +'<span id="of-parecida-'+o.id+'"></span>'    +'<span class="alerta-time">'+data+'</span>'
     +'</div>'
     +'<div style="padding:14px;display:flex;flex-direction:column;gap:10px">'
       +blocoSituacaoHistorico(o)
@@ -5175,6 +5185,129 @@ function blocoOriginalOferta(o) {
 }
 
 function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+// ══ JÁ APROVADAS (consulta rápida para não repetir oferta) ══
+// Lê ofertas.json do painel (as últimas 100 publicadas no Radar, mais recente
+// primeiro). Por padrão mostra só as aprovadas à mão — as variações automáticas
+// do Méliuz/cashback ficam escondidas, salvo marcar "Incluir automáticas".
+// Cada card da fila ganha o selo "PARECIDA COM APROVADA" quando o título bate
+// com uma aprovada dos últimos 10 dias (palavras em comum).
+var ofertasAprovadasData = [];
+var _ofapAberto = false;
+
+async function carregarOfertasAprovadas() {
+  try {
+    var r = await fetch(CDV_PROXY+'/conteudo/ofertas.json?t='+Date.now(), {cache:'no-cache', signal:AbortSignal.timeout(15000)});
+    if (!r.ok) throw new Error('status '+r.status);
+    var d = await r.json();
+    var itens = Array.isArray(d) ? d : (d.items || []);
+    itens.sort(function(a,b){ return String(b.publicadoEm||'').localeCompare(String(a.publicadoEm||'')); });
+    ofertasAprovadasData = itens;
+  } catch(e) {
+    var l = document.getElementById('ofap-lista');
+    if (l) l.innerHTML = '<div style="font-size:12px;color:var(--muted2)">⚠️ Não foi possível carregar as aprovadas.</div>';
+    return;
+  }
+  renderOfertasAprovadas();
+  marcarParecidasAprovadas();
+}
+
+function ofapAlternar() { ofapAbrir(!_ofapAberto); }
+function ofapAbrir(abrir) {
+  _ofapAberto = !!abrir;
+  var l = document.getElementById('ofap-lista');
+  if (l) l.style.display = _ofapAberto ? '' : 'none';
+}
+
+var _OFAP_VAZIAS = {de:1,da:1,do:1,das:1,dos:1,na:1,no:1,nas:1,nos:1,em:1,e:1,o:1,a:1,os:1,as:1,para:1,pra:1,com:1,ao:1,aos:1,um:1,uma:1,ate:1,por:1,seu:1,sua:1,seus:1,suas:1,mais:1,ou:1,entre:1};
+function ofapPalavras(t) {
+  return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9% ]+/g,' ').split(/\s+/)
+    .map(function(w){ return w.length > 3 ? w.replace(/(es|s)$/,'') : w; })
+    .filter(function(w){ return w && !_OFAP_VAZIAS[w]; });
+}
+function ofapSemelhanca(a, b) {
+  var A = {}, B = {}, ia = 0, uni = 0;
+  ofapPalavras(a).forEach(function(w){ A[w]=1; });
+  ofapPalavras(b).forEach(function(w){ B[w]=1; });
+  Object.keys(A).forEach(function(w){ uni++; if (B[w]) ia++; });
+  Object.keys(B).forEach(function(w){ if (!A[w]) uni++; });
+  return uni ? ia/uni : 0;
+}
+
+function ofapQuando(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+
+function renderOfertasAprovadas() {
+  var l = document.getElementById('ofap-lista');
+  if (!l) return;
+  var comAuto = (document.getElementById('ofap-auto')||{}).checked;
+  var termo = ((document.getElementById('ofap-busca')||{}).value || '').trim();
+  var base = ofertasAprovadasData.filter(function(o){ return comAuto || !o.publicadaAutomaticamente; });
+  var qtd = document.getElementById('ofap-qtd');
+  if (qtd) qtd.textContent = '(' + base.length + ')';
+  var lista = base;
+  if (termo) {
+    var ps = ofapPalavras(termo);
+    lista = base.filter(function(o){
+      var alvo = ofapPalavras([o.titulo,o.programa,o.bonus,o.loja,o.cupom,o.origem,o.destino,OFERTA_CAT_LABELS_AP[o.categoria]].join(' ')).join(' ');
+      return ps.every(function(p){ return alvo.indexOf(p) !== -1; });
+    });
+  }
+  if (!base.length) { l.innerHTML = '<div style="font-size:12px;color:var(--muted2)">Nenhuma oferta aprovada recentemente.</div>'; return; }
+  if (!lista.length) { l.innerHTML = '<div style="font-size:12px;color:var(--muted2)">Nada encontrado para "' + escapeHtml(termo) + '".</div>'; return; }
+  var mais = ofertasAprovadasData.length ? ofapQuando(ofertasAprovadasData[ofertasAprovadasData.length-1].publicadoEm) : '';
+  l.innerHTML = '<div style="font-size:11px;color:var(--muted2);margin-bottom:6px">Últimas publicadas no Radar' + (mais ? ' (desde ' + mais + ')' : '') + '.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto">'
+    + lista.map(function(o){
+        var venc = prazoVencido(o.prazo);
+        var det = [o.programa, o.bonus, (o.prazo && !/n[aã]o informado/i.test(o.prazo)) ? 'até ' + o.prazo : ''].filter(Boolean).join(' · ');
+        return '<div style="display:flex;gap:10px;align-items:baseline;font-size:12px;padding:6px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2)' + (venc ? ';opacity:.6' : '') + '">'
+          + '<span style="color:var(--muted2);white-space:nowrap;font-variant-numeric:tabular-nums">' + ofapQuando(o.publicadoEm) + '</span>'
+          + '<span style="flex:1;min-width:0"><span style="color:var(--text)">' + escapeHtml((o.emoji ? o.emoji + ' ' : '') + (o.titulo||'')) + '</span>'
+          + (det ? '<br><span style="color:var(--muted);font-size:11px">' + escapeHtml(det) + (venc ? ' · encerrada' : '') + '</span>' : '')
+          + '</span>'
+          + (o.publicadaAutomaticamente ? '<span style="font-size:10px;color:var(--muted2);white-space:nowrap">auto</span>' : '')
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
+function marcarParecidasAprovadas() {
+  var limite = Date.now() - 10*24*3600*1000;
+  var recentes = ofertasAprovadasData.filter(function(a){
+    return !a.publicadaAutomaticamente && new Date(a.publicadoEm||0).getTime() >= limite;
+  });
+  ofertasPendentesData.forEach(function(o){
+    var alvo = document.getElementById('of-parecida-'+o.id);
+    if (!alvo) return;
+    var s = o.situacaoHistorico;
+    if (s && (s.tipo === 'reenvio' || s.tipo === 'duplicada_fila')) { alvo.innerHTML = ''; return; }
+    var melhor = null, nota = 0;
+    recentes.forEach(function(a){
+      if (a.id === o.id) return;
+      var n = ofapSemelhanca(o.titulo, a.titulo);
+      if (a.categoria && o.categoria && a.categoria === o.categoria) n += 0.05;
+      if (n > nota) { nota = n; melhor = a; }
+    });
+    if (!melhor || nota < 0.7) { alvo.innerHTML = ''; return; }
+    var dica = 'Aprovada em ' + ofapQuando(melhor.publicadoEm) + ': ' + (melhor.titulo||'');
+    alvo.innerHTML = '<span title="' + escapeAttr(dica) + '" onclick="ofapVer(\'' + escapeAttr(String(melhor.titulo||'').slice(0,40)).replace(/'/g,'') + '\')" style="cursor:pointer;background:#713f12;color:#fde68a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px">&#128203; PARECIDA COM APROVADA · ' + ofapQuando(melhor.publicadoEm).split(',')[0] + '</span>';
+  });
+}
+
+function ofapVer(t) {
+  var b = document.getElementById('ofap-busca');
+  if (b) b.value = t;
+  ofapAbrir(true);
+  renderOfertasAprovadas();
+  var c = document.getElementById('ofap-card');
+  if (c) c.scrollIntoView({behavior:'smooth', block:'start'});
+}
 
 function atualizarPrevia(id) {
   var el = document.getElementById('of-msg-'+id);
@@ -5327,6 +5460,9 @@ async function aprovarOfertaPendente(id, enviarWhats) {
       var ofertaOriginal = ofertasPendentesData.find(function(o){return o.id===id;}) || {};
       var ofertaEditada = Object.assign({}, ofertaOriginal, edits);
       ofertasPendentesData = ofertasPendentesData.filter(function(o){return o.id!==id;});
+      ofertasAprovadasData = [Object.assign({}, ofertaEditada, {publicadoEm: new Date().toISOString(), publicadaAutomaticamente: false})]
+        .concat(ofertasAprovadasData.filter(function(o){ return o.id !== id; }));
+      renderOfertasAprovadas();
       atualizarBadgeOfertas();
 
       // Usa o conteúdo do textarea de preview (permite edição manual antes de aprovar)
