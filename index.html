@@ -412,6 +412,11 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .dash-est{color:var(--muted2);font-weight:800}
 @media (max-width:600px){.dash-hl-nome{width:110px}.dash-filtros #dash-escopos{margin-left:0!important}}
 /* ══ Aba Assinaturas (Hubla) ══ */
+.as-visoes{display:flex;gap:6px;margin-bottom:14px}
+.as-b-sem_cadastro{background:rgba(255,88,94,.15);color:var(--accent)}.as-b-concierge{background:rgba(18,110,255,.15);color:var(--blue)}
+.as-grupos-tags{display:flex;flex-wrap:wrap;gap:4px}
+.as-grupo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.as-aviso{font-size:12px;color:var(--muted2);margin:-4px 0 12px}
 .as-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .as-sinc{font-size:12px;color:var(--muted2)}
 .as-sinc strong{color:var(--muted)}
@@ -922,6 +927,22 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 
 <!-- ══ PAINEL ASSINATURAS (Hubla → proxy /hubla/assinaturas) ══ -->
 <div class="main-panel" id="panel-assin">
+  <div class="as-visoes">
+    <button class="dash-chip on" id="as-v-assin" onclick="asTrocaVisao('assin')">Assinaturas</button>
+    <button class="dash-chip" id="as-v-grupos" onclick="asTrocaVisao('grupos')">Grupos × acesso</button>
+  </div>
+  <div id="as-bloco-grupos" style="display:none">
+    <div class="as-topo">
+      <div class="as-sinc" id="ag-sinc">—</div>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="agCarregar(true)">↻ Atualizar</button>
+    </div>
+    <div class="as-aviso">Quem está nos grupos do CDV sem acesso ativo na Hubla, pelo telefone. Só relatório: ninguém é removido daqui. Admins e números da casa não entram.</div>
+    <div class="as-kpis" id="ag-kpis"></div>
+    <div class="as-filtros"><input type="search" id="ag-busca" placeholder="Buscar nome, e-mail, telefone ou grupo" oninput="agRender()"/></div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="ag-lista"></div></div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="ag-grupos"></div></div>
+  </div>
+  <div id="as-bloco-assin">
   <div class="as-topo">
     <div class="as-sinc" id="as-sinc">Carregando…</div>
     <div style="display:flex;gap:8px">
@@ -939,6 +960,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <div id="as-lista"></div>
   </div>
   <div class="card as-div" id="as-divergencias" style="display:none"></div>
+  </div>
 </div>
 
 <!-- ══ PAINEL APROVAR OFERTAS ══ -->
@@ -1497,7 +1519,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
   var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/passagens/listar','/voos/precos','/hubla/assinaturas'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1723,11 +1745,67 @@ document.getElementById('logo-img').src = "data:image/png;base64,/9j/4AAQSkZJRgA
 // ══ ASSINATURAS (Hubla) ══
 // Lê /hubla/assinaturas do proxy (situação e fim calculados lá). Visões pelos
 // cartões de cima: vencendo, venceram, vigentes, teste, renovação desligada, todas.
-var AS = { dados: null, visao: 'vencendo', limite: 100, poll: null };
+var AS = { dados: null, visao: 'vencendo', limite: 100, poll: null, aba: 'assin' };
 var AS_PROXY = 'https://cdv-proxy-production.up.railway.app';
 var AS_DIA = 86400000;
 
-function asAbrir() { if (!AS.dados) asCarregar(); }
+function asAbrir() { if (AS.aba === 'grupos') { if (!AG.dados) agCarregar(false); } else if (!AS.dados) asCarregar(); }
+
+function asTrocaVisao(v) {
+  AS.aba = v;
+  document.getElementById('as-v-assin').classList.toggle('on', v === 'assin');
+  document.getElementById('as-v-grupos').classList.toggle('on', v === 'grupos');
+  document.getElementById('as-bloco-assin').style.display = v === 'assin' ? '' : 'none';
+  document.getElementById('as-bloco-grupos').style.display = v === 'grupos' ? '' : 'none';
+  asAbrir();
+}
+
+// ── Grupos × acesso (GET /hubla/grupos-auditoria) ──
+var AG = { dados: null, filtro: 'sem_cadastro' };
+var AG_ROT = { sem_cadastro: 'Sem cadastro na Hubla', vencido: 'Acesso vencido', concierge: 'Cliente do concierge' };
+function agCarregar(forcar) {
+  document.getElementById('ag-sinc').textContent = 'Conferindo os grupos… (leva cerca de 30 s)';
+  fetch(AS_PROXY + '/hubla/grupos-auditoria' + (forcar ? '?forcar=1' : '')).then(function(r){ return r.json(); }).then(function(d) {
+    if (!d || !d.ok) throw new Error((d && d.erro) || 'falha ao carregar');
+    AG.dados = d; agRender();
+  }).catch(function(e){ document.getElementById('ag-sinc').textContent = 'Erro: ' + e.message; });
+}
+function agFiltro(f) { AG.filtro = f; agRender(); }
+function agRender() {
+  var d = AG.dados; if (!d) return;
+  document.getElementById('ag-sinc').innerHTML = 'Conferido em <strong>' + new Date(d.geradoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong>' +
+    (d.ignorados && d.ignorados.length ? ' · fora da conferência: ' + d.ignorados.map(escapeHtml).join(', ') : '');
+  var t = d.totais || {};
+  var cards = [['sem_cadastro', 'perigo'], ['vencido', 'alerta'], ['concierge', 'info']];
+  document.getElementById('ag-kpis').innerHTML = cards.map(function(c) {
+    return '<button class="as-kpi ' + c[1] + (AG.filtro === c[0] ? ' on' : '') + '" onclick="agFiltro(\'' + c[0] + '\')"><div class="as-kpi-t">' + AG_ROT[c[0]] + '</div><div class="as-kpi-v">' + (t[c[0]] || 0) + '</div></button>';
+  }).join('');
+  var q = (document.getElementById('ag-busca').value || '').toLowerCase().trim();
+  var lista = (d.pessoas || []).filter(function(p) {
+    if (p.situacao !== AG.filtro) return false;
+    if (!q) return true;
+    return ((p.nome || '') + ' ' + (p.email || '') + ' ' + (p.telefone || '') + ' ' + (p.grupos || []).join(' ')).toLowerCase().indexOf(q) >= 0;
+  });
+  var alvo = document.getElementById('ag-lista');
+  if (!lista.length) { alvo.innerHTML = '<div class="as-vazio">Ninguém nesta situação.</div>'; }
+  else alvo.innerHTML = '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Situação</th><th>Produtos</th><th>Venceu</th><th>Grupos</th></tr></thead><tbody>' +
+    lista.map(function(p) {
+      var tel = String(p.telefone || '').replace(/\D/g, '');
+      var venc = p.venceuEm ? asData(p.venceuEm) + '<div class="as-dias">há ' + p.diasDesdeVencimento + ' dia' + (p.diasDesdeVencimento === 1 ? '' : 's') + '</div>' : '—';
+      return '<tr>' +
+        '<td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email || '') + (p.email ? ' · ' : '') + '+' + tel + ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener">WhatsApp</a></div></td>' +
+        '<td data-l="Situação"><span class="as-badge as-b-' + p.situacao + '">' + AG_ROT[p.situacao] + '</span></td>' +
+        '<td data-l="Produtos">' + ((p.produtos || []).map(escapeHtml).join('<br>') || '—') + '</td>' +
+        '<td data-l="Venceu">' + venc + '</td>' +
+        '<td data-l="Grupos"><div class="as-grupos-tags">' + (p.grupos || []).map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g) + '</span>'; }).join('') + '</div></td>' +
+      '</tr>';
+    }).join('') + '</tbody></table>';
+  document.getElementById('ag-grupos').innerHTML = '<table class="as-tabela"><thead><tr><th>Grupo</th><th>Com acesso</th><th>Sem cadastro</th><th>Vencido</th><th>Concierge</th><th>Admins</th></tr></thead><tbody>' +
+    (d.grupos || []).map(function(g) {
+      return '<tr><td data-l="Grupo"><div class="as-nome">' + escapeHtml(g.nome || g.jid) + '</div></td><td data-l="Com acesso">' + g.ativo + '</td><td data-l="Sem cadastro">' + g.semCadastro +
+        '</td><td data-l="Vencido">' + g.vencido + '</td><td data-l="Concierge">' + g.concierge + '</td><td data-l="Admins">' + g.admins + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
 
 function asData(iso) {
   if (!iso) return '—';
