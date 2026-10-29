@@ -420,7 +420,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .as-sinc{font-size:12px;color:var(--muted2)}
 .as-sinc strong{color:var(--muted)}
-.as-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.as-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin-bottom:14px}
 .as-kpi{width:100%;margin:0;min-height:74px;display:flex;flex-direction:column;justify-content:space-between;font-size:inherit;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font-family:var(--font);color:var(--text)}
 .as-kpi:hover{border-color:var(--accent)}
 .as-kpi.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
@@ -457,6 +457,18 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-div p{font-size:12px;color:var(--muted2);margin:0 0 8px}
 .as-div ul{margin:0;padding-left:18px;font-size:12px;columns:2;column-gap:24px}
 .as-mais{display:block;margin:12px auto 0;width:auto}
+.as-dica{font-size:11px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border)}
+.as-pessoa{cursor:pointer}
+.as-of{padding:6px 8px;border-radius:8px;border:1px solid var(--border);margin-bottom:5px;opacity:.8}
+.as-of.dest{opacity:1;border-color:var(--accent);background:var(--surface)}
+.as-of-n{font-weight:700;font-size:12.5px}
+.as-of-l{font-size:11.5px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.as-renov{font-size:10px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:10px}
+.as-renov.on{background:rgba(47,179,122,.15);color:#2fb37a}.as-renov.off{background:rgba(240,160,32,.15);color:#f0a020}
+.as-hist-fundo{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.as-hist-caixa{background:var(--bg);border:1px solid var(--border);border-radius:14px;max-width:900px;width:100%;padding:14px}
+.as-hist-topo{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.as-hist-x{background:none;border:none;color:var(--text);font-size:18px;cursor:pointer}
 @media (max-width:680px){
   .as-tabela thead{display:none}
   .as-tabela,.as-tabela tbody,.as-tabela tr,.as-tabela td{display:block;width:100%}
@@ -1904,6 +1916,16 @@ function asIndexarPessoas() {
     return k;
   };
   L.forEach(function(a){ chaves(a).forEach(function(k){ (idx[k] = idx[k] || []).push(a); }); });
+  L.forEach(function(a, i){ a._i = i; });
+  // Junta e-mail e telefone da mesma pessoa (quem usou e-mails diferentes com o mesmo número).
+  var pai = {};
+  var raiz = function(x){ while (pai[x] !== undefined && pai[x] !== x) x = pai[x]; return x; };
+  L.forEach(function(a, i) {
+    pai[i] = pai[i] === undefined ? i : pai[i];
+    chaves(a).forEach(function(k){ var j = idx[k][0]._i; var ri = raiz(i), rj = raiz(j); if (ri !== rj) pai[rj] = ri; });
+  });
+  AS.pessoas = {};
+  L.forEach(function(a, i){ var r = 'p' + raiz(i); a._pessoa = r; (AS.pessoas[r] = AS.pessoas[r] || []).push(a); });
   var t = function(x){ return x ? new Date(x).getTime() : 0; };
   L.forEach(function(a) {
     var vistos = {}, segue = [], tambem = [];
@@ -1966,7 +1988,8 @@ function asRender() {
   var base = asBase();
   document.getElementById('as-kpis').innerHTML = Object.keys(AS_VISOES).map(function(k) {
     var v = AS_VISOES[k];
-    var n = base.filter(asFiltroVisao(k)).length;
+    var vistos = {}; base.filter(asFiltroVisao(k)).forEach(function(a){ vistos[a._pessoa || a.id] = 1; });
+    var n = Object.keys(vistos).length;
     return '<button class="as-kpi ' + v.c + (AS.visao === k ? ' on' : '') + '" onclick="asVisao(\'' + k + '\')">' +
       '<div class="as-kpi-t">' + v.t + '</div><div class="as-kpi-v">' + n + '</div></button>';
   }).join('');
@@ -1980,12 +2003,16 @@ function asRender() {
     return t(b.inicio || b.criadaEm) - t(a.inicio || a.criadaEm);
   });
 
+  // Uma linha por pessoa, na ordem da visão; as assinaturas que entraram na visão ficam destacadas.
+  var ordem = [], grupos = {};
+  lista.forEach(function(a){ var p = a._pessoa || a.id; if (!grupos[p]) { grupos[p] = []; ordem.push(p); } grupos[p].push(a); });
   var alvo = document.getElementById('as-lista');
-  if (!lista.length) { alvo.innerHTML = '<div class="as-vazio">Nenhuma assinatura nesta visão.</div>'; asDivergencias(); return; }
-  var mostrar = lista.slice(0, AS.limite);
-  alvo.innerHTML = '<table class="as-tabela"><thead><tr><th>Membro</th><th>Oferta</th><th>Início</th><th>Fim</th><th>Situação</th><th>Renovação</th></tr></thead><tbody>' +
-    mostrar.map(asLinha).join('') + '</tbody></table>' +
-    (lista.length > AS.limite ? '<button class="btn btn-copy as-mais" onclick="AS.limite+=100;asRender()">Mostrar mais (' + (lista.length - AS.limite) + ')</button>' : '');
+  if (!ordem.length) { alvo.innerHTML = '<div class="as-vazio">Ninguém nesta visão.</div>'; asDivergencias(); return; }
+  var mostrar = ordem.slice(0, AS.limite);
+  alvo.innerHTML = '<div class="as-dica">Duplo clique na linha (ou em "histórico") abre todas as assinaturas da pessoa.</div>' +
+    '<table class="as-tabela"><thead><tr><th>Membro</th><th>Ofertas</th></tr></thead><tbody>' +
+    mostrar.map(function(p){ return asLinhaPessoa(p, grupos[p]); }).join('') + '</tbody></table>' +
+    (ordem.length > AS.limite ? '<button class="btn btn-copy as-mais" onclick="AS.limite+=100;asRender()">Mostrar mais (' + (ordem.length - AS.limite) + ')</button>' : '');
   asDivergencias();
 }
 
@@ -2011,6 +2038,69 @@ function asLinha(a) {
     '<td data-l="Renovação">' + renov + '</td>' +
   '</tr>';
 }
+
+function asRenovTexto(a) {
+  if (a.situacao === 'vitalicio' || a.fonte === 'acesso') return '';
+  var r = a.renovacaoAutomatica === true ? '<span class="as-renov on">renova</span>' : (a.renovacaoAutomatica === false ? '<span class="as-renov off">não renova</span>' : '');
+  var pg = a.formaPagamento ? ({ credit_card: 'Cartão', pix: 'Pix', bank_slip: 'Boleto' }[a.formaPagamento] || escapeHtml(a.formaPagamento)) + (a.cicloMeses ? ' · ' + a.cicloMeses + (a.cicloMeses === 1 ? ' mês' : ' meses') : '') : '';
+  return r + (pg ? ' <span class="as-sub" style="display:inline">' + pg + '</span>' : '');
+}
+function asFimTexto(a) {
+  if (a.situacao === 'vitalicio') return 'vitalício';
+  var t = (a.situacao === 'encerrada' ? 'terminou ' : 'até ') + asData(a.fim);
+  if (a.diasRestantes !== null && a.diasRestantes !== undefined && a.situacao !== 'encerrada') {
+    var cls = a.diasRestantes <= 7 ? 'urg' : (a.diasRestantes <= 30 ? 'med' : '');
+    t += ' <span class="as-dias ' + cls + '" style="display:inline">(' + (a.diasRestantes <= 0 ? 'vence hoje' : a.diasRestantes + ' d') + ')</span>';
+  }
+  return t;
+}
+function asOfertaMini(a, destaque) {
+  return '<div class="as-of' + (destaque ? ' dest' : '') + '">' +
+    '<div class="as-of-n">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') +
+      (a.liberaPainel ? ' <span class="as-painel" style="display:inline">painel</span>' : '') + '</div>' +
+    '<div class="as-of-l"><span class="as-badge as-b-' + escapeHtml(a.situacao || 'desconhecida') + '">' + escapeHtml(a.situacao || '—') + '</span> ' +
+      asFimTexto(a) + ' ' + asRenovTexto(a) + '</div>' +
+    (a.ofertaNome && a.produtoNome && a.ofertaNome !== a.produtoNome ? '<div class="as-sub">' + escapeHtml(a.produtoNome) + '</div>' : '') +
+  '</div>';
+}
+function asLinhaPessoa(pid, naVisao) {
+  var todas = (AS.pessoas && AS.pessoas[pid]) || naVisao;
+  var a0 = naVisao[0];
+  var ids = {}; naVisao.forEach(function(a){ ids[a.id] = 1; });
+  var ativas = todas.filter(function(a){ return !ids[a.id] && asAtiva(a); });
+  var t = function(x){ return x ? new Date(x).getTime() : 9e15; };
+  ativas.sort(function(a, b){ return t(a.fim) - t(b.fim); });
+  var tel = String(a0.telefone || todas.map(function(a){ return a.telefone; }).filter(Boolean)[0] || '').replace(/\D/g, '');
+  var emails = {}; todas.forEach(function(a){ if (a.email) emails[a.email] = 1; });
+  var nAtivas = todas.filter(asAtiva).length;
+  var contato = Object.keys(emails).map(escapeHtml).join(' · ') + (tel ? ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>' : '');
+  return '<tr class="as-pessoa" ondblclick="asHistorico(\'' + pid + '\')">' +
+    '<td data-l="Membro"><div class="as-nome">' + escapeHtml(a0.nome || a0.email || '(sem nome)') + '</div><div class="as-sub">' + contato + '</div>' +
+      '<div class="as-sub">' + nAtivas + ' ativa' + (nAtivas === 1 ? '' : 's') + ' · ' + todas.length + ' no total · <a href="#" onclick="event.preventDefault();asHistorico(\'' + pid + '\')">histórico</a></div></td>' +
+    '<td data-l="Ofertas">' + naVisao.map(function(a){ return asOfertaMini(a, true); }).join('') +
+      ativas.map(function(a){ return asOfertaMini(a, false); }).join('') + '</td>' +
+  '</tr>';
+}
+function asHistorico(pid) {
+  var todas = ((AS.pessoas && AS.pessoas[pid]) || []).slice();
+  if (!todas.length) return;
+  try { window.getSelection().removeAllRanges(); } catch (e) {}
+  var t = function(x){ return x ? new Date(x).getTime() : 0; };
+  todas.sort(function(a, b){ return (asAtiva(b) - asAtiva(a)) || (t(b.inicio || b.criadaEm) - t(a.inicio || a.criadaEm)); });
+  var p = todas[0];
+  var fundo = document.getElementById('as-hist');
+  if (!fundo) { fundo = document.createElement('div'); fundo.id = 'as-hist'; fundo.className = 'as-hist-fundo'; fundo.onclick = function(e){ if (e.target === fundo) fundo.style.display = 'none'; }; document.body.appendChild(fundo); }
+  fundo.innerHTML = '<div class="as-hist-caixa"><div class="as-hist-topo"><div><div class="as-nome">' + escapeHtml(p.nome || p.email || '') + '</div><div class="as-sub">' +
+      todas.length + ' assinatura' + (todas.length === 1 ? '' : 's') + ' / acessos</div></div><button class="as-hist-x" onclick="document.getElementById(\'as-hist\').style.display=\'none\'">✕</button></div>' +
+    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Início</th><th>Fim</th><th>Situação</th><th>Renovação</th></tr></thead><tbody>' +
+    todas.map(function(a){ return '<tr><td data-l="Oferta"><div class="as-nome" style="font-weight:600">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') + '</div><div class="as-sub">' + escapeHtml(a.produtoNome || '') + (a.liberaPainel ? ' · libera o painel' : '') + (a.email ? ' · ' + escapeHtml(a.email) : '') + '</div></td>' +
+      '<td data-l="Início">' + asData(a.inicio || a.criadaEm) + '</td><td data-l="Fim">' + asFimTexto(a) + '</td>' +
+      '<td data-l="Situação"><span class="as-badge as-b-' + escapeHtml(a.situacao || 'desconhecida') + '">' + escapeHtml(a.situacao || '—') + '</span></td>' +
+      '<td data-l="Renovação">' + (asRenovTexto(a) || '—') + '</td></tr>'; }).join('') +
+    '</tbody></table></div>';
+  fundo.style.display = 'flex';
+}
+document.addEventListener('keydown', function(e){ var h = document.getElementById('as-hist'); if (e.key === 'Escape' && h) h.style.display = 'none'; });
 
 function asOutras(a) {
   if (a.situacao !== 'encerrada' && (a.diasRestantes === null || a.diasRestantes === undefined) && a.renovacaoAutomatica !== false) return '';
