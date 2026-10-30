@@ -1059,6 +1059,14 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     </div>
     <div id="ofap-lista" style="display:none;margin-top:10px"></div>
   </div>
+  <div class="card" id="oenv-card" style="margin-bottom:14px;padding:12px 14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button type="button" class="btn" id="oenv-toggle" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:7px 12px" onclick="oenvAlternar()">🔁 Enviadas nos grupos · prorrogar <span id="oenv-qtd" style="color:var(--muted2)"></span></button>
+      <input type="text" id="oenv-busca" placeholder="Buscar nas enviadas (programa, banco, bônus…)" oninput="oenvAbrir(true);renderOfertasEnviadas()" style="flex:1 1 220px;font-size:12px;padding:7px 10px"/>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer"><input type="checkbox" id="oenv-encerradas" onchange="renderOfertasEnviadas()"/> Mostrar encerradas</label>
+    </div>
+    <div id="oenv-lista" style="display:none;margin-top:10px"></div>
+  </div>
   <div id="ofertas-lista"></div>
 </div>
 
@@ -1559,9 +1567,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -5308,6 +5316,144 @@ function ofapQuando(iso) {
   var d = new Date(iso);
   if (isNaN(d)) return '';
   return d.toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+}
+
+// ══ PRORROGAR OFERTA JÁ ENVIADA (desde 30/10/2026) ══
+// Lista o que saiu nos grupos nos últimos 60 dias (GET /ofertas/enviadas do
+// proxy, que lê o baileys). "Prorrogar" grava a nova data no Radar, estende o
+// registro do histórico de transferências SEM criar campanha nova e, se marcado,
+// reenvia nos mesmos grupos com "🔁 PRORROGADO ATÉ DD/MM!". O ACABA HOJE passa
+// para a data nova.
+var ofertasEnviadasData = [];
+var _oenvAberto = false, _oenvForm = null;
+function oenvAlternar() { oenvAbrir(!_oenvAberto); }
+function oenvAbrir(abrir) {
+  _oenvAberto = !!abrir;
+  var l = document.getElementById('oenv-lista');
+  if (l) l.style.display = _oenvAberto ? 'block' : 'none';
+  if (_oenvAberto && !ofertasEnviadasData.length) carregarOfertasEnviadas();
+}
+function oenvHojeIso() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); }
+function oenvPrazoIso(prazo) {
+  var m = String(prazo||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m ? m[3] + '-' + ('0'+m[2]).slice(-2) + '-' + ('0'+m[1]).slice(-2) : '';
+}
+function oenvIsoBR(iso) { var m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3]+'/'+m[2]+'/'+m[1] : ''; }
+async function carregarOfertasEnviadas() {
+  var l = document.getElementById('oenv-lista');
+  if (l) l.innerHTML = '<div style="font-size:12px;color:var(--muted2)">Carregando…</div>';
+  try {
+    var r = await fetch(CDV_PROXY + '/ofertas/enviadas?t=' + Date.now(), { cache: 'no-cache' });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !j.ok) throw new Error(j.erro || ('status ' + r.status));
+    ofertasEnviadasData = j.itens || [];
+  } catch (e) {
+    if (l) l.innerHTML = '<div style="font-size:12px;color:#ff585e">Não consegui carregar as enviadas: ' + escapeHtml(e.message) + '</div>';
+    return;
+  }
+  renderOfertasEnviadas();
+}
+function renderOfertasEnviadas() {
+  var l = document.getElementById('oenv-lista');
+  if (!l) return;
+  var hoje = oenvHojeIso();
+  var comEnc = (document.getElementById('oenv-encerradas')||{}).checked;
+  var termo = ((document.getElementById('oenv-busca')||{}).value || '').trim();
+  var base = ofertasEnviadasData.filter(function(o){
+    var pz = oenvPrazoIso(o.prazo);
+    return comEnc || !pz || pz >= hoje;
+  });
+  var qtd = document.getElementById('oenv-qtd');
+  if (qtd) qtd.textContent = ofertasEnviadasData.length ? '(' + base.length + ')' : '';
+  var lista = base;
+  if (termo) {
+    var ps = ofapPalavras(termo);
+    lista = base.filter(function(o){
+      var alvo = ofapPalavras([o.titulo, o.programa, o.categoria, (o.grupos||[]).join(' ')].join(' ')).join(' ');
+      return ps.every(function(p){ return alvo.indexOf(p) !== -1; });
+    });
+  }
+  var topo = '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted2);margin-bottom:6px">'
+    + '<span>Ofertas do radar que saíram nos grupos (últimos 60 dias). Prorrogar não cria campanha nova no histórico.</span>'
+    + '<a href="#" onclick="carregarOfertasEnviadas();return false" style="color:var(--muted);white-space:nowrap">↻ Atualizar</a></div>';
+  if (!base.length) { l.innerHTML = topo + '<div style="font-size:12px;color:var(--muted2)">Nenhuma oferta ' + (comEnc ? '' : 'vigente ') + 'enviada nos grupos.</div>'; return; }
+  if (!lista.length) { l.innerHTML = topo + '<div style="font-size:12px;color:var(--muted2)">Nada encontrado para "' + escapeHtml(termo) + '".</div>'; return; }
+  l.innerHTML = topo + '<div style="display:flex;flex-direction:column;gap:4px;max-height:420px;overflow:auto">'
+    + lista.map(function(o){
+        var pz = oenvPrazoIso(o.prazo);
+        var venc = pz && pz < hoje;
+        var ult = (o.prorrogacoes||[]).length ? o.prorrogacoes[o.prorrogacoes.length-1] : null;
+        var gr = o.grupos || [];
+        var det = [o.programa, o.prazo ? 'prazo ' + o.prazo : 'sem prazo', gr.length + (gr.length === 1 ? ' grupo' : ' grupos') + (gr.length ? ': ' + gr.join(', ') : '')].filter(Boolean).join(' · ');
+        var selo = o.prazoOriginal || ult
+          ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:rgba(18,110,255,.15);color:var(--blue,#126eff);white-space:nowrap">🔁 prorrogada' + (o.prazoOriginal ? ' (era ' + escapeHtml(o.prazoOriginal) + ')' : '') + '</span>'
+          : '';
+        var aberto = _oenvForm === o.id;
+        var form = '';
+        if (aberto) {
+          var minIso = hoje;
+          var sugestao = pz && pz >= hoje ? pz : hoje;
+          form = '<div style="margin-top:8px;padding:10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);display:flex;flex-wrap:wrap;gap:10px;align-items:center">'
+            + '<label style="font-size:12px;color:var(--muted)">Nova data de encerramento <input type="date" id="oenv-data-' + o.id + '" min="' + minIso + '" value="' + sugestao + '" style="font-size:12px;padding:5px 8px;margin-left:6px"/></label>'
+            + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" id="oenv-reenviar-' + o.id + '" checked/> Reenviar aviso de prorrogação nos grupos</label>'
+            + '<span style="flex:1"></span>'
+            + '<button type="button" class="btn" style="font-size:12px;padding:6px 12px;background:#3f3f3f;color:#aaa" onclick="oenvFechar()">Cancelar</button>'
+            + '<button type="button" class="btn" id="oenv-ok-' + o.id + '" style="font-size:12px;padding:6px 12px" onclick="oenvConfirmar(\'' + o.id + '\')">🔁 Confirmar prorrogação</button>'
+            + '<div id="oenv-fb-' + o.id + '" style="flex-basis:100%;font-size:12px;color:var(--muted)"></div>'
+            + '</div>';
+        }
+        return '<div style="font-size:12px;padding:6px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2)' + (venc && !aberto ? ';opacity:.6' : '') + '">'
+          + '<div style="display:flex;gap:10px;align-items:baseline">'
+          + '<span style="color:var(--muted2);white-space:nowrap;font-variant-numeric:tabular-nums">' + ofapQuando(o.enviadoEm) + '</span>'
+          + '<span style="flex:1;min-width:0"><span style="color:var(--text)">' + escapeHtml((o.emoji ? o.emoji + ' ' : '') + (o.titulo||'')) + '</span>'
+          + '<br><span style="color:var(--muted);font-size:11px">' + escapeHtml(det) + (venc ? ' · encerrada' : '') + '</span></span>'
+          + selo
+          + (aberto ? '' : '<button type="button" class="btn" style="font-size:11px;padding:5px 10px;background:var(--surface);color:var(--text);border:1px solid var(--border2);white-space:nowrap" onclick="oenvAbrirForm(\'' + o.id + '\')">🔁 Prorrogar</button>')
+          + '</div>' + form + '</div>';
+      }).join('')
+    + '</div>';
+}
+function oenvAbrirForm(id) { _oenvForm = id; renderOfertasEnviadas(); }
+function oenvFechar() { _oenvForm = null; renderOfertasEnviadas(); }
+async function oenvConfirmar(id) {
+  var o = ofertasEnviadasData.find(function(x){ return x.id === id; });
+  var dataEl = document.getElementById('oenv-data-' + id);
+  var reenviar = !!(document.getElementById('oenv-reenviar-' + id)||{}).checked;
+  var fb = document.getElementById('oenv-fb-' + id);
+  var btn = document.getElementById('oenv-ok-' + id);
+  var iso = dataEl && dataEl.value;
+  if (!iso) { fb.style.color = '#ff585e'; fb.textContent = 'Escolha a nova data.'; return; }
+  if (iso < oenvHojeIso()) { fb.style.color = '#ff585e'; fb.textContent = 'A nova data já passou.'; return; }
+  var br = oenvIsoBR(iso);
+  var nGr = (o && o.grupos || []).length;
+  var pergunta = 'Prorrogar até ' + br + '?\n\n' + (reenviar
+    ? 'A mensagem "🔁 PRORROGADO ATÉ ' + br.slice(0,5) + '!" sai em ' + nGr + (nGr === 1 ? ' grupo' : ' grupos') + ' agora.'
+    : 'Só atualiza o prazo (Radar, histórico e ACABA HOJE), sem mensagem nos grupos.');
+  if (!confirm(pergunta)) return;
+  btn.disabled = true; fb.style.color = 'var(--muted)'; fb.textContent = 'Prorrogando…';
+  try {
+    var r = await fetch(CDV_PROXY + '/ofertas/prorrogar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, novoPrazo: br, reenviar: reenviar })
+    });
+    var j = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !j.ok) throw new Error(j.erro || ('status ' + r.status));
+    var partes = ['✓ Prorrogada até ' + br + '.'];
+    partes.push(j.reenviado ? 'Aviso na fila para ' + (j.grupos||[]).join(', ') + '.' : 'Sem reenvio nos grupos.');
+    if (j.historico === 'prazo_estendido') partes.push('Histórico de transferências: prazo estendido (sem campanha nova).');
+    else if (j.historico === 'sem_registro') partes.push('Histórico de transferências: nenhum registro encontrado para estender.');
+    if (j.avisos && j.avisos.length) partes.push('⚠️ ' + j.avisos.join(' '));
+    if (o) {
+      if (!o.prazoOriginal) o.prazoOriginal = o.prazo || '';
+      o.prazo = br;
+      o.prorrogacoes = (o.prorrogacoes || []).concat([{ para: br, em: new Date().toISOString(), reenviado: !!j.reenviado }]);
+    }
+    _oenvForm = null;
+    renderOfertasEnviadas();
+    alert(partes.join('\n'));
+  } catch (e) {
+    btn.disabled = false; fb.style.color = '#ff585e'; fb.textContent = 'Erro: ' + e.message;
+  }
 }
 
 function renderOfertasAprovadas() {
