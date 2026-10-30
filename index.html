@@ -6042,6 +6042,17 @@ async function enviarWA(msgId,statusId,fileKey) {
     } else {
       var body = {mensagem:texto,grupo:grupo};
       if (agendarEm) body.agendarEm = agendarEm;
+      // Agendamento com imagem: antes a imagem ficava para trás (só o texto ia
+      // para /enviar). O baileys guarda o anexo em base64 no próprio agendamento.
+      if (file && agendarEm) {
+        var b64 = await new Promise(function(ok, falha){
+          var fr = new FileReader();
+          fr.onload = function(){ ok(String(fr.result || '')); };
+          fr.onerror = function(){ falha(new Error('Não consegui ler a imagem anexada.')); };
+          fr.readAsDataURL(file);
+        });
+        body.anexo = { base64: b64, mimetype: file.type || 'image/jpeg', nomeArquivo: file.name || 'imagem' };
+      }
       r=await fetch(SERVER+'/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     }
     var d=await r.json();
