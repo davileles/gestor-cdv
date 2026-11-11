@@ -425,7 +425,11 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 @media (max-width:800px){.ar-col{grid-template-columns:1fr}}
 .ar-pess{font-size:12px;padding:6px 0;border-top:1px solid var(--border)}
 .ar-pess:first-child{border-top:0}
-.as-b-sem_cadastro{background:rgba(255,88,94,.15);color:var(--accent)}.as-b-concierge{background:rgba(18,110,255,.15);color:var(--blue)}
+.ar-gpainel{padding:10px;background:var(--surface2);border-radius:10px}
+.ar-gacoes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.ar-gacoes button{font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit}
+.ar-glista{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 12px}
+.as-b-sem_cadastro{background:rgba(255,88,94,.15);color:var(--accent)}.as-b-sem_direito{background:rgba(240,160,32,.15);color:#f0a020}.as-b-excecao{background:rgba(47,179,122,.15);color:#2fb37a}.as-b-concierge{background:rgba(18,110,255,.15);color:var(--blue)}
 .as-grupos-tags{display:flex;flex-wrap:wrap;gap:4px}
 .as-grupo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--muted);white-space:nowrap}
 .as-aviso{font-size:12px;color:var(--muted2);margin:-4px 0 12px}
@@ -1019,7 +1023,22 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <div class="as-sinc" id="ag-sinc">—</div>
       <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="agCarregar(true)">↻ Atualizar</button>
     </div>
-    <div class="as-aviso">Quem está nos grupos do CDV sem acesso ativo na Hubla, pelo telefone. Só relatório: ninguém é removido daqui. Admins e números da casa não entram.</div>
+    <div class="as-aviso">Quem está em cada grupo do CDV sem direito a ele, pelo telefone. Em grupo com regra de grupos (visão Regras de acesso), só conta como ativo quem tem oferta que dá aquele grupo; grupo sem regra aceita qualquer assinatura ativa. Admins e números da casa não entram. Esta lista não remove ninguém: a remoção é o cartão abaixo.</div>
+    <div class="card" id="rg-card">
+      <div class="ap-cab" style="padding:0 0 8px"><h4 class="ap-h" style="margin:0">Remoção pelo Tico</h4>
+        <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:6px 12px;width:auto;margin:0" onclick="rgCarregar(true)">↻ Conferir agora</button></div>
+      <div class="as-aviso" style="margin:0 0 10px">O Tico (tico-02/03/04, nunca a principal) tira do grupo quem ficou com a assinatura inválida para ele. Só remove, nunca inclui. Só em grupo com regra de grupos, só quem tem cadastro na Hubla, uma pessoa a cada 20 min, dentro da janela, com teto diário e rodízio entre os ticos. Nunca sai: sem cadastro, exceção, admin, cliente do concierge e números da casa. Se uma conta cair ou o WhatsApp limitar, a remoção pausa até você retomar.</div>
+      <div class="ar-barra" style="justify-content:flex-start">
+        <label>Modo <select id="rg-modo" class="ar-sel"><option value="off">Desligada</option><option value="on">Ligada (remove)</option><option value="sombra">Sombra (só lista quem sairia)</option></select></label>
+        <label>Carência <input id="rg-carencia" type="number" min="0" max="60" class="ar-sel" style="width:60px"> dias após vencer</label>
+        <label>Teto <input id="rg-limite" type="number" min="1" max="40" class="ar-sel" style="width:60px"> remoções/dia</label>
+        <label class="chk-box"><input type="checkbox" id="rg-semdireito"/> Tirar também quem tem assinatura que não dá o grupo</label>
+        <button class="btn" style="width:auto;margin:0;font-size:12px;padding:7px 14px" onclick="rgSalvar()">Salvar</button>
+      </div>
+      <div id="rg-estado" class="as-sinc" style="margin:6px 0 10px"></div>
+      <div id="rg-candidatos"></div>
+      <div id="rg-historico" style="margin-top:12px"></div>
+    </div>
     <div class="as-kpis" id="ag-kpis"></div>
     <div class="as-filtros"><input type="search" id="ag-busca" placeholder="Buscar nome, e-mail, telefone ou grupo" oninput="agRender()"/></div>
     <div class="card" style="padding:0;overflow:hidden"><div id="ag-lista"></div></div>
@@ -1627,9 +1646,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1885,7 +1904,7 @@ function asTrocaVisao(v) {
 // (POST /hubla/regras-acesso/simular), salva (POST /hubla/regras-acesso) e
 // libera quem passou a ter direito (POST /hubla/regras-acesso/aplicar). Quem
 // perde o direito sai pela visão "Acesso ao painel · Exceções".
-var AR = { dados: null, mudou: {} };
+var AR = { dados: null, mudou: {}, grupos: {}, aberto: null };
 var AR_ROT = { libera: 'Libera o painel', nao: 'Não libera', prazo: 'Só com prazo (vitalício não)' };
 function arPost(rota, corpo) {
   return fetch(AS_PROXY + rota, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) })
@@ -1895,7 +1914,7 @@ function arCarregar() {
   document.getElementById('ar-sinc').textContent = 'Carregando…';
   fetch(AS_PROXY + '/hubla/regras-acesso').then(function(r){ return r.json(); }).then(function(d) {
     if (!d.ok) throw new Error(d.erro || 'falha ao ler as regras');
-    AR.dados = d; AR.mudou = {};
+    AR.dados = d; AR.mudou = {}; AR.grupos = {}; AR.aberto = null;
     document.getElementById('ar-impacto').innerHTML = '';
     document.getElementById('ar-sinc').innerHTML = (d.regrasSalvas
       ? 'Regras salvas em <strong>' + new Date(d.atualizadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong>'
@@ -1905,6 +1924,36 @@ function arCarregar() {
   }).catch(function(e){ document.getElementById('ar-sinc').textContent = 'Erro: ' + e.message; });
 }
 function arRegra(o) { return AR.mudou[o.ofertaId] || o.regra; }
+function arGrupos(o) { return AR.grupos[o.ofertaId] || o.grupos || []; }
+function arGruposMudou(o) {
+  var g = AR.grupos[o.ofertaId]; if (!g) return false;
+  var a = (o.grupos || []).slice().sort().join('|'), b = g.slice().sort().join('|');
+  return a !== b;
+}
+function arAbrirGrupos(id) { AR.aberto = AR.aberto === id ? null : id; arRender(); }
+function arMarcarGrupo(id, jid, on) {
+  var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0]; if (!o) return;
+  var g = arGrupos(o).slice();
+  var i = g.indexOf(jid);
+  if (on && i < 0) g.push(jid); if (!on && i >= 0) g.splice(i, 1);
+  AR.grupos[id] = g;
+  document.getElementById('ar-impacto').innerHTML = '';
+  arRender();
+}
+function arGruposTodos(id, on) {
+  var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0]; if (!o) return;
+  AR.grupos[id] = on ? (AR.dados.grupos || []).map(function(g){ return g.jid; }) : [];
+  document.getElementById('ar-impacto').innerHTML = '';
+  arRender();
+}
+function arCopiarGrupos(id) {
+  var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0]; if (!o) return;
+  var g = arGrupos(o);
+  (AR.dados.ofertas || []).forEach(function(x){ if (x.produtoNome === o.produtoNome && x.ofertaId !== id) AR.grupos[x.ofertaId] = g.slice(); });
+  document.getElementById('ar-impacto').innerHTML = '';
+  arRender();
+}
+function arNomeGrupo(jid) { var g = ((AR.dados && AR.dados.grupos) || []).filter(function(x){ return x.jid === jid; })[0]; return g ? g.nome : jid; }
 function arMudar(id, v) {
   var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0];
   if (o && v === o.regra) delete AR.mudou[id]; else AR.mudou[id] = v;
@@ -1913,7 +1962,7 @@ function arMudar(id, v) {
 }
 function arRender() {
   var lista = (AR.dados && AR.dados.ofertas) || [];
-  var nMud = Object.keys(AR.mudou).length;
+  var nMud = Object.keys(AR.mudou).length + lista.filter(function(o){ return !AR.mudou[o.ofertaId] && arGruposMudou(o); }).length;
   var nLib = lista.filter(function(o){ return arRegra(o) !== 'nao'; }).length;
   document.getElementById('ar-resumo').innerHTML = '<strong>' + nLib + '</strong> de ' + lista.length + ' ofertas liberam o painel' +
     (nMud ? ' · <strong style="color:var(--accent)">' + nMud + ' alteração' + (nMud > 1 ? 'ões' : '') + ' não salva' + (nMud > 1 ? 's' : '') + '</strong>' : '');
@@ -1923,25 +1972,42 @@ function arRender() {
       prodAtual = o.produtoNome;
       var doProd = lista.filter(function(x){ return x.produtoNome === prodAtual; });
       var ativos = doProd.reduce(function(s, x){ return s + (x.pessoasAtivas || 0); }, 0);
-      linhas.push('<tr class="ar-prod"><td colspan="4">' + escapeHtml(prodAtual || '(sem produto)') + ' <span class="as-sub" style="display:inline;font-weight:600">· ' + doProd.length + ' oferta' + (doProd.length > 1 ? 's' : '') + ' · ' + ativos + ' com assinatura ativa</span></td></tr>');
+      linhas.push('<tr class="ar-prod"><td colspan="5">' + escapeHtml(prodAtual || '(sem produto)') + ' <span class="as-sub" style="display:inline;font-weight:600">· ' + doProd.length + ' oferta' + (doProd.length > 1 ? 's' : '') + ' · ' + ativos + ' com assinatura ativa</span></td></tr>');
     }
     var r = arRegra(o);
     var sel = '<select class="ar-sel" onchange="arMudar(\'' + escapeHtml(o.ofertaId) + '\', this.value)">' +
       ['libera', 'nao', 'prazo'].map(function(k){ return '<option value="' + k + '"' + (k === r ? ' selected' : '') + '>' + AR_ROT[k] + '</option>'; }).join('') + '</select>';
     var origem = AR.mudou[o.ofertaId] ? 'alterada (não salva)' : (o.regraSalva ? 'regra salva' : 'regra de fábrica');
-    linhas.push('<tr class="' + (AR.mudou[o.ofertaId] ? 'ar-mudou' : '') + '">' +
+    var gs = arGrupos(o);
+    var btnG = '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="arAbrirGrupos(\'' + escapeHtml(o.ofertaId) + '\')">' +
+      (gs.length ? gs.length + ' grupo' + (gs.length > 1 ? 's' : '') : 'Nenhum grupo') + (AR.aberto === o.ofertaId ? ' ▴' : ' ▾') + '</button>' +
+      (gs.length ? '<div class="as-sub">' + gs.slice(0, 3).map(function(j){ return escapeHtml(arNomeGrupo(j)); }).join(', ') + (gs.length > 3 ? ' e mais ' + (gs.length - 3) : '') + '</div>' : '') +
+      (arGruposMudou(o) ? '<div class="as-sub" style="color:var(--accent)">alterado (não salvo)</div>' : '');
+    linhas.push('<tr class="' + (AR.mudou[o.ofertaId] || arGruposMudou(o) ? 'ar-mudou' : '') + '">' +
       '<td data-l="Oferta"><div class="as-nome">' + escapeHtml(o.ofertaNome || '(sem nome)') + '</div><div class="as-sub">' +
         (o.arquivada ? 'arquivada na Hubla · ' : '') + (o.soEmAssinaturas ? 'fora do catálogo atual · ' : '') + o.assinaturas + ' assinatura' + (o.assinaturas === 1 ? '' : 's') + ' no total</div></td>' +
       '<td data-l="Com assinatura ativa">' + o.pessoasAtivas + (o.vitalicias ? ' <span class="as-sub" style="display:inline">(' + o.vitalicias + ' vitalícia' + (o.vitalicias > 1 ? 's' : '') + ')</span>' : '') + '</td>' +
       '<td data-l="Já no painel">' + o.ativasNoPainel + '</td>' +
-      '<td data-l="Regra">' + sel + '<div class="as-sub">' + origem + '</div></td></tr>');
+      '<td data-l="Regra">' + sel + '<div class="as-sub">' + origem + '</div></td>' +
+      '<td data-l="Grupos">' + btnG + '</td></tr>');
+    if (AR.aberto === o.ofertaId) {
+      var oid = escapeHtml(o.ofertaId);
+      linhas.push('<tr><td colspan="5"><div class="ar-gpainel">' +
+        '<div class="ar-gacoes"><button type="button" onclick="arGruposTodos(\'' + oid + '\', true)">Marcar todos</button><button type="button" onclick="arGruposTodos(\'' + oid + '\', false)">Desmarcar todos</button>' +
+        '<button type="button" onclick="arCopiarGrupos(\'' + oid + '\')">Copiar estes grupos para as outras ofertas de ' + escapeHtml(o.produtoNome || 'este produto') + '</button></div>' +
+        '<div class="ar-glista">' + ((AR.dados.grupos || []).map(function(g) {
+          return '<label class="chk-box"><input type="checkbox"' + (gs.indexOf(g.jid) >= 0 ? ' checked' : '') + ' onchange="arMarcarGrupo(\'' + oid + '\', \'' + escapeHtml(g.jid) + '\', this.checked)"/> ' + escapeHtml(g.nome || g.jid) + '</label>';
+        }).join('') || '<div class="as-vazio">Não consegui ler os grupos do CDV agora (baileys-server). Atualize em instantes.</div>') + '</div>' +
+        ((AR.dados.gruposIgnorados || []).length ? '<div class="as-sub" style="margin-top:6px">Fora da conferência (nunca removidos): ' + AR.dados.gruposIgnorados.map(escapeHtml).join(', ') + '</div>' : '') +
+        '</div></td></tr>');
+    }
   });
   document.getElementById('ar-lista').innerHTML = !lista.length ? '<div class="as-vazio">Nenhuma oferta. Rode "⇅ Buscar na Hubla" na visão Assinaturas.</div>' :
-    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Com assinatura ativa</th><th>Já no painel</th><th>Regra</th></tr></thead><tbody>' + linhas.join('') + '</tbody></table>';
+    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Com assinatura ativa</th><th>Já no painel</th><th>Painel</th><th>Grupos</th></tr></thead><tbody>' + linhas.join('') + '</tbody></table>';
 }
 function arTodas() {
   var o = {};
-  ((AR.dados && AR.dados.ofertas) || []).forEach(function(x){ o[x.ofertaId] = arRegra(x); });
+  ((AR.dados && AR.dados.ofertas) || []).forEach(function(x){ o[x.ofertaId] = { regra: arRegra(x), grupos: arGrupos(x) }; });
   return o;
 }
 function arPessoas(lista, perde) {
@@ -1960,7 +2026,12 @@ function arImpacto() {
       '<div class="as-aviso" style="margin:0 0 10px">Pessoas com assinatura ativa (vigente, em teste ou vitalícia) que dá direito ao painel: <strong>' + d.liberadosAntes + '</strong> hoje → <strong>' + d.liberadosDepois + '</strong> com estas regras.</div>' +
       '<div class="ar-col"><div><h4 class="ap-h" style="color:#2fb37a">Ganham o direito (' + d.ganham.length + ')</h4>' + arPessoas(d.ganham) + '</div>' +
       '<div><h4 class="ap-h" style="color:var(--accent)">Perdem o direito (' + d.perdem.length + ')</h4>' + arPessoas(d.perdem, true) +
-      (d.perdem.length ? '<div class="as-aviso" style="margin:8px 0 0">Ninguém sai sozinho ao salvar: a retirada é na visão "Acesso ao painel · Exceções".</div>' : '') + '</div></div></div>';
+      (d.perdem.length ? '<div class="as-aviso" style="margin:8px 0 0">Ninguém sai sozinho ao salvar: a retirada do painel é na visão "Acesso ao painel · Exceções".</div>' : '') + '</div></div>' +
+      (d.grupos && d.grupos.length ? '<h4 class="ap-h" style="margin-top:14px">Grupos com regra: participantes sem direito (vencido + sem direito + sem cadastro)</h4><table class="as-tabela"><thead><tr><th>Grupo</th><th>Participantes</th><th>Hoje</th><th>Com estas regras</th></tr></thead><tbody>' +
+        d.grupos.map(function(g){ return '<tr><td data-l="Grupo"><div class="as-nome">' + escapeHtml(g.nome) + '</div>' + (g.mapeado ? '' : '<div class="as-sub">deixa de ter regra</div>') + '</td><td data-l="Participantes">' + g.participantes + '</td><td data-l="Hoje">' + g.foraAntes + '</td><td data-l="Com estas regras"><strong>' + g.fora + '</strong> <span class="as-sub" style="display:inline">(' + g.vencido + ' vencido · ' + g.semDireito + ' sem direito · ' + g.semCadastro + ' sem cadastro)</span></td></tr>'; }).join('') + '</tbody></table>' +
+        '<div class="as-aviso" style="margin:6px 0 0">Ninguém sai do grupo ao salvar. Quem o Tico tiraria aparece em Grupos × acesso → Remoção pelo Tico.</div>'
+        : (d.grupos === null ? '<div class="as-aviso" style="margin:10px 0 0">Para ver o efeito nos grupos, abra antes a visão Grupos × acesso (ela lê os participantes).</div>' : '')) +
+      '</div>';
     return d;
   }).catch(function(e){ box.innerHTML = '<div class="card"><div class="as-sinc">Erro: ' + escapeHtml(e.message) + '</div></div>'; throw e; });
 }
@@ -2082,21 +2153,75 @@ function apRetirar() {
 
 // ── Grupos × acesso (GET /hubla/grupos-auditoria) ──
 var AG = { dados: null, filtro: 'sem_cadastro' };
-var AG_ROT = { sem_cadastro: 'Sem cadastro na Hubla', vencido: 'Acesso vencido', concierge: 'Cliente do concierge' };
+var AG_ROT = { concierge: 'Cliente do concierge', excecao: 'Exceção', sem_cadastro: 'Sem cadastro na Hubla', sem_direito: 'Sem direito a este grupo', vencido: 'Acesso vencido' };
 function agCarregar(forcar) {
   document.getElementById('ag-sinc').textContent = 'Conferindo os grupos… (leva cerca de 30 s)';
   fetch(AS_PROXY + '/hubla/grupos-auditoria' + (forcar ? '?forcar=1' : '')).then(function(r){ return r.json(); }).then(function(d) {
     if (!d || !d.ok) throw new Error((d && d.erro) || 'falha ao carregar');
-    AG.dados = d; agRender();
+    AG.dados = d; agRender(); rgCarregar(false);
   }).catch(function(e){ document.getElementById('ag-sinc').textContent = 'Erro: ' + e.message; });
 }
 function agFiltro(f) { AG.filtro = f; agRender(); }
+// ── Remoção pelo Tico (GET/POST /hubla/grupos-remocao) ──
+var RG = { dados: null };
+var RG_ROT = { off: 'desligada', on: 'ligada', sombra: 'em sombra (só lista)' };
+function rgCarregar(forcar) {
+  document.getElementById('rg-estado').textContent = 'Carregando…';
+  fetch(AS_PROXY + '/hubla/grupos-remocao' + (forcar ? '?forcar=1' : '')).then(function(r){ return r.json(); }).then(function(d) {
+    if (!d || !d.ok) throw new Error((d && d.erro) || 'falha');
+    RG.dados = d; rgRender();
+  }).catch(function(e){ document.getElementById('rg-estado').textContent = 'Erro: ' + e.message; });
+}
+function rgRender() {
+  var d = RG.dados, c = d.config;
+  document.getElementById('rg-modo').value = c.modo;
+  document.getElementById('rg-carencia').value = c.carenciaDias;
+  document.getElementById('rg-limite').value = c.limiteDia;
+  document.getElementById('rg-semdireito').checked = !!c.incluirSemDireito;
+  var est = 'Remoção <strong>' + RG_ROT[c.modo] + '</strong> · janela ' + c.janelaIni + 'h–' + c.janelaFim + 'h · hoje: ' + (d.hoje.remocoes || 0) + ' de ' + c.limiteDia + ' remoções' +
+    ' · ' + d.gruposComRegra + ' grupo' + (d.gruposComRegra === 1 ? '' : 's') + ' com regra' +
+    (d.ultimaRodada ? ' · última rodada ' + new Date(d.ultimaRodada.em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
+    + (d.ultimaRodada && d.ultimaRodada.aviso ? '<div style="color:var(--accent);margin-top:4px">' + escapeHtml(d.ultimaRodada.aviso) + '</div>' : '');
+  if (!d.gruposComRegra) est += '<div style="color:var(--accent);margin-top:4px">Nenhum grupo tem regra ainda: marque os grupos de cada oferta em Regras de acesso. Sem isso o Tico não remove ninguém.</div>';
+  if (d.pausado) est += '<div style="color:var(--accent);margin-top:4px">⏸ Pausada desde ' + new Date(d.pausado.em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ': ' + escapeHtml(d.pausado.motivo) +
+    ' <button class="btn" style="width:auto;margin:0 0 0 6px;font-size:11px;padding:4px 10px" onclick="rgRetomar()">Retomar</button></div>';
+  document.getElementById('rg-estado').innerHTML = est;
+  var cand = d.candidatos;
+  var box = document.getElementById('rg-candidatos');
+  if (d.erroPrevia) box.innerHTML = '<div class="as-sinc">Não consegui conferir agora: ' + escapeHtml(d.erroPrevia) + '</div>';
+  else if (!cand) box.innerHTML = '';
+  else box.innerHTML = '<h4 class="ap-h">' + (c.modo === 'on' ? 'Na fila para sair' : 'Sairiam se a remoção estivesse ligada') + ' (' + cand.length + ')</h4>' + (!cand.length ? '<div class="as-vazio" style="padding:8px 0">Ninguém.</div>' :
+    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Motivo</th><th>Sai de</th></tr></thead><tbody>' + cand.map(function(p) {
+      var tel = String(p.telefone || '').replace(/\D/g, '');
+      return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email || '') + (p.email ? ' · ' : '') + '+' + tel + '</div></td>' +
+        '<td data-l="Motivo">' + p.motivos.map(function(m){ return '<span class="as-badge as-b-' + m + '">' + AG_ROT[m] + '</span>'; }).join(' ') + '</td>' +
+        '<td data-l="Sai de"><div class="as-grupos-tags">' + p.grupos.map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g.nome) + (g.dias !== null && g.dias !== undefined ? ' · venceu há ' + g.dias + 'd' : '') + '</span>'; }).join('') + '</div></td></tr>';
+    }).join('') + '</tbody></table>');
+  var h = d.historico || [];
+  document.getElementById('rg-historico').innerHTML = !h.length ? '' : '<h4 class="ap-h">Últimas remoções</h4><table class="as-tabela"><thead><tr><th>Quando</th><th>Pessoa</th><th>Resultado</th></tr></thead><tbody>' +
+    h.slice(0, 30).map(function(x) {
+      return '<tr><td data-l="Quando">' + new Date(x.em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</td>' +
+        '<td data-l="Pessoa"><div class="as-nome">' + escapeHtml(x.nome || '(sem nome)') + '</div><div class="as-sub">+' + escapeHtml(String(x.telefone || '').replace(/\D/g, '')) + '</div></td>' +
+        '<td data-l="Resultado">' + (x.erro ? '<div style="color:var(--accent)">' + escapeHtml(x.erro) + '</div>' : '') + (x.grupos || []).map(function(g) {
+          return '<div class="as-sub">' + escapeHtml(g.nome || g.jid) + ': ' + escapeHtml(g.estado === 'ok' ? 'removido' + (g.por ? ' por ' + g.por : '') : (g.detalhe || g.estado)) + '</div>';
+        }).join('') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+function rgSalvar() {
+  var corpo = { modo: document.getElementById('rg-modo').value, carenciaDias: parseInt(document.getElementById('rg-carencia').value, 10),
+    limiteDia: parseInt(document.getElementById('rg-limite').value, 10), incluirSemDireito: document.getElementById('rg-semdireito').checked };
+  if (corpo.modo === 'on' && !confirm('Ligar a remoção? O Tico vai tirar dos grupos quem aparece na lista, uma pessoa a cada 20 min, até ' + corpo.limiteDia + ' remoções por dia.')) return;
+  arPost('/hubla/grupos-remocao/config', corpo).then(function(){ rgCarregar(false); }).catch(function(e){ alert('Não salvou: ' + e.message); });
+}
+function rgRetomar() {
+  arPost('/hubla/grupos-remocao/retomar', {}).then(function(){ rgCarregar(false); }).catch(function(e){ alert('Não retomou: ' + e.message); });
+}
 function agRender() {
   var d = AG.dados; if (!d) return;
   document.getElementById('ag-sinc').innerHTML = 'Conferido em <strong>' + new Date(d.geradoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong>' +
     (d.ignorados && d.ignorados.length ? ' · fora da conferência: ' + d.ignorados.map(escapeHtml).join(', ') : '');
   var t = d.totais || {};
-  var cards = [['sem_cadastro', 'perigo'], ['vencido', 'alerta'], ['concierge', 'info']];
+  var cards = [['vencido', 'alerta'], ['sem_direito', 'alerta'], ['sem_cadastro', 'perigo'], ['concierge', 'info'], ['excecao', 'info']];
   document.getElementById('ag-kpis').innerHTML = cards.map(function(c) {
     return '<button class="as-kpi ' + c[1] + (AG.filtro === c[0] ? ' on' : '') + '" onclick="agFiltro(\'' + c[0] + '\')"><div class="as-kpi-t">' + AG_ROT[c[0]] + '</div><div class="as-kpi-v">' + (t[c[0]] || 0) + '</div></button>';
   }).join('');
@@ -2120,10 +2245,11 @@ function agRender() {
         '<td data-l="Grupos"><div class="as-grupos-tags">' + (p.grupos || []).map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g) + '</span>'; }).join('') + '</div></td>' +
       '</tr>';
     }).join('') + '</tbody></table>';
-  document.getElementById('ag-grupos').innerHTML = '<table class="as-tabela"><thead><tr><th>Grupo</th><th>Com acesso</th><th>Sem cadastro</th><th>Vencido</th><th>Concierge</th><th>Admins</th></tr></thead><tbody>' +
+  document.getElementById('ag-grupos').innerHTML = '<table class="as-tabela"><thead><tr><th>Grupo</th><th>Com acesso</th><th>Vencido</th><th>Sem direito</th><th>Sem cadastro</th><th>Concierge</th><th>Exceção</th><th>Admins</th></tr></thead><tbody>' +
     (d.grupos || []).map(function(g) {
-      return '<tr><td data-l="Grupo"><div class="as-nome">' + escapeHtml(g.nome || g.jid) + '</div></td><td data-l="Com acesso">' + g.ativo + '</td><td data-l="Sem cadastro">' + g.semCadastro +
-        '</td><td data-l="Vencido">' + g.vencido + '</td><td data-l="Concierge">' + g.concierge + '</td><td data-l="Admins">' + g.admins + '</td></tr>';
+      return '<tr><td data-l="Grupo"><div class="as-nome">' + escapeHtml(g.nome || g.jid) + '</div><div class="as-sub">' + (g.mapeado ? 'com regra de grupos' : 'sem regra: qualquer assinatura ativa vale') + '</div></td><td data-l="Com acesso">' + g.ativo +
+        '</td><td data-l="Vencido">' + g.vencido + '</td><td data-l="Sem direito">' + (g.semDireito || 0) + '</td><td data-l="Sem cadastro">' + g.semCadastro +
+        '</td><td data-l="Concierge">' + g.concierge + '</td><td data-l="Exceção">' + (g.excecao || 0) + '</td><td data-l="Admins">' + g.admins + '</td></tr>';
     }).join('') + '</tbody></table>';
 }
 
