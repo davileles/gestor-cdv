@@ -1027,16 +1027,19 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <div class="card" id="rg-card">
       <div class="ap-cab" style="padding:0 0 8px"><h4 class="ap-h" style="margin:0">Remoção pelo Tico</h4>
         <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:6px 12px;width:auto;margin:0" onclick="rgCarregar(true)">↻ Conferir agora</button></div>
-      <div class="as-aviso" style="margin:0 0 10px">O Tico (tico-02/03/04, nunca a principal) tira do grupo quem ficou com a assinatura inválida para ele. Só remove, nunca inclui. Só em grupo com regra de grupos, só quem tem cadastro na Hubla, uma pessoa a cada 20 min, dentro da janela, com teto diário e rodízio entre os ticos. Nunca sai: sem cadastro, exceção, admin, cliente do concierge e números da casa. Se uma conta cair ou o WhatsApp limitar, a remoção pausa até você retomar.</div>
+      <div class="as-aviso" style="margin:0 0 10px">O Tico (tico-02/03/04, nunca a principal) tira do grupo quem ficou com a assinatura inválida para ele. Só remove, nunca inclui. Só em grupo com regra de grupos, uma pessoa a cada 20 min, dentro da janela, com teto diário e rodízio entre os ticos. Quem não tem cadastro na Hubla (entrou pelo link sem ser aluno) só sai se a opção abaixo estiver marcada, e depois da espera contada desde que o sistema o viu no grupo. Nunca sai: exceção, admin, cliente do concierge, números da casa e participante sem telefone conhecido. Se uma conta cair ou o WhatsApp limitar, a remoção pausa até você retomar.</div>
       <div class="ar-barra" style="justify-content:flex-start">
         <label>Modo <select id="rg-modo" class="ar-sel"><option value="off">Desligada</option><option value="on">Ligada (remove)</option><option value="sombra">Sombra (só lista quem sairia)</option></select></label>
         <label>Carência <input id="rg-carencia" type="number" min="0" max="60" class="ar-sel" style="width:60px"> dias após vencer</label>
         <label>Teto <input id="rg-limite" type="number" min="1" max="40" class="ar-sel" style="width:60px"> remoções/dia</label>
         <label class="chk-box"><input type="checkbox" id="rg-semdireito"/> Tirar também quem tem assinatura que não dá o grupo</label>
+        <label class="chk-box"><input type="checkbox" id="rg-semcadastro"/> Tirar quem não tem cadastro na Hubla</label>
+        <label>após <input id="rg-espera" type="number" min="1" max="168" class="ar-sel" style="width:60px"> h no grupo</label>
         <button class="btn" style="width:auto;margin:0;font-size:12px;padding:7px 14px" onclick="rgSalvar()">Salvar</button>
       </div>
       <div id="rg-estado" class="as-sinc" style="margin:6px 0 10px"></div>
       <div id="rg-candidatos"></div>
+      <div id="rg-excecoes" style="margin-top:12px"></div>
       <div id="rg-historico" style="margin-top:12px"></div>
     </div>
     <div class="as-kpis" id="ag-kpis"></div>
@@ -2184,6 +2187,8 @@ function rgRender() {
   document.getElementById('rg-carencia').value = c.carenciaDias;
   document.getElementById('rg-limite').value = c.limiteDia;
   document.getElementById('rg-semdireito').checked = !!c.incluirSemDireito;
+  document.getElementById('rg-semcadastro').checked = !!c.incluirSemCadastro;
+  document.getElementById('rg-espera').value = c.esperaSemCadastroH;
   var est = 'Remoção <strong>' + RG_ROT[c.modo] + '</strong> · janela ' + c.janelaIni + 'h–' + c.janelaFim + 'h · hoje: ' + (d.hoje.remocoes || 0) + ' de ' + c.limiteDia + ' remoções' +
     ' · ' + d.gruposComRegra + ' grupo' + (d.gruposComRegra === 1 ? '' : 's') + ' com regra' +
     (d.ultimaRodada ? ' · última rodada ' + new Date(d.ultimaRodada.em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '')
@@ -2197,12 +2202,21 @@ function rgRender() {
   if (d.erroPrevia) box.innerHTML = '<div class="as-sinc">Não consegui conferir agora: ' + escapeHtml(d.erroPrevia) + '</div>';
   else if (!cand) box.innerHTML = '';
   else box.innerHTML = '<h4 class="ap-h">' + (c.modo === 'on' ? 'Na fila para sair' : 'Sairiam se a remoção estivesse ligada') + ' (' + cand.length + ')</h4>' + (!cand.length ? '<div class="as-vazio" style="padding:8px 0">Ninguém.</div>' :
-    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Motivo</th><th>Sai de</th></tr></thead><tbody>' + cand.map(function(p) {
+    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Motivo</th><th>Sai de</th><th></th></tr></thead><tbody>' + cand.map(function(p) {
       var tel = String(p.telefone || '').replace(/\D/g, '');
       return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email || '') + (p.email ? ' · ' : '') + '+' + tel + '</div></td>' +
         '<td data-l="Motivo">' + p.motivos.map(function(m){ return '<span class="as-badge as-b-' + m + '">' + AG_ROT[m] + '</span>'; }).join(' ') + '</td>' +
-        '<td data-l="Sai de"><div class="as-grupos-tags">' + p.grupos.map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g.nome) + (g.dias !== null && g.dias !== undefined ? ' · venceu há ' + g.dias + 'd' : '') + '</span>'; }).join('') + '</div></td></tr>';
+        '<td data-l="Sai de"><div class="as-grupos-tags">' + p.grupos.map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g.nome) + (g.dias !== null && g.dias !== undefined ? ' · venceu há ' + g.dias + 'd' : '') + (g.vistoDesde ? ' · no grupo há ' + rgHoras(g.vistoDesde) : '') + '</span>'; }).join('') + '</div></td>' +
+        '<td data-l=""><button class="btn" style="background:#3f3f3f;color:#ddd;width:auto;margin:0;font-size:11px;padding:4px 10px" onclick="rgExcecao(\'' + tel + '\',' + escapeHtml(JSON.stringify(p.nome || '')).replace(/'/g, '&#39;') + ')">Não remover</button></td></tr>';
     }).join('') + '</tbody></table>');
+  var ex = d.excecoesTelefone || [];
+  document.getElementById('rg-excecoes').innerHTML = !ex.length ? '' : '<h4 class="ap-h">Ficam nos grupos (exceção por telefone)</h4><table class="as-tabela"><thead><tr><th>Pessoa</th><th>Justificativa</th><th></th></tr></thead><tbody>' +
+    ex.map(function(x) {
+      var tel = String(x.telefone || '').replace(/\D/g, '');
+      return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(x.nome || '(sem nome)') + '</div><div class="as-sub">+' + tel + '</div></td>' +
+        '<td data-l="Justificativa"><div class="ap-just">' + escapeHtml(x.justificativa || '') + '</div></td>' +
+        '<td data-l=""><button class="btn" style="background:#3f3f3f;color:#aaa;width:auto;margin:0;font-size:11px;padding:4px 10px" onclick="rgTirarExcecao(\'' + tel + '\')">Tirar exceção</button></td></tr>';
+    }).join('') + '</tbody></table>';
   var h = d.historico || [];
   document.getElementById('rg-historico').innerHTML = !h.length ? '' : '<h4 class="ap-h">Últimas remoções</h4><table class="as-tabela"><thead><tr><th>Quando</th><th>Pessoa</th><th>Resultado</th></tr></thead><tbody>' +
     h.slice(0, 30).map(function(x) {
@@ -2213,9 +2227,24 @@ function rgRender() {
         }).join('') + '</td></tr>';
     }).join('') + '</tbody></table>';
 }
+function rgHoras(iso) {
+  var h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600e3);
+  return h < 48 ? h + 'h' : Math.floor(h / 24) + 'd';
+}
+function rgExcecao(tel, nome) {
+  var just = prompt('Por que +' + tel + (nome ? ' (' + nome + ')' : '') + ' deve ficar nos grupos?');
+  if (just === null) return;
+  if (!just.trim()) { alert('A justificativa é obrigatória.'); return; }
+  arPost('/hubla/grupos-remocao/excecao', { telefone: tel, nome: nome || '', justificativa: just.trim() }).then(function(){ rgCarregar(true); }).catch(function(e){ alert('Não salvou: ' + e.message); });
+}
+function rgTirarExcecao(tel) {
+  if (!confirm('Tirar a exceção de +' + tel + '? A pessoa volta a poder ser removida.')) return;
+  arPost('/hubla/grupos-remocao/excecao', { telefone: tel, remover: true }).then(function(){ rgCarregar(true); }).catch(function(e){ alert('Não salvou: ' + e.message); });
+}
 function rgSalvar() {
   var corpo = { modo: document.getElementById('rg-modo').value, carenciaDias: parseInt(document.getElementById('rg-carencia').value, 10),
-    limiteDia: parseInt(document.getElementById('rg-limite').value, 10), incluirSemDireito: document.getElementById('rg-semdireito').checked };
+    limiteDia: parseInt(document.getElementById('rg-limite').value, 10), incluirSemDireito: document.getElementById('rg-semdireito').checked,
+    incluirSemCadastro: document.getElementById('rg-semcadastro').checked, esperaSemCadastroH: parseInt(document.getElementById('rg-espera').value, 10) };
   if (corpo.modo === 'on' && !confirm('Ligar a remoção? O Tico vai tirar dos grupos quem aparece na lista, uma pessoa a cada 20 min, até ' + corpo.limiteDia + ' remoções por dia.')) return;
   arPost('/hubla/grupos-remocao/config', corpo).then(function(){ rgCarregar(false); }).catch(function(e){ alert('Não salvou: ' + e.message); });
 }
