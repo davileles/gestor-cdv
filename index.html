@@ -457,6 +457,12 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-painel{font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.4px}
 .as-vazio{padding:28px;text-align:center;color:var(--muted2);font-size:13px}
 .as-div{margin-top:16px}
+.ap-h{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 10px}
+.ap-cab{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;flex-wrap:wrap}
+.ap-form{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px}
+.ap-form input{margin:0}
+.ap-just{font-size:12px;color:var(--muted2)}
+@media(max-width:900px){.ap-form{grid-template-columns:1fr}}
 .as-div h4{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 6px}
 .as-div p{font-size:12px;color:var(--muted2);margin:0 0 8px}
 .as-div ul{margin:0;padding-left:18px;font-size:12px;columns:2;column-gap:24px}
@@ -954,6 +960,32 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div class="as-visoes">
     <button class="dash-chip on" id="as-v-assin" onclick="asTrocaVisao('assin')">Assinaturas</button>
     <button class="dash-chip" id="as-v-grupos" onclick="asTrocaVisao('grupos')">Grupos × acesso</button>
+    <button class="dash-chip" id="as-v-acesso" onclick="asTrocaVisao('acesso')">Acesso ao painel · Exceções</button>
+  </div>
+  <div id="as-bloco-acesso" style="display:none">
+    <div class="as-topo">
+      <div class="as-sinc" id="ap-sinc">—</div>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="apCarregar()">↻ Atualizar</button>
+    </div>
+    <div class="card">
+      <h4 class="ap-h">Exceções — ficam com acesso ao painel sem assinatura vigente</h4>
+      <div class="ap-form">
+        <input type="email" id="ap-email" placeholder="E-mail"/>
+        <input type="text" id="ap-nome" placeholder="Nome (opcional)"/>
+        <input type="text" id="ap-just" placeholder="Justificativa (obrigatória) — ex.: parceiro, cortesia, cliente do concierge"/>
+        <button class="btn" style="width:auto;margin:0;font-size:12px;padding:8px 14px" onclick="apSalvarExcecao()">Adicionar exceção</button>
+      </div>
+      <div class="as-aviso" style="margin:8px 0 0">Ao adicionar, a pessoa passa a ter acesso ao painel (se estava inativa, é reativada) e não perde o acesso quando a assinatura da Hubla acabar.</div>
+      <div id="ap-excecoes" style="margin-top:12px"></div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="ap-cab">
+        <h4 class="ap-h" style="margin:0">Ativos no painel sem assinatura vigente <span id="ap-total"></span></h4>
+        <button class="btn" id="ap-btn-retirar" style="width:auto;margin:0;font-size:12px;padding:8px 14px;background:var(--accent);color:#fff" onclick="apRetirar()" disabled>Retirar acesso</button>
+      </div>
+      <div class="as-aviso" style="margin:0 14px 10px">Mesmo critério da lista de divergências, recalculado agora: sem assinatura vigente, em teste ou vitalícia de oferta que libera o painel e sem acesso ativo na Hubla. Exceções e admins nunca saem. Para manter alguém, clique em "Manter (exceção)".</div>
+      <div id="ap-lista"></div>
+    </div>
   </div>
   <div id="as-bloco-grupos" style="display:none">
     <div class="as-topo">
@@ -1567,9 +1599,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1808,9 +1840,100 @@ function asTrocaVisao(v) {
   AS.aba = v;
   document.getElementById('as-v-assin').classList.toggle('on', v === 'assin');
   document.getElementById('as-v-grupos').classList.toggle('on', v === 'grupos');
+  document.getElementById('as-v-acesso').classList.toggle('on', v === 'acesso');
   document.getElementById('as-bloco-assin').style.display = v === 'assin' ? '' : 'none';
   document.getElementById('as-bloco-grupos').style.display = v === 'grupos' ? '' : 'none';
+  document.getElementById('as-bloco-acesso').style.display = v === 'acesso' ? '' : 'none';
+  if (v === 'acesso') { apCarregar(); return; }
   asAbrir();
+}
+
+// ── Acesso ao painel · Exceções (desde 11/11/2026) ──
+// GET /hubla/painel/sem-assinatura (quem está ativo no painel sem assinatura
+// vigente, recalculado no proxy) + exceções com justificativa
+// (/hubla/painel/excecoes). "Retirar acesso" manda os e-mails mostrados; o
+// proxy só desativa quem ainda se encaixa no critério e não é exceção/admin.
+var AP = { sem: null, exc: null };
+function apCarregar() {
+  document.getElementById('ap-sinc').textContent = 'Carregando…';
+  Promise.all([
+    fetch(AS_PROXY + '/hubla/painel/sem-assinatura').then(function(r){ return r.json(); }),
+    fetch(AS_PROXY + '/hubla/painel/excecoes').then(function(r){ return r.json(); })
+  ]).then(function(rs) {
+    if (!rs[0].ok) throw new Error(rs[0].erro || 'falha ao ler a lista');
+    if (!rs[1].ok) throw new Error(rs[1].erro || 'falha ao ler as exceções');
+    AP.sem = rs[0]; AP.exc = rs[1].excecoes || []; apRender();
+  }).catch(function(e){ document.getElementById('ap-sinc').textContent = 'Erro: ' + e.message; });
+}
+function apRetiraveis() { return ((AP.sem && AP.sem.pessoas) || []).filter(function(p){ return !p.excecao && !p.admin; }); }
+function apRender() {
+  var s = AP.sem;
+  document.getElementById('ap-sinc').innerHTML = 'Dados da Hubla de <strong>' + (s.ultimaSincronizacao ? new Date(s.ultimaSincronizacao).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—') + '</strong> · se tiver dúvida, rode "⇅ Buscar na Hubla" na visão Assinaturas antes de retirar.';
+  var ex = AP.exc || [];
+  document.getElementById('ap-excecoes').innerHTML = !ex.length ? '<div class="as-vazio" style="padding:12px">Nenhuma exceção ainda.</div>' :
+    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Justificativa</th><th>Painel</th><th>Desde</th><th></th></tr></thead><tbody>' +
+    ex.map(function(x) {
+      var st = x.statusPainel === 'ativo' ? 'ativo' : (x.statusPainel === 'sem_cadastro' ? 'sem cadastro' : 'inativo');
+      return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(x.nome || x.nomeMembro || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(x.email) + '</div></td>' +
+        '<td data-l="Justificativa"><div class="ap-just">' + escapeHtml(x.justificativa || '') + '</div></td>' +
+        '<td data-l="Painel">' + st + '</td><td data-l="Desde">' + asData(x.criadoEm) + '</td>' +
+        '<td><button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="apEditar(\'' + escapeHtml(x.email) + '\')">Editar</button> ' +
+        '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:#3f3f3f;color:#ddd" onclick="apExcluir(\'' + escapeHtml(x.email) + '\')">Remover</button></td></tr>';
+    }).join('') + '</tbody></table>';
+  var lista = s.pessoas || [], ret = apRetiraveis();
+  document.getElementById('ap-total').textContent = '(' + lista.length + (lista.length !== ret.length ? ' · ' + ret.length + ' sairão' : '') + ')';
+  var btn = document.getElementById('ap-btn-retirar');
+  btn.disabled = !ret.length; btn.textContent = ret.length ? 'Retirar acesso de ' + ret.length : 'Nada a retirar';
+  document.getElementById('ap-lista').innerHTML = !lista.length ? '<div class="as-vazio">Ninguém ativo no painel sem assinatura vigente.</div>' :
+    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Produtos no cadastro</th><th>Ativado em</th><th>Situação</th><th></th></tr></thead><tbody>' +
+    lista.map(function(p) {
+      var sit = p.admin ? '<span class="as-badge as-b-concierge">admin · fica</span>' : (p.excecao ? '<span class="as-badge as-b-vigente">exceção · fica</span><div class="ap-just">' + escapeHtml(p.excecao.justificativa) + '</div>' : '<span class="as-badge as-b-sem_cadastro">vai sair</span>');
+      return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email) + '</div></td>' +
+        '<td data-l="Produtos">' + ((p.produtos || []).map(escapeHtml).join('<br>') || '—') + '</td>' +
+        '<td data-l="Ativado em">' + asData(p.ativadoEm) + '</td><td data-l="Situação">' + sit + '</td>' +
+        '<td>' + (p.excecao || p.admin ? '' : '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="apPreparar(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml((p.nome || '').replace(/'/g, '')) + '\')">Manter (exceção)</button>') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+function apPreparar(email, nome) {
+  document.getElementById('ap-email').value = email;
+  document.getElementById('ap-nome').value = nome || '';
+  var j = document.getElementById('ap-just'); j.value = ''; j.focus();
+  j.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function apEditar(email) {
+  var x = (AP.exc || []).filter(function(e){ return e.email === email; })[0]; if (!x) return;
+  apPreparar(x.email, x.nome || x.nomeMembro);
+  document.getElementById('ap-just').value = x.justificativa || '';
+}
+function apSalvarExcecao() {
+  var email = document.getElementById('ap-email').value.trim(), nome = document.getElementById('ap-nome').value.trim(), just = document.getElementById('ap-just').value.trim();
+  if (!email) { alert('Informe o e-mail.'); return; }
+  if (!just) { alert('Escreva a justificativa: por que essa pessoa fica com acesso sem assinatura?'); document.getElementById('ap-just').focus(); return; }
+  fetch(AS_PROXY + '/hubla/painel/excecoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, nome: nome, justificativa: just }) })
+    .then(function(r){ return r.json(); }).then(function(d) {
+      if (!d.ok) throw new Error(d.erro || 'falha');
+      ['ap-email', 'ap-nome', 'ap-just'].forEach(function(id){ document.getElementById(id).value = ''; });
+      if (d.reativado) alert(email + ' estava inativo no painel e foi reativado.');
+      if (d.criado) alert(email + ' não tinha cadastro no painel e foi incluído com acesso.');
+      apCarregar();
+    }).catch(function(e){ alert('Não foi possível salvar: ' + e.message); });
+}
+function apExcluir(email) {
+  if (!confirm('Remover ' + email + ' das exceções?\n\nO acesso ao painel não é retirado agora; a pessoa volta a aparecer na lista de "sem assinatura vigente" se não tiver assinatura.')) return;
+  fetch(AS_PROXY + '/hubla/painel/excecoes/excluir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) })
+    .then(function(r){ return r.json(); }).then(function(d) { if (!d.ok) throw new Error(d.erro || 'falha'); apCarregar(); })
+    .catch(function(e){ alert('Não foi possível remover: ' + e.message); });
+}
+function apRetirar() {
+  var ret = apRetiraveis(); if (!ret.length) return;
+  if (!confirm('Retirar o acesso ao painel de ' + ret.length + ' pessoa' + (ret.length === 1 ? '' : 's') + ' sem assinatura vigente?\n\nExceções (' + (AP.exc || []).length + ') e admins ficam. Dá para devolver o acesso depois adicionando a pessoa como exceção.')) return;
+  var btn = document.getElementById('ap-btn-retirar'); btn.disabled = true; btn.textContent = 'Retirando…';
+  fetch(AS_PROXY + '/hubla/painel/retirar-acesso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: ret.map(function(p){ return p.email; }) }) })
+    .then(function(r){ return r.json(); }).then(function(d) {
+      if (!d.ok) throw new Error(d.erro || 'falha');
+      alert('Acesso retirado de ' + d.removidos.length + '.' + (d.ignorados.length ? '\n' + d.ignorados.length + ' ficaram (mudaram de situação desde que a lista foi carregada).' : ''));
+      apCarregar();
+    }).catch(function(e){ alert('Não foi possível retirar: ' + e.message); apRender(); });
 }
 
 // ── Grupos × acesso (GET /hubla/grupos-auditoria) ──
@@ -2144,7 +2267,7 @@ function asDivergencias() {
   var li = function(l){ return '<ul>' + l.map(function(e){ return '<li>' + escapeHtml(e) + '</li>'; }).join('') + '</ul>'; };
   box.style.display = '';
   box.innerHTML =
-    (a.length ? '<h4>Ativos no painel sem assinatura vigente (' + a.length + ')</h4><p>Têm acesso ao painel, mas a Hubla não mostra assinatura vigente nem acesso ativo de uma oferta que libera o painel.</p>' + li(a) : '') +
+    (a.length ? '<h4>Ativos no painel sem assinatura vigente (' + a.length + ')</h4><p>Têm acesso ao painel, mas a Hubla não mostra assinatura vigente nem acesso ativo de uma oferta que libera o painel. Para retirar o acesso ou cadastrar exceções, abra <a href="#" onclick="asTrocaVisao(\'acesso\');return false">Acesso ao painel · Exceções</a>.</p>' + li(a) : '') +
     (b.length ? '<h4 style="margin-top:14px">Assinatura vigente sem acesso ao painel (' + b.length + ')</h4><p>Pagam uma oferta que libera o painel, mas estão inativos em membros.json.</p>' + li(b) : '');
 }
 
