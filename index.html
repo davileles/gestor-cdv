@@ -416,7 +416,15 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .dash-est{color:var(--muted2);font-weight:800}
 @media (max-width:600px){.dash-hl-nome{width:110px}.dash-filtros #dash-escopos{margin-left:0!important}}
 /* ══ Aba Assinaturas (Hubla) ══ */
-.as-visoes{display:flex;gap:6px;margin-bottom:14px}
+.as-visoes{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ar-barra{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--muted2)}
+.ar-prod td{background:var(--surface2);font-weight:800;font-size:12px}
+.ar-mudou td{background:rgba(255,88,94,.06)}
+.ar-sel{background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit}
+.ar-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:800px){.ar-col{grid-template-columns:1fr}}
+.ar-pess{font-size:12px;padding:6px 0;border-top:1px solid var(--border)}
+.ar-pess:first-child{border-top:0}
 .as-b-sem_cadastro{background:rgba(255,88,94,.15);color:var(--accent)}.as-b-concierge{background:rgba(18,110,255,.15);color:var(--blue)}
 .as-grupos-tags{display:flex;flex-wrap:wrap;gap:4px}
 .as-grupo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--muted);white-space:nowrap}
@@ -961,6 +969,25 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <button class="dash-chip on" id="as-v-assin" onclick="asTrocaVisao('assin')">Assinaturas</button>
     <button class="dash-chip" id="as-v-grupos" onclick="asTrocaVisao('grupos')">Grupos × acesso</button>
     <button class="dash-chip" id="as-v-acesso" onclick="asTrocaVisao('acesso')">Acesso ao painel · Exceções</button>
+    <button class="dash-chip" id="as-v-regras" onclick="asTrocaVisao('regras')">Regras de acesso</button>
+  </div>
+  <div id="as-bloco-regras" style="display:none">
+    <div class="as-topo">
+      <div class="as-sinc" id="ar-sinc">—</div>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="arCarregar()">↻ Atualizar</button>
+    </div>
+    <div class="as-aviso">Todas as ofertas de todos os produtos da Hubla. Em cada uma, você decide se ela dá acesso ao painel: <strong>Libera o painel</strong>, <strong>Só com prazo</strong> (libera enquanto a assinatura tiver data de fim; a vitalícia não libera) ou <strong>Não libera</strong>. Oferta sem regra salva segue a regra de fábrica (as 7 ofertas de antes). Antes de salvar, o gestor mostra quem ganha e quem perde o direito.</div>
+    <div class="ar-barra">
+      <span id="ar-resumo"></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="ar-btn-impacto" style="width:auto;margin:0;font-size:12px;padding:8px 14px;background:var(--surface2);color:var(--text)" onclick="arImpacto()">Ver impacto</button>
+        <button class="btn" id="ar-btn-salvar" style="width:auto;margin:0;font-size:12px;padding:8px 14px" onclick="arSalvar()">Salvar regras</button>
+        <button class="btn" style="width:auto;margin:0;font-size:12px;padding:8px 14px;background:var(--surface2);color:var(--text)" onclick="arAplicar(false)" title="Mostra quem tem assinatura ativa de oferta que libera o painel (regras salvas) e ainda não está ativo no painel">Liberar quem tem direito…</button>
+      </div>
+    </div>
+    <div id="ar-impacto"></div>
+    <div id="ar-aplicar"></div>
+    <div class="card" style="padding:0;overflow:hidden"><div id="ar-lista"></div></div>
   </div>
   <div id="as-bloco-acesso" style="display:none">
     <div class="as-topo">
@@ -1011,7 +1038,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div class="as-filtros">
     <button type="button" class="as-prod-btn" id="as-prod-btn" onclick="asTogglePainelProdutos()">Produtos: todos ▾</button>
     <input type="search" id="as-busca" placeholder="Buscar nome, e-mail ou telefone" oninput="asRender()"/>
-    <label class="chk-box" title="Ofertas que liberam o painel + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga (grátis, convite, vitalício). Desmarque para ver os acessos de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()" checked/> Só o painel</label>
+    <label class="chk-box" title="Mostra só as ofertas que liberam o painel (veja Regras de acesso) + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga. Desmarcado = todas as assinaturas de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()"/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
   </div>
@@ -1600,9 +1627,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1842,11 +1869,127 @@ function asTrocaVisao(v) {
   document.getElementById('as-v-assin').classList.toggle('on', v === 'assin');
   document.getElementById('as-v-grupos').classList.toggle('on', v === 'grupos');
   document.getElementById('as-v-acesso').classList.toggle('on', v === 'acesso');
+  document.getElementById('as-v-regras').classList.toggle('on', v === 'regras');
   document.getElementById('as-bloco-assin').style.display = v === 'assin' ? '' : 'none';
   document.getElementById('as-bloco-grupos').style.display = v === 'grupos' ? '' : 'none';
   document.getElementById('as-bloco-acesso').style.display = v === 'acesso' ? '' : 'none';
+  document.getElementById('as-bloco-regras').style.display = v === 'regras' ? '' : 'none';
   if (v === 'acesso') { apCarregar(); return; }
+  if (v === 'regras') { if (!AR.dados) arCarregar(); return; }
   asAbrir();
+}
+
+// ── Regras de acesso (desde 11/11/2026) ──
+// Gestão global: GET /hubla/regras-acesso lista todas as ofertas de todos os
+// produtos com a regra efetiva; o Davi muda o seletor, vê o impacto
+// (POST /hubla/regras-acesso/simular), salva (POST /hubla/regras-acesso) e
+// libera quem passou a ter direito (POST /hubla/regras-acesso/aplicar). Quem
+// perde o direito sai pela visão "Acesso ao painel · Exceções".
+var AR = { dados: null, mudou: {} };
+var AR_ROT = { libera: 'Libera o painel', nao: 'Não libera', prazo: 'Só com prazo (vitalício não)' };
+function arPost(rota, corpo) {
+  return fetch(AS_PROXY + rota, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); return d; });
+}
+function arCarregar() {
+  document.getElementById('ar-sinc').textContent = 'Carregando…';
+  fetch(AS_PROXY + '/hubla/regras-acesso').then(function(r){ return r.json(); }).then(function(d) {
+    if (!d.ok) throw new Error(d.erro || 'falha ao ler as regras');
+    AR.dados = d; AR.mudou = {};
+    document.getElementById('ar-impacto').innerHTML = '';
+    document.getElementById('ar-sinc').innerHTML = (d.regrasSalvas
+      ? 'Regras salvas em <strong>' + new Date(d.atualizadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong>'
+      : 'Ainda sem regras salvas: valendo as regras de fábrica') +
+      ' · dados da Hubla de ' + (d.baseAtualizadaEm ? new Date(d.baseAtualizadaEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
+    arRender();
+  }).catch(function(e){ document.getElementById('ar-sinc').textContent = 'Erro: ' + e.message; });
+}
+function arRegra(o) { return AR.mudou[o.ofertaId] || o.regra; }
+function arMudar(id, v) {
+  var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0];
+  if (o && v === o.regra) delete AR.mudou[id]; else AR.mudou[id] = v;
+  document.getElementById('ar-impacto').innerHTML = '';
+  arRender();
+}
+function arRender() {
+  var lista = (AR.dados && AR.dados.ofertas) || [];
+  var nMud = Object.keys(AR.mudou).length;
+  var nLib = lista.filter(function(o){ return arRegra(o) !== 'nao'; }).length;
+  document.getElementById('ar-resumo').innerHTML = '<strong>' + nLib + '</strong> de ' + lista.length + ' ofertas liberam o painel' +
+    (nMud ? ' · <strong style="color:var(--accent)">' + nMud + ' alteração' + (nMud > 1 ? 'ões' : '') + ' não salva' + (nMud > 1 ? 's' : '') + '</strong>' : '');
+  var linhas = [], prodAtual = null;
+  lista.forEach(function(o) {
+    if (o.produtoNome !== prodAtual) {
+      prodAtual = o.produtoNome;
+      var doProd = lista.filter(function(x){ return x.produtoNome === prodAtual; });
+      var ativos = doProd.reduce(function(s, x){ return s + (x.pessoasAtivas || 0); }, 0);
+      linhas.push('<tr class="ar-prod"><td colspan="4">' + escapeHtml(prodAtual || '(sem produto)') + ' <span class="as-sub" style="display:inline;font-weight:600">· ' + doProd.length + ' oferta' + (doProd.length > 1 ? 's' : '') + ' · ' + ativos + ' com assinatura ativa</span></td></tr>');
+    }
+    var r = arRegra(o);
+    var sel = '<select class="ar-sel" onchange="arMudar(\'' + escapeHtml(o.ofertaId) + '\', this.value)">' +
+      ['libera', 'nao', 'prazo'].map(function(k){ return '<option value="' + k + '"' + (k === r ? ' selected' : '') + '>' + AR_ROT[k] + '</option>'; }).join('') + '</select>';
+    var origem = AR.mudou[o.ofertaId] ? 'alterada (não salva)' : (o.regraSalva ? 'regra salva' : 'regra de fábrica');
+    linhas.push('<tr class="' + (AR.mudou[o.ofertaId] ? 'ar-mudou' : '') + '">' +
+      '<td data-l="Oferta"><div class="as-nome">' + escapeHtml(o.ofertaNome || '(sem nome)') + '</div><div class="as-sub">' +
+        (o.arquivada ? 'arquivada na Hubla · ' : '') + (o.soEmAssinaturas ? 'fora do catálogo atual · ' : '') + o.assinaturas + ' assinatura' + (o.assinaturas === 1 ? '' : 's') + ' no total</div></td>' +
+      '<td data-l="Com assinatura ativa">' + o.pessoasAtivas + (o.vitalicias ? ' <span class="as-sub" style="display:inline">(' + o.vitalicias + ' vitalícia' + (o.vitalicias > 1 ? 's' : '') + ')</span>' : '') + '</td>' +
+      '<td data-l="Já no painel">' + o.ativasNoPainel + '</td>' +
+      '<td data-l="Regra">' + sel + '<div class="as-sub">' + origem + '</div></td></tr>');
+  });
+  document.getElementById('ar-lista').innerHTML = !lista.length ? '<div class="as-vazio">Nenhuma oferta. Rode "⇅ Buscar na Hubla" na visão Assinaturas.</div>' :
+    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Com assinatura ativa</th><th>Já no painel</th><th>Regra</th></tr></thead><tbody>' + linhas.join('') + '</tbody></table>';
+}
+function arTodas() {
+  var o = {};
+  ((AR.dados && AR.dados.ofertas) || []).forEach(function(x){ o[x.ofertaId] = arRegra(x); });
+  return o;
+}
+function arPessoas(lista, perde) {
+  if (!lista.length) return '<div class="as-vazio" style="padding:8px 0">Ninguém.</div>';
+  return lista.map(function(p) {
+    var st = p.statusPainel === 'ativo' ? 'ativo no painel' : (p.statusPainel === 'sem_cadastro' ? 'sem cadastro no painel' : 'inativo no painel');
+    var fica = perde && (p.excecao || p.admin) ? ' · <strong>' + (p.admin ? 'admin' : 'exceção') + ', fica</strong>' : '';
+    return '<div class="ar-pess"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email) + ' · ' + st + fica + '</div><div class="as-sub">' + (p.ofertas || []).map(escapeHtml).join('<br>') + '</div></div>';
+  }).join('');
+}
+function arImpacto() {
+  var box = document.getElementById('ar-impacto');
+  box.innerHTML = '<div class="card"><div class="as-sinc">Calculando o impacto…</div></div>';
+  return arPost('/hubla/regras-acesso/simular', { ofertas: arTodas() }).then(function(d) {
+    box.innerHTML = '<div class="card"><h4 class="ap-h">Impacto destas regras</h4>' +
+      '<div class="as-aviso" style="margin:0 0 10px">Pessoas com assinatura ativa (vigente, em teste ou vitalícia) que dá direito ao painel: <strong>' + d.liberadosAntes + '</strong> hoje → <strong>' + d.liberadosDepois + '</strong> com estas regras.</div>' +
+      '<div class="ar-col"><div><h4 class="ap-h" style="color:#2fb37a">Ganham o direito (' + d.ganham.length + ')</h4>' + arPessoas(d.ganham) + '</div>' +
+      '<div><h4 class="ap-h" style="color:var(--accent)">Perdem o direito (' + d.perdem.length + ')</h4>' + arPessoas(d.perdem, true) +
+      (d.perdem.length ? '<div class="as-aviso" style="margin:8px 0 0">Ninguém sai sozinho ao salvar: a retirada é na visão "Acesso ao painel · Exceções".</div>' : '') + '</div></div></div>';
+    return d;
+  }).catch(function(e){ box.innerHTML = '<div class="card"><div class="as-sinc">Erro: ' + escapeHtml(e.message) + '</div></div>'; throw e; });
+}
+function arSalvar() {
+  if (!AR.dados) return;
+  arImpacto().then(function(d) {
+    if (!confirm('Salvar as regras?\n\n' + d.ganham.length + ' pessoa(s) ganham o direito ao painel e ' + d.perdem.length + ' perdem.\nNinguém é liberado nem retirado agora: depois você confirma a liberação.')) return;
+    var btn = document.getElementById('ar-btn-salvar');
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    arPost('/hubla/regras-acesso', { ofertas: arTodas() }).then(function(r) {
+      btn.disabled = false; btn.textContent = 'Salvar regras';
+      arCarregar();
+      arAplicar(false);
+    }).catch(function(e){ btn.disabled = false; btn.textContent = 'Salvar regras'; alert('Não salvou: ' + e.message); });
+  }).catch(function(){});
+}
+function arAplicar(confirmar) {
+  var box = document.getElementById('ar-aplicar');
+  box.innerHTML = '<div class="card"><div class="as-sinc">' + (confirmar ? 'Liberando…' : 'Conferindo quem tem direito e está fora do painel…') + '</div></div>';
+  arPost('/hubla/regras-acesso/aplicar', { confirmar: !!confirmar }).then(function(d) {
+    if (!d.previa) {
+      box.innerHTML = '<div class="card"><h4 class="ap-h">Acesso liberado para ' + d.ativados.length + ' pessoa' + (d.ativados.length === 1 ? '' : 's') + '</h4>' + arPessoas(d.pessoas) + '</div>';
+      if (AR.dados) arCarregar();
+      return;
+    }
+    box.innerHTML = '<div class="card"><div class="ap-cab" style="padding:0 0 8px"><h4 class="ap-h" style="margin:0">Têm direito pelas regras salvas e estão fora do painel (' + d.total + ')</h4>' +
+      (d.total ? '<button class="btn" style="width:auto;margin:0;font-size:12px;padding:8px 14px;background:#2fb37a;color:#fff" onclick="if(confirm(\'Liberar o painel para ' + d.total + ' pessoa(s)?\'))arAplicar(true)">Liberar ' + d.total + '</button>' : '') +
+      '</div>' + arPessoas(d.pessoas) + '</div>';
+  }).catch(function(e){ box.innerHTML = '<div class="card"><div class="as-sinc">Erro: ' + escapeHtml(e.message) + '</div></div>'; });
 }
 
 // ── Acesso ao painel · Exceções (desde 11/11/2026) ──
