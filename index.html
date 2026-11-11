@@ -1003,6 +1003,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <div class="as-sinc" id="as-sinc">Carregando…</div>
     <div style="display:flex;gap:8px">
       <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="asCarregar()">↻ Atualizar</button>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="asExportarCsv()" title="Baixa a visão atual (com os filtros) em CSV, uma linha por assinatura ou acesso">⬇ CSV</button>
       <button class="btn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:7px 14px;width:auto;margin:0" id="as-btn-sinc" onclick="asSincronizar()">⇅ Buscar na Hubla</button>
     </div>
   </div>
@@ -1010,7 +1011,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div class="as-filtros">
     <button type="button" class="as-prod-btn" id="as-prod-btn" onclick="asTogglePainelProdutos()">Produtos: todos ▾</button>
     <input type="search" id="as-busca" placeholder="Buscar nome, e-mail ou telefone" oninput="asRender()"/>
-    <label class="chk-box" title="Ofertas que liberam o painel + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga (grátis, convite, vitalício)"><input type="checkbox" id="as-so-painel" onchange="asRender()" checked/> Só o painel</label>
+    <label class="chk-box" title="Ofertas que liberam o painel + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga (grátis, convite, vitalício). Desmarque para ver os acessos de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()" checked/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
   </div>
@@ -2052,6 +2053,10 @@ function asProdutosFora() {
 // a._segue = outras ATIVAS que terminam depois (ou vitalícias) e cobrem esta:
 // mesmo produto, ou uma que libera o painel / acesso ao produto do painel.
 // a._tambem = outras ativas que não cobrem (ex.: curso vitalício).
+// Acesso (sem fatura) ao produto do painel. Desde 11/11/2026 o proxy manda
+// acessos de TODOS os produtos; antes só vinham os do painel (sem doPainel).
+var AS_PROD_PAINEL = '5aPVHUjfhTa79XR2bWqC';
+function asAcessoPainel(a) { return a.fonte === 'acesso' && (a.doPainel === true || (a.doPainel === undefined && (!a.produtoId || a.produtoId === AS_PROD_PAINEL))); }
 function asAtiva(b) { return b.situacao === 'vigente' || b.situacao === 'teste' || b.situacao === 'vitalicio'; }
 function asIndexarPessoas() {
   var L = AS.dados.assinaturas || [], idx = {};
@@ -2078,7 +2083,7 @@ function asIndexarPessoas() {
     chaves(a).forEach(function(k){ (idx[k] || []).forEach(function(b) {
       if (b === a || vistos[b.id] || !asAtiva(b)) return; vistos[b.id] = 1;
       var depois = b.situacao === 'vitalicio' || !b.fim || !a.fim || t(b.fim) > t(a.fim);
-      var cobre = b.liberaPainel || b.fonte === 'acesso' || (b.produtoId && b.produtoId === a.produtoId);
+      var cobre = b.liberaPainel || asAcessoPainel(b) || (b.produtoId && b.produtoId === a.produtoId);
       (depois && cobre ? segue : tambem).push(b);
     }); });
     a._segue = segue; a._tambem = tambem;
@@ -2099,7 +2104,7 @@ function asBase() {
   var q = (document.getElementById('as-busca').value || '').toLowerCase().trim();
   var qNum = q.replace(/\D/g, '');
   return (AS.dados.assinaturas || []).filter(function(a) {
-    if (soPainel && !a.liberaPainel && a.fonte !== 'acesso') return false;
+    if (soPainel && !a.liberaPainel && !asAcessoPainel(a)) return false;
     if (a.produtoNome && fora[a.produtoNome]) return false;
     if (semGratis && (a.fonte === 'acesso' || a.situacao === 'vitalicio')) return false;
     if (q) {
@@ -2116,12 +2121,32 @@ var AS_VISOES = {
   venceram:  { t: 'Venceram (60 dias)', c: 'k-perigo', f: function(a){ return a.situacao === 'encerrada' && a.fim && (Date.now() - new Date(a.fim).getTime()) <= 60 * AS_DIA; }, ord: 'fimDesc' },
   vigentes:  { t: 'Vigentes', c: 'k-ok', f: function(a){ return a.situacao === 'vigente'; }, ord: 'fimAsc' },
   teste:     { t: 'Em teste', c: 'k-info', f: function(a){ return a.situacao === 'teste'; }, ord: 'fimAsc' },
+  gratuitos: { t: 'Acesso gratuito', c: 'k-info', f: function(a){ return a.gratuito && asAtiva(a); }, ord: 'fimAsc' },
   vitalicio: { t: 'Vitalícios', c: 'k-info', f: function(a){ return a.situacao === 'vitalicio'; }, ord: 'inicioDesc' },
   semRenov:  { t: 'Renovação desligada', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.renovacaoAutomatica === false; }, ord: 'fimAsc' },
   todas:     { t: 'Todas', c: 'k-neutro', f: function(){ return true; }, ord: 'inicioDesc' }
 };
 
 function asVisao(v) { AS.visao = v; AS.limite = 100; asRender(); }
+
+// CSV da visão atual (mesmos filtros da tela), uma linha por assinatura/acesso.
+function asExportarCsv() {
+  if (!AS.dados) return;
+  var lista = asBase().filter(asFiltroVisao(AS.visao));
+  var t = function(x){ return x ? new Date(x).getTime() : 9e15; };
+  lista.sort(function(a, b){ return t(a.fim) - t(b.fim); });
+  var q = function(v){ v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; };
+  var cab = ['Nome', 'E-mail', 'Telefone', 'Produto', 'Oferta', 'Turmas', 'Gratuito', 'Situação', 'Início', 'Fim', 'Dias restantes', 'Origem'];
+  var linhas = lista.map(function(a){ return [a.nome, a.email, a.telefone, a.produtoNome, a.ofertaNome, (a.turmas || []).join(', '),
+    a.gratuito ? 'sim' : 'não', a.situacao, asData(a.inicio || a.criadaEm), a.situacao === 'vitalicio' ? 'vitalício' : asData(a.fim),
+    a.diasRestantes === null || a.diasRestantes === undefined ? '' : a.diasRestantes, a.fonte === 'acesso' ? 'acesso sem fatura' : 'assinatura'].map(q).join(';'); });
+  var csv = '\ufeff' + cab.map(q).join(';') + '\n' + linhas.join('\n');
+  var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  var el = document.createElement('a');
+  el.href = url; el.download = 'hubla-' + AS.visao + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
 
 function asRender() {
   if (!AS.dados) return;
@@ -2177,7 +2202,7 @@ function asLinha(a) {
   if (a.formaPagamento) renov += '<div class="as-sub">' + ({ credit_card: 'Cartão', pix: 'Pix', bank_slip: 'Boleto' }[a.formaPagamento] || escapeHtml(a.formaPagamento)) + (a.cicloMeses ? ' · ' + a.cicloMeses + (a.cicloMeses === 1 ? ' mês' : ' meses') : '') + '</div>';
   return '<tr>' +
     '<td data-l="Membro"><div class="as-nome">' + escapeHtml(a.nome || a.email || '(sem nome)') + '</div><div class="as-sub">' + contato + '</div></td>' +
-    '<td data-l="Oferta">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') + (a.liberaPainel ? '<div class="as-painel">libera o painel</div>' : (a.fonte === 'acesso' ? '<div class="as-sub">acesso ao produto do painel</div>' : '')) + asOutras(a) + '</td>' +
+    '<td data-l="Oferta">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') + (a.liberaPainel ? '<div class="as-painel">libera o painel</div>' : (a.fonte === 'acesso' ? '<div class="as-sub">' + (asAcessoPainel(a) ? 'acesso ao produto do painel' : 'acesso sem fatura') + '</div>' : '')) + asOutras(a) + '</td>' +
     '<td data-l="Início">' + asData(a.inicio || a.criadaEm) + '</td>' +
     '<td data-l="Fim">' + (a.situacao === 'vitalicio' ? 'vitalício' : asData(a.fim)) + dias + '</td>' +
     '<td data-l="Situação"><span class="as-badge as-b-' + escapeHtml(a.situacao || 'desconhecida') + '">' + escapeHtml(a.situacao || '—') + '</span></td>' +
@@ -2203,10 +2228,12 @@ function asFimTexto(a) {
 function asOfertaMini(a, destaque) {
   return '<div class="as-of' + (destaque ? ' dest' : '') + '">' +
     '<div class="as-of-n">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') +
-      (a.liberaPainel ? ' <span class="as-painel" style="display:inline">painel</span>' : '') + '</div>' +
+      (a.liberaPainel ? ' <span class="as-painel" style="display:inline">painel</span>' : '') +
+      (a.gratuito ? ' <span class="as-renov on" style="display:inline">gratuito</span>' : '') + '</div>' +
     '<div class="as-of-l"><span class="as-badge as-b-' + escapeHtml(a.situacao || 'desconhecida') + '">' + escapeHtml(a.situacao || '—') + '</span> ' +
       asFimTexto(a) + ' ' + asRenovTexto(a) + '</div>' +
     (a.ofertaNome && a.produtoNome && a.ofertaNome !== a.produtoNome ? '<div class="as-sub">' + escapeHtml(a.produtoNome) + '</div>' : '') +
+    (a.turmas && a.turmas.length ? '<div class="as-sub">Turma: ' + a.turmas.map(escapeHtml).join(', ') + '</div>' : '') +
   '</div>';
 }
 function asLinhaPessoa(pid, naVisao) {
