@@ -1060,6 +1060,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <label class="chk-box" title="Mostra só as ofertas que liberam o painel (veja Regras de acesso) + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga. Desmarcado = todas as assinaturas de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()"/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
+    <label class="chk-box" id="as-excl-box" style="display:none" title="Produtos que você excluiu na Hubla. O histórico continua guardado; desmarcado, eles somem da lista de produtos, das linhas e dos cartões."><input type="checkbox" id="as-mostrar-excluidos" onchange="asSalvarFiltro();asMontarProdutos();asRender()"/> <span id="as-excl-txt">Mostrar produtos excluídos</span></label>
   </div>
   <div class="as-prod-painel" id="as-prod-painel" style="display:none">
     <div class="as-prod-acoes">
@@ -1960,12 +1961,17 @@ function arMudar(id, v) {
   document.getElementById('ar-impacto').innerHTML = '';
   arRender();
 }
+// Ofertas de produtos excluídos na Hubla ficam escondidas (o salvar usa a lista inteira).
+function arMostrarExcluidos() { AR.mostrarExcluidos = !AR.mostrarExcluidos; arRender(); }
 function arRender() {
-  var lista = (AR.dados && AR.dados.ofertas) || [];
+  var todas = (AR.dados && AR.dados.ofertas) || [];
+  var nExcl = todas.filter(function(o){ return o.produtoExcluido; }).length;
+  var lista = AR.mostrarExcluidos ? todas : todas.filter(function(o){ return !o.produtoExcluido; });
   var nMud = Object.keys(AR.mudou).length + lista.filter(function(o){ return !AR.mudou[o.ofertaId] && arGruposMudou(o); }).length;
   var nLib = lista.filter(function(o){ return arRegra(o) !== 'nao'; }).length;
   document.getElementById('ar-resumo').innerHTML = '<strong>' + nLib + '</strong> de ' + lista.length + ' ofertas liberam o painel' +
-    (nMud ? ' · <strong style="color:var(--accent)">' + nMud + ' alteração' + (nMud > 1 ? 'ões' : '') + ' não salva' + (nMud > 1 ? 's' : '') + '</strong>' : '');
+    (nMud ? ' · <strong style="color:var(--accent)">' + nMud + ' alteração' + (nMud > 1 ? 'ões' : '') + ' não salva' + (nMud > 1 ? 's' : '') + '</strong>' : '') +
+    (nExcl ? ' · <a href="javascript:void(0)" onclick="arMostrarExcluidos()">' + (AR.mostrarExcluidos ? 'Esconder' : 'Mostrar') + ' ' + nExcl + ' oferta' + (nExcl > 1 ? 's' : '') + ' de produtos excluídos</a>' : '');
   var linhas = [], prodAtual = null;
   lista.forEach(function(o) {
     if (o.produtoNome !== prodAtual) {
@@ -2274,14 +2280,14 @@ function asCarregar() {
 // Seleção de produtos: guarda os DESMARCADOS (produto novo entra marcado).
 var AS_FILTRO_CHAVE = 'cdv_assin_filtro';
 function asLerFiltro() {
-  try { var f = JSON.parse(localStorage.getItem(AS_FILTRO_CHAVE) || '{}'); return { fora: f.fora || [], semGratis: !!f.semGratis, escondeSegue: f.escondeSegue !== false }; }
-  catch (e) { return { fora: [], semGratis: false, escondeSegue: true }; }
+  try { var f = JSON.parse(localStorage.getItem(AS_FILTRO_CHAVE) || '{}'); return { fora: f.fora || [], semGratis: !!f.semGratis, escondeSegue: f.escondeSegue !== false, mostraExcluidos: !!f.mostraExcluidos }; }
+  catch (e) { return { fora: [], semGratis: false, escondeSegue: true, mostraExcluidos: false }; }
 }
 function asSalvarFiltro() {
   var fora = [];
   document.querySelectorAll('#as-prod-lista input[type=checkbox]').forEach(function(i){ if (!i.checked) fora.push(i.value); });
   if (!document.getElementById('as-prod-lista').children.length) fora = asLerFiltro().fora;
-  try { localStorage.setItem(AS_FILTRO_CHAVE, JSON.stringify({ fora: fora, semGratis: document.getElementById('as-sem-gratis').checked, escondeSegue: document.getElementById('as-esconder-segue').checked })); } catch (e) {}
+  try { localStorage.setItem(AS_FILTRO_CHAVE, JSON.stringify({ fora: fora, semGratis: document.getElementById('as-sem-gratis').checked, escondeSegue: document.getElementById('as-esconder-segue').checked, mostraExcluidos: document.getElementById('as-mostrar-excluidos').checked })); } catch (e) {}
 }
 function asTogglePainelProdutos() {
   var p = document.getElementById('as-prod-painel');
@@ -2301,8 +2307,13 @@ function asMontarProdutos() {
   var f = asLerFiltro();
   document.getElementById('as-sem-gratis').checked = f.semGratis;
   document.getElementById('as-esconder-segue').checked = f.escondeSegue;
+  // Produtos excluídos na Hubla (desde 11/11/2026): escondidos por padrão.
+  var excl = AS.dados.produtosExcluidos || [];
+  document.getElementById('as-excl-box').style.display = excl.length ? '' : 'none';
+  document.getElementById('as-excl-txt').textContent = 'Mostrar produtos excluídos (' + excl.length + ')';
+  document.getElementById('as-mostrar-excluidos').checked = f.mostraExcluidos;
   var cont = {};
-  (AS.dados.assinaturas || []).forEach(function(a){ if (a.produtoNome) cont[a.produtoNome] = (cont[a.produtoNome] || 0) + 1; });
+  (AS.dados.assinaturas || []).forEach(function(a){ if (a.produtoNome && (!a.produtoExcluido || f.mostraExcluidos)) cont[a.produtoNome] = (cont[a.produtoNome] || 0) + 1; });
   var lista = Object.keys(cont).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
   document.getElementById('as-prod-lista').innerHTML = lista.map(function(n){
     return '<label><input type="checkbox" value="' + escapeHtml(n) + '"' + (f.fora.indexOf(n) >= 0 ? '' : ' checked') +
@@ -2369,11 +2380,13 @@ function asFiltroVisao(k) {
 function asBase() {
   var fora = asProdutosFora();
   var semGratis = document.getElementById('as-sem-gratis').checked;
+  var mostraExcl = document.getElementById('as-mostrar-excluidos').checked;
   var soPainel = document.getElementById('as-so-painel').checked;
   var q = (document.getElementById('as-busca').value || '').toLowerCase().trim();
   var qNum = q.replace(/\D/g, '');
   return (AS.dados.assinaturas || []).filter(function(a) {
     if (soPainel && !a.liberaPainel && !asAcessoPainel(a)) return false;
+    if (a.produtoExcluido && !mostraExcl) return false;
     if (a.produtoNome && fora[a.produtoNome]) return false;
     if (semGratis && (a.fonte === 'acesso' || a.situacao === 'vitalicio')) return false;
     if (q) {
