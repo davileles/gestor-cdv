@@ -1711,9 +1711,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-clube'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
