@@ -1020,6 +1020,23 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <div class="as-aviso" style="margin:8px 0 0">Vincule a pessoa a uma oferta da Hubla: ela passa a ter o que a oferta dá nas <strong>Regras de acesso</strong> (painel e grupos), como se tivesse a assinatura. Com data de fim, a exceção para de valer depois desse dia. Sem oferta, vale acesso total. Se a exceção dá o painel e a pessoa estava inativa, ela é reativada.</div>
       <div id="ap-excecoes" style="margin-top:12px"></div>
     </div>
+    <div class="card">
+      <h4 class="ap-h" id="aj-form-tit">Ajustes de cadastro — tem assinatura, mas usa outro e-mail ou telefone</h4>
+      <div class="ap-form">
+        <input type="email" id="aj-hubla" placeholder="E-mail da assinatura na Hubla" onchange="ajMostrarHubla()"/>
+        <input type="email" id="aj-painel" placeholder="E-mail que usa no painel"/>
+        <input type="tel" id="aj-tel" placeholder="Telefone novo com DDD (grupos)"/>
+        <input type="text" id="aj-nome" placeholder="Nome"/>
+        <input type="text" id="aj-just" placeholder="Observação (opcional) — ex.: e-mail do trabalho na Hubla"/>
+        <div style="display:flex;gap:6px">
+          <button class="btn" id="aj-btn-salvar" style="width:auto;margin:0;font-size:12px;padding:8px 14px;flex:1" onclick="ajSalvar()">Adicionar ajuste</button>
+          <button class="btn" id="aj-btn-cancelar" style="display:none;width:auto;margin:0;font-size:12px;padding:8px 12px;background:#3f3f3f;color:#ddd" onclick="ajLimpar()">Cancelar</button>
+        </div>
+      </div>
+      <div class="ap-direito" id="aj-hubla-info"></div>
+      <div class="as-aviso" style="margin:8px 0 0">Não é exceção: a pessoa continua valendo pela assinatura dela na Hubla (oferta, prazo, painel e grupos pelas Regras de acesso). Só muda o e-mail com que ela entra no painel e/ou o telefone que ela usa nos grupos. Se a assinatura acabar, ela perde o acesso como qualquer aluno.</div>
+      <div id="aj-lista" style="margin-top:12px"></div>
+    </div>
     <div class="card" style="padding:0;overflow:hidden">
       <div class="ap-cab">
         <h4 class="ap-h" style="margin:0">Ativos no painel sem assinatura vigente <span id="ap-total"></span></h4>
@@ -2104,12 +2121,14 @@ function apCarregar() {
   document.getElementById('ap-sinc').textContent = 'Carregando…';
   Promise.all([
     fetch(AS_PROXY + '/hubla/painel/sem-assinatura').then(function(r){ return r.json(); }),
-    fetch(AS_PROXY + '/hubla/painel/excecoes').then(function(r){ return r.json(); })
+    fetch(AS_PROXY + '/hubla/painel/excecoes').then(function(r){ return r.json(); }),
+    fetch(AS_PROXY + '/hubla/painel/ajustes').then(function(r){ return r.json(); }).catch(function(){ return { ok: false }; })
   ]).then(function(rs) {
     if (!rs[0].ok) throw new Error(rs[0].erro || 'falha ao ler a lista');
     if (!rs[1].ok) throw new Error(rs[1].erro || 'falha ao ler as exceções');
     AP.sem = rs[0]; AP.exc = rs[1].excecoes || []; AP.ofertas = rs[1].ofertas || []; AP.grupos = rs[1].grupos || [];
-    apMontarOfertas(); apRender(); apMostrarDireito();
+    AP.aj = rs[2].ok ? (rs[2].ajustes || []) : null;
+    apMontarOfertas(); apRender(); apMostrarDireito(); ajRender();
   }).catch(function(e){ document.getElementById('ap-sinc').textContent = 'Erro: ' + e.message; });
 }
 var AP_REGRA = { libera: 'dá o painel', prazo: 'dá o painel só com data de fim', nao: 'não dá o painel' };
@@ -2166,7 +2185,9 @@ function apRender() {
       return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email) + '</div></td>' +
         '<td data-l="Produtos">' + ((p.produtos || []).map(escapeHtml).join('<br>') || '—') + '</td>' +
         '<td data-l="Ativado em">' + asData(p.ativadoEm) + '</td><td data-l="Situação">' + sit + '</td>' +
-        '<td>' + (p.excecao || p.admin ? '' : '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="apPreparar(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml((p.nome || '').replace(/'/g, '')) + '\')">Manter (exceção)</button>') + '</td></tr>';
+        '<td>' + (p.excecao || p.admin ? '' : '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="apPreparar(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml((p.nome || '').replace(/'/g, '')) + '\')">Manter (exceção)</button> ' +
+          '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" title="Tem assinatura com outro e-mail na Hubla" onclick="ajPreparar(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml((p.nome || '').replace(/'/g, '')) + '\')">É outro e-mail</button>') +
+          (p.emailHubla ? '<div class="as-sub">assinatura em ' + escapeHtml(p.emailHubla) + '</div>' : '') + '</td></tr>';
     }).join('') + '</tbody></table>';
 }
 function apLimparForm() {
@@ -2226,6 +2247,90 @@ function apExcluir(id) {
   if (!confirm('Remover ' + quem + ' das exceções?\n\nO acesso não é retirado agora: sem assinatura, a pessoa volta a aparecer em "sem assinatura vigente" e em Grupos × acesso.')) return;
   fetch(AS_PROXY + '/hubla/painel/excecoes/excluir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
     .then(function(r){ return r.json(); }).then(function(d) { if (!d.ok) throw new Error(d.erro || 'falha'); if (AP.editId === id) apLimparForm(); apCarregar(); })
+    .catch(function(e){ alert('Não foi possível remover: ' + e.message); });
+}
+// ── Ajustes de cadastro (desde 12/11/2026): /hubla/painel/ajustes ──
+function ajRender() {
+  var el = document.getElementById('aj-lista');
+  if (AP.aj === null) { el.innerHTML = '<div class="as-sinc">Não consegui ler os ajustes agora.</div>'; return; }
+  var l = AP.aj || [];
+  el.innerHTML = !l.length ? '<div class="as-vazio" style="padding:12px">Nenhum ajuste ainda.</div>' :
+    '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Assinatura na Hubla</th><th>Usa</th><th>Situação</th><th></th></tr></thead><tbody>' +
+    l.map(function(a) {
+      var ass = (a.assinaturasAtivas || []).map(function(s) {
+        return '<div class="as-nome" style="font-weight:600">' + escapeHtml(s.ofertaNome || s.produtoNome || '—') + '</div><div class="as-sub">' +
+          (s.situacao === 'vitalicio' ? 'vitalício' : (s.situacao === 'teste' ? 'em teste · ' : '') + 'até ' + asData(s.fim)) + (s.liberaPainel ? ' · dá o painel' : '') + '</div>';
+      }).join('') || '<span class="as-sub" style="display:inline">' + (a.emailHublaNaBase ? 'nenhuma assinatura ativa' : 'e-mail não encontrado na Hubla') + '</span>';
+      var tel = String(a.telefone || '').replace(/\D/g, '');
+      var usa = (a.emailPainel ? '<div>painel: ' + escapeHtml(a.emailPainel) + '</div>' : '') + (tel ? '<div>grupos: +' + tel + '</div>' : '');
+      var sit = a.daPainel ? '<span class="as-badge as-b-vigente">valendo</span>' : '<span class="as-badge as-b-sem_cadastro">assinatura não dá o painel</span>';
+      if (a.emailPainel && a.statusPainel && a.statusPainel !== 'ativo') sit += '<div class="as-sub">e-mail do painel ' + (a.statusPainel === 'sem_cadastro' ? 'sem cadastro' : 'inativo') + '</div>';
+      return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(a.nome || '(sem nome)') + '</div>' + (a.justificativa ? '<div class="ap-just">' + escapeHtml(a.justificativa) + '</div>' : '') + '</td>' +
+        '<td data-l="Assinatura na Hubla"><div class="as-sub" style="margin-bottom:3px">' + escapeHtml(a.emailHubla) + '</div>' + ass + '</td>' +
+        '<td data-l="Usa"><div class="ap-just">' + usa + '</div></td><td data-l="Situação">' + sit + '</td>' +
+        '<td><button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="ajEditar(\'' + escapeHtml(a.id) + '\')">Editar</button> ' +
+        '<button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:#3f3f3f;color:#ddd" onclick="ajExcluir(\'' + escapeHtml(a.id) + '\')">Remover</button></td></tr>';
+    }).join('') + '</tbody></table>';
+}
+// Mostra as assinaturas ativas do e-mail da Hubla digitado (dados da visão Assinaturas).
+function ajMostrarHubla() {
+  var e = document.getElementById('aj-hubla').value.trim().toLowerCase(), el = document.getElementById('aj-hubla-info');
+  if (!e) { el.innerHTML = ''; return; }
+  if (!AS.dados) { el.textContent = 'Conferindo na Hubla…'; agCarregarAssinaturas(); setTimeout(function(){ if (AS.dados) ajMostrarHubla(); }, 4000); return; }
+  var l = (AS.dados.assinaturas || []).filter(function(a){ return String(a.email || '').toLowerCase() === e; });
+  var at = l.filter(asAtiva);
+  if (!l.length) { el.innerHTML = '<strong>Esse e-mail não aparece na Hubla.</strong> Confira o e-mail ou, se a pessoa não tem assinatura, use Exceções.'; return; }
+  if (!document.getElementById('aj-nome').value && l[0].nome) document.getElementById('aj-nome').value = l[0].nome;
+  el.innerHTML = at.length ? 'Assinaturas ativas: ' + at.map(function(a){ return '<strong>' + escapeHtml(a.ofertaNome || a.produtoNome || '—') + '</strong> (' + (a.situacao === 'vitalicio' ? 'vitalício' : 'até ' + asData(a.fim)) + ')'; }).join(', ')
+    : '<strong>Nenhuma assinatura ativa com esse e-mail.</strong> O ajuste fica salvo, mas só vale quando houver assinatura.';
+}
+function ajLimpar() {
+  AP.ajEdit = null;
+  ['aj-hubla', 'aj-painel', 'aj-tel', 'aj-nome', 'aj-just'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('aj-hubla-info').innerHTML = '';
+  document.getElementById('aj-btn-salvar').textContent = 'Adicionar ajuste';
+  document.getElementById('aj-btn-cancelar').style.display = 'none';
+  document.getElementById('aj-form-tit').textContent = 'Ajustes de cadastro — tem assinatura, mas usa outro e-mail ou telefone';
+}
+function ajPreparar(emailPainel, nome) {
+  ajLimpar();
+  document.getElementById('aj-painel').value = emailPainel || '';
+  document.getElementById('aj-nome').value = nome || '';
+  var h = document.getElementById('aj-hubla'); h.focus(); h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function ajEditar(id) {
+  var a = (AP.aj || []).filter(function(x){ return x.id === id; })[0]; if (!a) return;
+  ajLimpar(); AP.ajEdit = a.id;
+  document.getElementById('aj-hubla').value = a.emailHubla || '';
+  document.getElementById('aj-painel').value = a.emailPainel || '';
+  document.getElementById('aj-tel').value = a.telefone || '';
+  document.getElementById('aj-nome').value = a.nome || '';
+  document.getElementById('aj-just').value = a.justificativa || '';
+  document.getElementById('aj-btn-salvar').textContent = 'Salvar alterações';
+  document.getElementById('aj-btn-cancelar').style.display = '';
+  document.getElementById('aj-form-tit').textContent = 'Editando ajuste de ' + (a.nome || a.emailHubla);
+  ajMostrarHubla();
+  document.getElementById('aj-hubla').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function ajSalvar() {
+  var v = function(id){ return document.getElementById(id).value.trim(); };
+  var corpo = { id: AP.ajEdit || '', emailHubla: v('aj-hubla'), emailPainel: v('aj-painel'), telefone: v('aj-tel').replace(/\D/g, ''), nome: v('aj-nome'), justificativa: v('aj-just') };
+  if (!corpo.emailHubla) { alert('Informe o e-mail da assinatura na Hubla.'); return; }
+  if (!corpo.emailPainel && !corpo.telefone) { alert('Informe o e-mail que a pessoa usa no painel e/ou o telefone novo.'); return; }
+  fetch(AS_PROXY + '/hubla/painel/ajustes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+    .then(function(r){ return r.json(); }).then(function(d) {
+      if (!d.ok) throw new Error(d.erro || 'falha');
+      ajLimpar();
+      if (d.ativado) alert(corpo.emailPainel + ' agora entra no painel pela assinatura de ' + corpo.emailHubla + '.');
+      else if (corpo.emailPainel && !d.daPainel) alert('Ajuste salvo. A assinatura de ' + corpo.emailHubla + ' não dá o painel agora, então ' + corpo.emailPainel + ' não foi liberado.');
+      apCarregar();
+    }).catch(function(e){ alert('Não foi possível salvar: ' + e.message); });
+}
+function ajExcluir(id) {
+  var a = (AP.aj || []).filter(function(x){ return x.id === id; })[0];
+  if (!confirm('Remover o ajuste de ' + (a ? (a.nome || a.emailHubla) : id) + '?\n\nO acesso não é retirado agora: o e-mail do painel passa a aparecer em "sem assinatura vigente".')) return;
+  fetch(AS_PROXY + '/hubla/painel/ajustes/excluir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); apCarregar(); })
     .catch(function(e){ alert('Não foi possível remover: ' + e.message); });
 }
 function apRetirar() {
