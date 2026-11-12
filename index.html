@@ -1995,7 +1995,7 @@ function arRender() {
     linhas.push('<tr class="' + (AR.mudou[o.ofertaId] || arGruposMudou(o) ? 'ar-mudou' : '') + '">' +
       '<td data-l="Oferta"><div class="as-nome">' + escapeHtml(o.ofertaNome || '(sem nome)') + '</div><div class="as-sub">' +
         (o.arquivada ? 'arquivada na Hubla · ' : '') + (o.soEmAssinaturas ? 'fora do catálogo atual · ' : '') + o.assinaturas + ' assinatura' + (o.assinaturas === 1 ? '' : 's') + ' no total</div></td>' +
-      '<td data-l="Com assinatura ativa">' + o.pessoasAtivas + (o.vitalicias ? ' <span class="as-sub" style="display:inline">(' + o.vitalicias + ' vitalícia' + (o.vitalicias > 1 ? 's' : '') + ')</span>' : '') + '</td>' +
+      '<td data-l="Com assinatura ativa">' + o.pessoasAtivas + (o.vitalicias ? ' <span class="as-sub" style="display:inline">(' + o.vitalicias + ' vitalícia' + (o.vitalicias > 1 ? 's' : '') + (o.vitaliciasConcedidas ? ', ' + o.vitaliciasConcedidas + ' concedida' + (o.vitaliciasConcedidas > 1 ? 's' : '') : '') + ')</span>' : '') + '</td>' +
       '<td data-l="Já no painel">' + o.ativasNoPainel + '</td>' +
       '<td data-l="Regra">' + sel + '<div class="as-sub">' + origem + '</div></td>' +
       '<td data-l="Grupos">' + btnG + '</td></tr>');
@@ -2428,12 +2428,13 @@ function asBase() {
 }
 
 var AS_VISOES = {
-  vencendo:  { t: 'Vencem em 30 dias', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.diasRestantes !== null && a.diasRestantes <= 30; }, ord: 'fimAsc' },
+  vencendo:  { t: 'Vencem em 30 dias', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && !a.acessoVitalicio && a.diasRestantes !== null && a.diasRestantes <= 30; }, ord: 'fimAsc' },
   venceram:  { t: 'Venceram (60 dias)', c: 'k-perigo', f: function(a){ return a.situacao === 'encerrada' && a.fim && (Date.now() - new Date(a.fim).getTime()) <= 60 * AS_DIA; }, ord: 'fimDesc' },
   vigentes:  { t: 'Vigentes', c: 'k-ok', f: function(a){ return a.situacao === 'vigente'; }, ord: 'fimAsc' },
   teste:     { t: 'Em teste', c: 'k-info', f: function(a){ return a.situacao === 'teste'; }, ord: 'fimAsc' },
   gratuitos: { t: 'Acesso gratuito', c: 'k-info', f: function(a){ return a.gratuito && asAtiva(a); }, ord: 'fimAsc' },
-  vitalicio: { t: 'Vitalícios', c: 'k-info', f: function(a){ return a.situacao === 'vitalicio'; }, ord: 'inicioDesc' },
+  vitVendido:   { t: 'Vitalício vendido', c: 'k-info', f: function(a){ return a.vitalicioOrigem === 'vendido'; }, ord: 'inicioDesc' },
+  vitConcedido: { t: 'Vitalício concedido', c: 'k-info', f: function(a){ return a.vitalicioOrigem === 'concedido'; }, ord: 'inicioDesc' },
   semRenov:  { t: 'Renovação desligada', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.renovacaoAutomatica === false; }, ord: 'fimAsc' },
   todas:     { t: 'Todas', c: 'k-neutro', f: function(){ return true; }, ord: 'inicioDesc' }
 };
@@ -2447,9 +2448,10 @@ function asExportarCsv() {
   var t = function(x){ return x ? new Date(x).getTime() : 9e15; };
   lista.sort(function(a, b){ return t(a.fim) - t(b.fim); });
   var q = function(v){ v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; };
-  var cab = ['Nome', 'E-mail', 'Telefone', 'Produto', 'Oferta', 'Turmas', 'Gratuito', 'Situação', 'Início', 'Fim', 'Dias restantes', 'Origem'];
+  var cab = ['Nome', 'E-mail', 'Telefone', 'Produto', 'Oferta', 'Turmas', 'Gratuito', 'Situação', 'Início', 'Fim', 'Vitalício', 'Dias restantes', 'Origem'];
   var linhas = lista.map(function(a){ return [a.nome, a.email, a.telefone, a.produtoNome, a.ofertaNome, (a.turmas || []).join(', '),
     a.gratuito ? 'sim' : 'não', a.situacao, asData(a.inicio || a.criadaEm), a.situacao === 'vitalicio' ? 'vitalício' : asData(a.fim),
+    a.vitalicioOrigem === 'vendido' ? 'vendido' : (a.vitalicioOrigem === 'concedido' ? (a.acessoVitalicio ? 'concedido (em assinatura com prazo)' : 'concedido') : ''),
     a.diasRestantes === null || a.diasRestantes === undefined ? '' : a.diasRestantes, a.fonte === 'acesso' ? 'acesso sem fatura' : 'assinatura'].map(q).join(';'); });
   var csv = '\ufeff' + cab.map(q).join(';') + '\n' + linhas.join('\n');
   var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -2515,7 +2517,7 @@ function asLinha(a) {
     '<td data-l="Membro"><div class="as-nome">' + escapeHtml(a.nome || a.email || '(sem nome)') + '</div><div class="as-sub">' + contato + '</div></td>' +
     '<td data-l="Oferta">' + escapeHtml(a.ofertaNome || a.produtoNome || '—') + (a.liberaPainel ? '<div class="as-painel">libera o painel</div>' : (a.fonte === 'acesso' ? '<div class="as-sub">' + (asAcessoPainel(a) ? 'acesso ao produto do painel' : 'acesso sem fatura') + '</div>' : '')) + asOutras(a) + '</td>' +
     '<td data-l="Início">' + asData(a.inicio || a.criadaEm) + '</td>' +
-    '<td data-l="Fim">' + (a.situacao === 'vitalicio' ? 'vitalício' : asData(a.fim)) + dias + '</td>' +
+    '<td data-l="Fim">' + (a.situacao === 'vitalicio' || a.acessoVitalicio ? asVitTexto(a) : asData(a.fim) + dias) + '</td>' +
     '<td data-l="Situação"><span class="as-badge as-b-' + escapeHtml(a.situacao || 'desconhecida') + '">' + escapeHtml(a.situacao || '—') + '</span></td>' +
     '<td data-l="Renovação">' + renov + '</td>' +
   '</tr>';
@@ -2527,8 +2529,16 @@ function asRenovTexto(a) {
   var pg = a.formaPagamento ? ({ credit_card: 'Cartão', pix: 'Pix', bank_slip: 'Boleto' }[a.formaPagamento] || escapeHtml(a.formaPagamento)) + (a.cicloMeses ? ' · ' + a.cicloMeses + (a.cicloMeses === 1 ? ' mês' : ' meses') : '') : '';
   return r + (pg ? ' <span class="as-sub" style="display:inline">' + pg + '</span>' : '');
 }
+// Vitalício vendido (produto vendido como vitalício) x concedido (liberado à
+// mão, inclusive dentro de assinatura com prazo). Vem do proxy desde 12/11/2026.
+function asVitTexto(a) {
+  if (a.acessoVitalicio) return 'vitalício concedido<div class="as-sub">assinatura com prazo até ' + asData(a.fim) + '</div>';
+  if (a.situacao !== 'vitalicio') return '';
+  var o = a.vitalicioOrigem === 'concedido' ? 'vitalício concedido' : (a.vitalicioOrigem === 'vendido' ? 'vitalício vendido' : 'vitalício');
+  return o + (a.ofertaComPrazo ? '<div class="as-sub">oferta com prazo: ' + escapeHtml(a.ofertaComPrazo) + '</div>' : '');
+}
 function asFimTexto(a) {
-  if (a.situacao === 'vitalicio') return 'vitalício';
+  if (a.situacao === 'vitalicio' || a.acessoVitalicio) return asVitTexto(a);
   var t = (a.situacao === 'encerrada' ? 'terminou ' : 'até ') + asData(a.fim);
   if (a.diasRestantes !== null && a.diasRestantes !== undefined && a.situacao !== 'encerrada') {
     var cls = a.diasRestantes <= 7 ? 'urg' : (a.diasRestantes <= 30 ? 'med' : '');
