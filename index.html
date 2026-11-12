@@ -1065,6 +1065,17 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
     <label class="chk-box" id="as-excl-box" style="display:none" title="Produtos que você excluiu na Hubla. O histórico continua guardado; desmarcado, eles somem da lista de produtos, das linhas e dos cartões."><input type="checkbox" id="as-mostrar-excluidos" onchange="asSalvarFiltro();asMontarProdutos();asRender()"/> <span id="as-excl-txt">Mostrar produtos excluídos</span></label>
   </div>
+  <div class="as-filtros" id="as-ex-filtros" style="display:none">
+    <span style="font-size:12px;color:var(--muted)">Saiu entre</span>
+    <input type="date" id="as-ex-de" onchange="asRender()" title="Data do fim da última assinatura da pessoa"/>
+    <span style="font-size:12px;color:var(--muted)">e</span>
+    <input type="date" id="as-ex-ate" data-data-de="as-ex-de" onchange="asRender()"/>
+    <select id="as-ex-oferta" onchange="asRender()" title="Só quem teve esta oferta (em qualquer momento)"><option value="">Todas as ofertas</option></select>
+    <button type="button" class="as-prod-btn" onclick="document.getElementById('as-ex-de').value='';document.getElementById('as-ex-ate').value='';document.getElementById('as-ex-oferta').value='';asRender()">Limpar</button>
+    <span style="flex:1"></span>
+    <button type="button" class="as-prod-btn" onclick="asExExportar()" title="Uma linha por pessoa: nome, e-mail, telefone, produtos, ofertas, início, saída">⬇ CSV de ex-clientes</button>
+    <button type="button" class="as-prod-btn" onclick="asExParaCampanha()" title="Leva a lista para a aba Campanhas: abra ou crie a campanha e clique em Importar lista">📣 Levar para Campanha</button>
+  </div>
   <div class="as-prod-painel" id="as-prod-painel" style="display:none">
     <div class="as-prod-acoes">
       <button type="button" onclick="asMarcarProdutos(true)">Marcar todos</button>
@@ -2435,11 +2446,87 @@ var AS_VISOES = {
   gratuitos: { t: 'Acesso gratuito', c: 'k-info', f: function(a){ return a.gratuito && asAtiva(a); }, ord: 'fimAsc' },
   vitVendido:   { t: 'Vitalício vendido', c: 'k-info', f: function(a){ return a.vitalicioOrigem === 'vendido'; }, ord: 'inicioDesc' },
   vitConcedido: { t: 'Vitalício concedido', c: 'k-info', f: function(a){ return a.vitalicioOrigem === 'concedido'; }, ord: 'inicioDesc' },
+  exclientes: { t: 'Ex-clientes', c: 'k-neutro', f: function(a){ return asExPassa(a); }, ord: 'fimDesc' },
   semRenov:  { t: 'Renovação desligada', c: 'k-alerta', f: function(a){ return (a.situacao === 'vigente' || a.situacao === 'teste') && a.renovacaoAutomatica === false; }, ord: 'fimAsc' },
   todas:     { t: 'Todas', c: 'k-neutro', f: function(){ return true; }, ord: 'inicioDesc' }
 };
 
 function asVisao(v) { AS.visao = v; AS.limite = 100; asRender(); }
+
+// ── Ex-clientes (desde 12/11/2026) ────────────────────────────────────────────
+// Pessoa (e-mail ou telefone, asIndexarPessoas) sem NENHUMA assinatura ou
+// acesso ativo hoje, em qualquer produto. Entram as linhas encerradas dela.
+// Saída = fim mais recente entre as encerradas. Filtros: período de saída e
+// oferta (já teve). Uma linha por pessoa no CSV e na ida para a Campanha.
+function asExPessoa(p) {
+  var L = (AS.pessoas && AS.pessoas[p]) || [];
+  if (!L.length || L.some(asAtiva)) return null;
+  var enc = L.filter(function(b){ return b.situacao === 'encerrada'; });
+  if (!enc.length) return null;
+  var saida = enc.map(function(b){ return b.fim || ''; }).sort().pop() || '';
+  return { L: L, enc: enc, saida: saida };
+}
+function asExPassa(a) {
+  if (a.situacao !== 'encerrada' || !a._pessoa) return false;
+  var x = asExPessoa(a._pessoa); if (!x) return false;
+  var de = document.getElementById('as-ex-de').value, ate = document.getElementById('as-ex-ate').value;
+  var dia = x.saida ? new Date(x.saida).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }) : '';
+  if (de && (!dia || dia < de)) return false;
+  if (ate && (!dia || dia > ate)) return false;
+  var of = document.getElementById('as-ex-oferta').value;
+  if (of && !x.enc.some(function(b){ return (b.ofertaNome || b.produtoNome) === of; })) return false;
+  return true;
+}
+function asExMontarOfertas() {
+  var sel = document.getElementById('as-ex-oferta'); if (!sel || !AS.dados) return;
+  var atual = sel.value, vistos = {};
+  (AS.dados.assinaturas || []).forEach(function(a){ if (a.situacao === 'encerrada') { var n = a.ofertaNome || a.produtoNome; if (n) vistos[n] = 1; } });
+  var nomes = Object.keys(vistos).sort(function(x, y){ return x.localeCompare(y, 'pt-BR'); });
+  sel.innerHTML = '<option value="">Todas as ofertas</option>' + nomes.map(function(n){ return '<option' + (n === atual ? ' selected' : '') + '>' + escapeHtml(n) + '</option>'; }).join('');
+}
+// Uma linha por pessoa da visão atual (com os filtros da tela).
+function asExLinhas() {
+  var lista = asBase().filter(asFiltroVisao('exclientes')), vistos = {}, out = [];
+  lista.forEach(function(a) {
+    var p = a._pessoa; if (vistos[p]) return; vistos[p] = 1;
+    var x = asExPessoa(p); if (!x) return;
+    var uniq = function(arr){ return arr.filter(function(v, i){ return v && arr.indexOf(v) === i; }); };
+    var comTel = x.L.filter(function(b){ return b.telefone; })[0] || {};
+    var comNome = x.L.filter(function(b){ return b.nome; })[0] || {};
+    var inicios = x.enc.map(function(b){ return b.inicio || b.criadaEm || ''; }).filter(Boolean).sort();
+    out.push({
+      nome: comNome.nome || '', email: (x.L.filter(function(b){ return b.email; })[0] || {}).email || '',
+      telefone: String(comTel.telefone || '').replace(/\D/g, ''),
+      produtos: uniq(x.enc.map(function(b){ return b.produtoNome; })).join(', '),
+      ofertas: uniq(x.enc.map(function(b){ return b.ofertaNome || b.produtoNome; })).join(', '),
+      inicio: inicios[0] || '', saida: x.saida,
+    });
+  });
+  out.sort(function(a, b){ return String(b.saida).localeCompare(String(a.saida)); });
+  return out;
+}
+function asExExportar() {
+  var L = asExLinhas(); if (!L.length) return alert('Ninguém nesta visão.');
+  var q = function(v){ v = v === null || v === undefined ? '' : String(v); return '"' + v.replace(/"/g, '""') + '"'; };
+  var cab = ['Nome', 'E-mail', 'Telefone', 'Produtos', 'Ofertas', 'Primeiro início', 'Saída'];
+  var csv = '\ufeff' + cab.map(q).join(';') + '\n' + L.map(function(x){ return [x.nome, x.email, x.telefone, x.produtos, x.ofertas, asData(x.inicio), asData(x.saida)].map(q).join(';'); }).join('\n');
+  var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  var el = document.createElement('a'); el.href = url; el.download = 'ex-clientes-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+// Passa a lista para a aba Campanhas: o texto fica guardado e entra sozinho no
+// "Importar lista" da campanha que for aberta (colunas do modelo da campanha;
+// produto = ofertas, dataFalha = saída, obs = produtos).
+function asExParaCampanha() {
+  var L = asExLinhas().filter(function(x){ return x.telefone; });
+  if (!L.length) return alert('Ninguém com telefone nesta visão.');
+  var limpa = function(v){ return String(v || '').replace(/[\t\r\n]+/g, ' '); };
+  window.CAMP_IMPORT_PENDENTE = ['nome', 'telefone', 'email', 'produto', 'dataFalha', 'obs'].join('\t') + '\n' +
+    L.map(function(x){ return [x.nome, x.telefone, x.email, x.ofertas, asData(x.saida), x.produtos].map(limpa).join('\t'); }).join('\n');
+  switchMain('campanha');
+  alert(L.length + ' ex-cliente(s) prontos. Abra ou crie a campanha, vá em "1. Quem recebe" e clique em 📥 Importar lista: a lista já vem preenchida para você conferir as colunas e importar.');
+}
 
 // CSV da visão atual (mesmos filtros da tela), uma linha por assinatura/acesso.
 function asExportarCsv() {
@@ -2469,6 +2556,8 @@ function asRender() {
     ? 'Última busca completa na Hubla: <strong>' + new Date(s.ultimaEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong> · webhooks atualizam em tempo real'
     : 'Ainda sem a busca completa na Hubla (a primeira roda sozinha; ou clique em ⇅ Buscar na Hubla).';
 
+  var exBar = document.getElementById('as-ex-filtros');
+  if (exBar) { exBar.style.display = AS.visao === 'exclientes' ? 'flex' : 'none'; if (AS.visao === 'exclientes') asExMontarOfertas(); }
   var base = asBase();
   document.getElementById('as-kpis').innerHTML = Object.keys(AS_VISOES).map(function(k) {
     var v = AS_VISOES[k];
@@ -6940,6 +7029,12 @@ function campToggleLista(abrir) {
 function campToggleImport() {
   var el = document.getElementById('camp-import');
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  // Lista vinda de Assinaturas → Ex-clientes ("Levar para Campanha").
+  if (el.style.display === 'block' && window.CAMP_IMPORT_PENDENTE) {
+    document.getElementById('camp-import-txt').value = window.CAMP_IMPORT_PENDENTE;
+    window.CAMP_IMPORT_PENDENTE = null;
+    campAnalisarImport();
+  }
 }
 // Reaproveita o trabalho de importação sem transformar público em cadastro
 // separado: os contatos vêm zerados, e o histórico de envio continua sendo de
