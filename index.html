@@ -1094,6 +1094,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div class="as-kpis" id="as-kpis"></div>
   <div class="as-filtros">
     <button type="button" class="as-prod-btn" id="as-prod-btn" onclick="asTogglePainelProdutos()">Produtos: todos ▾</button>
+    <select id="as-oferta" onchange="asRender()" title="Só as assinaturas e acessos desta oferta (vale para os cartões, a lista e o CSV)"><option value="">Todas as ofertas</option></select>
     <label class="chk-box" title="Mostra só as ofertas que liberam o painel (veja Regras de acesso) + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga. Desmarcado = todas as assinaturas de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()"/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
@@ -2674,6 +2675,7 @@ function asBase(semBusca) {
   var semGratis = document.getElementById('as-sem-gratis').checked;
   var mostraExcl = document.getElementById('as-mostrar-excluidos').checked;
   var soPainel = document.getElementById('as-so-painel').checked;
+  var oferta = (document.getElementById('as-oferta') || {}).value || '';
   var q = semBusca ? '' : asSemAcento((document.getElementById('as-busca').value || '').toLowerCase().trim());
   var qNum = q.replace(/\D/g, '');
   return (AS.dados.assinaturas || []).filter(function(a) {
@@ -2681,6 +2683,7 @@ function asBase(semBusca) {
     if (a.produtoExcluido && !mostraExcl) return false;
     if (a.produtoNome && fora[a.produtoNome]) return false;
     if (semGratis && (a.fonte === 'acesso' || a.situacao === 'vitalicio')) return false;
+    if (oferta && (a.ofertaNome || a.produtoNome) !== oferta) return false;
     if (q) {
       if (!asCasaBusca(a, q, qNum)) return false;
     }
@@ -2764,6 +2767,24 @@ function asExPassa(a) {
   if (of && !x.enc.some(function(b){ return (b.ofertaNome || b.produtoNome) === of; })) return false;
   return true;
 }
+// Filtro por oferta (desde 12/11/2026): lista as ofertas dos produtos que estão
+// marcados no filtro de Produtos, em ordem alfabética, com o nº de pessoas.
+function asMontarOfertasFiltro() {
+  var sel = document.getElementById('as-oferta'); if (!sel || !AS.dados) return;
+  var atual = sel.value, fora = asProdutosFora(), mostraExcl = document.getElementById('as-mostrar-excluidos').checked, pessoas = {};
+  (AS.dados.assinaturas || []).forEach(function(a){
+    if (a.produtoExcluido && !mostraExcl) return;
+    if (a.produtoNome && fora[a.produtoNome]) return;
+    var n = a.ofertaNome || a.produtoNome; if (!n) return;
+    (pessoas[n] = pessoas[n] || {})[a._pessoa || a.id] = 1;
+  });
+  if (atual && !pessoas[atual]) pessoas[atual] = {};
+  var nomes = Object.keys(pessoas).sort(function(x, y){ return x.localeCompare(y, 'pt-BR'); });
+  sel.innerHTML = '<option value="">Todas as ofertas</option>' + nomes.map(function(n){
+    return '<option value="' + escapeHtml(n) + '"' + (n === atual ? ' selected' : '') + '>' + escapeHtml(n) + ' (' + Object.keys(pessoas[n]).length + ')</option>';
+  }).join('');
+  sel.classList.toggle('on', !!atual);
+}
 function asExMontarOfertas() {
   var sel = document.getElementById('as-ex-oferta'); if (!sel || !AS.dados) return;
   var atual = sel.value, vistos = {};
@@ -2845,6 +2866,7 @@ function asRender() {
 
   var exBar = document.getElementById('as-ex-filtros');
   if (exBar) { exBar.style.display = AS.visao === 'exclientes' ? 'flex' : 'none'; if (AS.visao === 'exclientes') asExMontarOfertas(); }
+  asMontarOfertasFiltro();
   var qBusca = (document.getElementById('as-busca').value || '').trim();
   var base = asBase(true);
   document.getElementById('as-kpis').innerHTML = Object.keys(AS_VISOES).map(function(k) {
