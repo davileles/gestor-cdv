@@ -1495,20 +1495,42 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <div id="cfg-carregando" style="font-size:12.5px;color:var(--muted)">Carregando configuração…</div>
 
     <div id="cfg-app" style="display:none">
-      <div class="camp-sec">Grupos de destino</div>
+      <div class="camp-sec">Grupos do Clube</div>
+      <p class="cfg-ajuda">
+        Qual grupo do WhatsApp é cada produto do clube. É daqui que saem os grupos das <b>Regras de acesso</b>
+        (Assinaturas), a conferência <b>Grupos × acesso</b> e a <b>Reentrada</b>. Trocou o grupo de um produto
+        (ex.: grupo banido e recriado)? Escolha o novo e salve: o antigo é <b>aposentado</b> — some das Regras de
+        acesso e da remoção pelo Tico — e as ofertas que davam o antigo passam a dar o novo. O grupo novo só
+        aparece na lista quando algum número da casa (principal ou tico) já está nele.
+      </p>
       <div class="field" style="margin-bottom:10px">
-        <label>Ofertas <span style="color:var(--muted2);font-weight:400">— aba Oferta e aprovações do radar</span></label>
-        <select id="cfg-g-ofertas"></select>
+        <label>Balcão</label>
+        <select id="cfg-g-balcao" onchange="cfgSujo()"></select>
       </div>
       <div class="field" style="margin-bottom:10px">
-        <label>Emissão <span style="color:var(--muted2);font-weight:400">— aba Emissão</span></label>
+        <label>Comunidade <span style="color:var(--muted2);font-weight:400">— recebeu o Networking em 12/11/2026</span></label>
+        <select id="cfg-g-comunidade" onchange="cfgSujo()"></select>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Emissões <span style="color:var(--muted2);font-weight:400">— destino da aba Emissão e das emissões aprovadas</span></label>
         <select id="cfg-g-emissao"></select>
       </div>
       <div class="field" style="margin-bottom:6px">
         <label>Emissões em executiva <span style="color:var(--muted2);font-weight:400">— opcional</span></label>
         <select id="cfg-g-executiva"></select>
       </div>
-      <p class="cfg-ajuda">Toda emissão em Executiva (ou Primeira Classe) que sai no grupo de Emissão é repetida aqui — grupo dos clientes do Concierge. Vazio: sem cópia.</p>
+      <p class="cfg-ajuda">Toda emissão em Executiva (ou Primeira Classe) que sai no grupo de Emissões é repetida aqui — grupo dos clientes do Concierge. Vazio: sem cópia.</p>
+      <div class="field" style="margin-bottom:10px">
+        <label>News <span style="color:var(--muted2);font-weight:400">— destino da aba Oferta e das aprovações do radar</span></label>
+        <select id="cfg-g-ofertas"></select>
+      </div>
+      <div class="field" style="margin-bottom:6px">
+        <label>Super Promos</label>
+        <select id="cfg-g-superpromos" onchange="cfgSujo()"></select>
+      </div>
+      <div id="cfg-clube-info" class="cfg-ajuda" style="margin-bottom:10px"></div>
+
+      <div class="camp-sec">Avisos</div>
       <div class="field" style="margin-bottom:6px">
         <label>Avisos operacionais <span style="color:var(--muted2);font-weight:400">— opcional</span></label>
         <select id="cfg-g-operador"></select>
@@ -1689,9 +1711,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-clube'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1996,7 +2018,7 @@ function arCopiarGrupos(id) {
   document.getElementById('ar-impacto').innerHTML = '';
   arRender();
 }
-function arNomeGrupo(jid) { var g = ((AR.dados && AR.dados.grupos) || []).filter(function(x){ return x.jid === jid; })[0]; return g ? g.nome : jid; }
+function arNomeGrupo(jid) { var g = ((AR.dados && AR.dados.grupos) || []).filter(function(x){ return x.jid === jid; })[0]; return g ? (g.papelRotulo ? g.papelRotulo + ' (' + g.nome + ')' : g.nome) : jid; }
 function arMudar(id, v) {
   var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0];
   if (o && v === o.regra) delete AR.mudou[id]; else AR.mudou[id] = v;
@@ -2044,8 +2066,9 @@ function arRender() {
         '<div class="ar-gacoes"><button type="button" onclick="arGruposTodos(\'' + oid + '\', true)">Marcar todos</button><button type="button" onclick="arGruposTodos(\'' + oid + '\', false)">Desmarcar todos</button>' +
         '<button type="button" onclick="arCopiarGrupos(\'' + oid + '\')">Copiar estes grupos para as outras ofertas de ' + escapeHtml(o.produtoNome || 'este produto') + '</button></div>' +
         '<div class="ar-glista">' + ((AR.dados.grupos || []).map(function(g) {
-          return '<label class="chk-box"><input type="checkbox"' + (gs.indexOf(g.jid) >= 0 ? ' checked' : '') + ' onchange="arMarcarGrupo(\'' + oid + '\', \'' + escapeHtml(g.jid) + '\', this.checked)"/> ' + escapeHtml(g.nome || g.jid) + '</label>';
+          return '<label class="chk-box"><input type="checkbox"' + (gs.indexOf(g.jid) >= 0 ? ' checked' : '') + ' onchange="arMarcarGrupo(\'' + oid + '\', \'' + escapeHtml(g.jid) + '\', this.checked)"/> ' + (g.papelRotulo ? '<b>' + escapeHtml(g.papelRotulo) + '</b> · ' : '') + escapeHtml(g.nome || g.jid) + '</label>';
         }).join('') || '<div class="as-vazio">Não consegui ler os grupos do CDV agora (baileys-server). Atualize em instantes.</div>') + '</div>' +
+        '<div class="as-sub" style="margin-top:6px">Qual grupo é cada produto: Config → Grupos do Clube.</div>' +
         ((AR.dados.gruposIgnorados || []).length ? '<div class="as-sub" style="margin-top:6px">Fora da conferência (nunca removidos): ' + AR.dados.gruposIgnorados.map(escapeHtml).join(', ') + '</div>' : '') +
         '</div></td></tr>');
     }
@@ -8211,6 +8234,7 @@ async function cfgCarregar() {
     if (Array.isArray(j.ufs) && j.ufs.length) {
       CFG_UFS = j.ufs.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
     }
+    await cfgCarregarClube();
     cfgRender();
     carregando.style.display = 'none';
     app.style.display = 'block';
@@ -8255,7 +8279,48 @@ function cfgOpcoesGrupo(selecionado, comVazio) {
   return html;
 }
 
+// ── Grupos do Clube (proxy, grupos-clube.json) ──
+// News, Emissões e Executiva continuam gravados na config do baileys (são os
+// destinos de envio); Balcão, Comunidade e Super Promos só existem no proxy.
+// Os seis vão juntos para o proxy no Salvar, que aposenta o grupo trocado e
+// migra as Regras de acesso.
+var CFG_CLUBE = null; // { papeis, aposentados } ou null se o proxy não respondeu
+async function cfgCarregarClube() {
+  try {
+    var r = await fetch(CDV_PROXY + '/hubla/grupos-clube?t=' + Date.now(), { cache:'no-cache', signal: AbortSignal.timeout(20000) });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.erro || 'resposta inválida');
+    CFG_CLUBE = { papeis: j.papeis || {}, aposentados: j.aposentados || {} };
+  } catch (e) { CFG_CLUBE = null; console.warn('[grupos-clube]', e.message); }
+}
+function cfgClubeAtual() {
+  return {
+    balcao: document.getElementById('cfg-g-balcao').value,
+    comunidade: document.getElementById('cfg-g-comunidade').value,
+    emissoes: document.getElementById('cfg-g-emissao').value,
+    executiva: document.getElementById('cfg-g-executiva').value,
+    news: document.getElementById('cfg-g-ofertas').value,
+    superpromos: document.getElementById('cfg-g-superpromos').value,
+  };
+}
+function cfgRenderClubeInfo() {
+  var alvo = document.getElementById('cfg-clube-info');
+  if (!alvo) return;
+  if (!CFG_CLUBE) { alvo.innerHTML = '<span style="color:#ff9a9d">Não li os Grupos do Clube no proxy (chave de operador?). Balcão, Comunidade e Super Promos não serão gravados.</span>'; return; }
+  var ap = Object.keys(CFG_CLUBE.aposentados || {});
+  if (!ap.length) { alvo.textContent = ''; return; }
+  alvo.innerHTML = '<b>Aposentados</b> (fora das Regras de acesso e da remoção): ' + ap.map(function(j) {
+    var a = CFG_CLUBE.aposentados[j] || {};
+    return cfgEsc(a.nome || j.split('@')[0]) + (a.substituto ? ' → ' + cfgEsc(cfgNomeDe(a.substituto)) : '');
+  }).join(' · ');
+}
+
 function cfgRenderSelectsGrupo() {
+  var pc = (CFG_CLUBE && CFG_CLUBE.papeis) || {};
+  document.getElementById('cfg-g-balcao').innerHTML = cfgOpcoesGrupo(pc.balcao || '', true);
+  document.getElementById('cfg-g-comunidade').innerHTML = cfgOpcoesGrupo(pc.comunidade || '', true);
+  document.getElementById('cfg-g-superpromos').innerHTML = cfgOpcoesGrupo(pc.superpromos || '', true);
+  cfgRenderClubeInfo();
   document.getElementById('cfg-g-ofertas').innerHTML  = cfgOpcoesGrupo(CFG_CDV.grupos.ofertas, false);
   document.getElementById('cfg-g-emissao').innerHTML  = cfgOpcoesGrupo(CFG_CDV.grupos.emissao, false);
   document.getElementById('cfg-g-executiva').innerHTML = cfgOpcoesGrupo(CFG_CDV.grupos.executiva || '', true);
@@ -9099,6 +9164,27 @@ async function cfgSalvar() {
     envio:   { conta: document.getElementById('cfg-conta').value },
     leitura: { conta: document.getElementById('cfg-leitor-cdv').value },
   };
+  // Grupos do Clube: produto que trocou de grupo troca também na Reentrada
+  // (o ex-aluno volta para o grupo novo, não para o banido).
+  var clube = cfgClubeAtual();
+  var antes = {};
+  if (CFG_CLUBE) Object.keys(CFG_CLUBE.papeis || {}).forEach(function(k){ antes[k] = CFG_CLUBE.papeis[k]; });
+  antes.emissoes = CFG_CDV.grupos.emissao; antes.executiva = CFG_CDV.grupos.executiva || ''; antes.news = CFG_CDV.grupos.ofertas;
+  var trocas = Object.keys(clube).filter(function(k){ return antes[k] && clube[k] && antes[k] !== clube[k]; })
+    .map(function(k){ return { de: antes[k], para: clube[k] }; });
+  if (trocas.length) {
+    if (!confirm('Trocar o grupo de ' + trocas.length + ' produto(s):\n\n' + trocas.map(function(t){ return '• ' + cfgNomeDe(t.de) + ' → ' + cfgNomeDe(t.para); }).join('\n')
+      + '\n\nO grupo antigo é aposentado: sai das Regras de acesso, da conferência e da remoção pelo Tico, e as ofertas que davam o antigo passam a dar o novo. Confirma?')) return;
+    var ent = (body.entrada || []).slice();
+    trocas.forEach(function(t) {
+      var i = ent.findIndex(function(g){ return g.jid === t.de; });
+      if (i < 0) return;
+      var jaTem = ent.some(function(g){ return g.jid === t.para; });
+      if (jaTem) ent.splice(i, 1);
+      else ent[i] = { jid: t.para, nome: CFG_NOMES[t.para] || '', ativo: ent[i].ativo !== false };
+    });
+    body.entrada = ent;
+  }
   if (body.grupos.executiva && body.grupos.executiva === body.grupos.emissao) {
     alert('O grupo de Emissões em executiva não pode ser o mesmo grupo de Emissão.');
     return;
@@ -9125,9 +9211,22 @@ async function cfgSalvar() {
     var j = await r.json();
     if (!j.ok) throw new Error(j.erro || 'falha ao salvar');
     CFG_CDV = j.config;
+    var avisoClube = '';
+    if (CFG_CLUBE) {
+      try {
+        var rc = await fetch(CDV_PROXY + '/hubla/grupos-clube', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ papeis: clube }), signal: AbortSignal.timeout(30000),
+        });
+        var jc = await rc.json();
+        if (!jc.ok) throw new Error(jc.erro || 'falha');
+        CFG_CLUBE = { papeis: jc.papeis || {}, aposentados: jc.aposentados || {} };
+        if (jc.ofertasMigradas) avisoClube = ' ' + jc.ofertasMigradas + ' oferta(s) das Regras de acesso passaram para o grupo novo.';
+      } catch (ec) { avisoClube = ' Mas os Grupos do Clube não salvaram no proxy: ' + ec.message; }
+    }
     cfgRender();
-    fb.style.color = 'var(--green, #3ddc84)';
-    fb.textContent = '✓ Configuração salva.';
+    fb.style.color = avisoClube.indexOf('não salvaram') >= 0 ? '#ffb020' : 'var(--green, #3ddc84)';
+    fb.textContent = '✓ Configuração salva.' + avisoClube;
   } catch (e) {
     fb.style.color = '#ff9a9d';
     fb.textContent = 'Não salvou: ' + e.message;
