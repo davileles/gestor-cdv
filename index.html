@@ -3009,7 +3009,23 @@ function switchMain(name) {
   if (name === 'entrada') reAoAbrir();
   if (name === 'gradm') ggAbrir();
   if (name === 'config') cfgCarregar();
+  // Guarda a aba no endereço (#aba) para o refresh voltar nela
+  try { if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name); } catch(e) {}
 }
+
+// Refresh: reabre a aba que estava no endereço (#aba) em vez da página inicial
+var ABAS_MAIN = ['oferta','milhas','alertas','enviadas','dash','assin','buscavoos','ofertas','campanha','entrada','gradm','config'];
+function abaDoEndereco() {
+  var h = (location.hash || '').replace(/^#/, '');
+  return ABAS_MAIN.indexOf(h) >= 0 ? h : '';
+}
+window.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() { var a = abaDoEndereco(); if (a && a !== 'oferta') switchMain(a); }, 0);
+});
+window.addEventListener('hashchange', function() {
+  var a = abaDoEndereco(), atual = document.querySelector('.main-tab.active');
+  if (a && (!atual || atual.id !== 'tab-' + a)) switchMain(a);
+});
 
 function setMode(m) {
   currentMode = m;
