@@ -2410,22 +2410,27 @@ function agAssinaturasDe(p) {
   Object.keys(ids).forEach(function(id){ AS.pessoas[id].forEach(function(a){ if (!vistos[a.id]) { vistos[a.id] = 1; L.push(a); } }); });
   return L;
 }
-// Coluna Oferta: vencido → última oferta encerrada; sem direito → assinaturas
-// ativas (que não dão aquele grupo); demais situações → em branco.
+// Coluna Assinatura (desde 12/11/2026): para cada pessoa do grupo mostra as
+// assinaturas ATIVAS (oferta, até quando, renova ou não) e, se não tiver
+// nenhuma, a ÚLTIMA assinatura encerrada e quando ela venceu.
 function agColunaOferta(p) {
-  if (p.situacao !== 'vencido' && p.situacao !== 'sem_direito') return '';
   var L = agAssinaturasDe(p);
   if (L === null) return '<span class="as-sub">carregando…</span>';
+  if (!L.length) return p.situacao === 'sem_cadastro' ? '—' : '<span class="as-sub">sem assinatura na Hubla</span>';
   var nome = function(a){ return escapeHtml(a.ofertaNome || a.produtoNome || '—') + (a.ofertaNome && a.produtoNome && a.ofertaNome !== a.produtoNome ? '<div class="as-sub">' + escapeHtml(a.produtoNome) + '</div>' : ''); };
   var t = function(x){ return x ? new Date(x).getTime() : 0; };
-  if (p.situacao === 'vencido') {
-    var enc = L.filter(function(a){ return !asAtiva(a); }).sort(function(a, b){ return t(b.fim) - t(a.fim); });
-    if (!enc.length) return '—';
-    return '<div class="as-nome" style="font-weight:600">' + nome(enc[0]) + '</div><div class="as-sub">terminou em ' + asData(enc[0].fim) + '</div>';
-  }
   var at = L.filter(asAtiva).sort(function(a, b){ return (b.situacao === 'vitalicio') - (a.situacao === 'vitalicio') || t(b.fim) - t(a.fim); });
-  if (!at.length) return '—';
-  return at.map(function(a){ return '<div class="as-nome" style="font-weight:600">' + nome(a) + '</div><div class="as-sub">' + (a.situacao === 'vitalicio' ? 'vitalício' : (a.situacao === 'teste' ? 'em teste · ' : 'ativa · ') + 'até ' + asData(a.fim)) + '</div>'; }).join('<div style="height:6px"></div>');
+  if (at.length) return '<div class="as-sub" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Atual</div>' + at.map(function(a) {
+    var sit = a.situacao === 'teste' ? 'em teste · ' : '';
+    var renov = asRenovTexto(a);
+    return '<div class="as-nome" style="font-weight:600">' + nome(a) + '</div><div class="as-sub">' + sit + (a.situacao === 'vitalicio' || a.acessoVitalicio ? asVitTexto(a) : 'vence ' + asFimTexto(a).replace(/^até /, 'em ')) + '</div>' + (renov ? '<div>' + renov + '</div>' : '');
+  }).join('<div style="height:6px"></div>');
+  var enc = L.filter(function(a){ return !asAtiva(a); }).sort(function(a, b){ return t(b.fim) - t(a.fim); });
+  if (!enc.length) return '—';
+  var u = enc[0], dias = u.fim ? Math.floor((Date.now() - t(u.fim)) / 864e5) : null;
+  return '<div class="as-sub" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">Última</div><div class="as-nome" style="font-weight:600">' + nome(u) + '</div>' +
+    '<div class="as-sub">venceu em ' + asData(u.fim) + (dias !== null && dias >= 0 ? ' · há ' + dias + ' dia' + (dias === 1 ? '' : 's') : '') + '</div>' +
+    (enc.length > 1 ? '<div class="as-sub">' + (enc.length - 1) + ' anterior' + (enc.length === 2 ? '' : 'es') + ' encerrada' + (enc.length === 2 ? '' : 's') + '</div>' : '');
 }
 function agFiltro(f) { AG.filtro = f; agRender(); }
 // ── Remoção pelo Tico (GET/POST /hubla/grupos-remocao) ──
@@ -2519,14 +2524,14 @@ function agRender() {
   });
   var alvo = document.getElementById('ag-lista');
   if (!lista.length) { alvo.innerHTML = '<div class="as-vazio">Ninguém nesta situação.</div>'; }
-  else alvo.innerHTML = '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Situação</th><th>Oferta</th><th>Produtos</th><th>Venceu</th><th>Grupos</th></tr></thead><tbody>' +
+  else alvo.innerHTML = '<table class="as-tabela"><thead><tr><th>Pessoa</th><th>Situação</th><th>Assinatura atual / última</th><th>Produtos</th><th>Venceu</th><th>Grupos</th></tr></thead><tbody>' +
     lista.map(function(p) {
       var tel = String(p.telefone || '').replace(/\D/g, '');
       var venc = p.venceuEm ? asData(p.venceuEm) + '<div class="as-dias">há ' + p.diasDesdeVencimento + ' dia' + (p.diasDesdeVencimento === 1 ? '' : 's') + '</div>' : '—';
       return '<tr>' +
         '<td data-l="Pessoa"><div class="as-nome">' + escapeHtml(p.nome || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(p.email || '') + (p.email ? ' · ' : '') + '+' + tel + ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener">WhatsApp</a></div></td>' +
         '<td data-l="Situação"><span class="as-badge as-b-' + p.situacao + '">' + AG_ROT[p.situacao] + '</span></td>' +
-        '<td data-l="Oferta">' + agColunaOferta(p) + '</td>' +
+        '<td data-l="Assinatura">' + agColunaOferta(p) + '</td>' +
         '<td data-l="Produtos">' + ((p.produtos || []).map(escapeHtml).join('<br>') || '—') + '</td>' +
         '<td data-l="Venceu">' + venc + '</td>' +
         '<td data-l="Grupos"><div class="as-grupos-tags">' + (p.grupos || []).map(function(g){ return '<span class="as-grupo-tag">' + escapeHtml(g) + '</span>'; }).join('') + '</div></td>' +
