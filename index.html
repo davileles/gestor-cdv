@@ -451,6 +451,9 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-prod-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 14px;max-height:320px;overflow:auto}
 .as-prod-lista label{display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:4px 2px;cursor:pointer}
 .as-prod-lista label span.n{color:var(--muted);margin-left:auto;white-space:nowrap}
+.as-busca-linha{margin:0 0 10px}
+.as-busca-linha input{width:100%;padding:11px 14px;font-size:14px}
+.as-busca-info{font-size:12px;color:var(--muted);margin:0 0 10px}
 .as-filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .as-filtros select,.as-filtros input[type=search]{width:auto;min-width:180px;padding:8px 10px;font-size:13px}
 .as-filtros label.chk-box{padding:7px 10px;font-size:12px}
@@ -1084,10 +1087,13 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <button class="btn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);font-size:12px;padding:7px 14px;width:auto;margin:0" id="as-btn-sinc" onclick="asSincronizar()">⇅ Buscar na Hubla</button>
     </div>
   </div>
+  <div class="as-busca-linha">
+    <input type="search" id="as-busca" placeholder="Buscar aluno por nome, e-mail ou telefone (em todas as assinaturas)" oninput="asRender()" autocomplete="off"/>
+  </div>
+  <div class="as-busca-info" id="as-busca-info" style="display:none"></div>
   <div class="as-kpis" id="as-kpis"></div>
   <div class="as-filtros">
     <button type="button" class="as-prod-btn" id="as-prod-btn" onclick="asTogglePainelProdutos()">Produtos: todos ▾</button>
-    <input type="search" id="as-busca" placeholder="Buscar nome, e-mail ou telefone" oninput="asRender()"/>
     <label class="chk-box" title="Mostra só as ofertas que liberam o painel (veja Regras de acesso) + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga. Desmarcado = todas as assinaturas de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()"/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
     <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
@@ -2663,12 +2669,12 @@ function asFiltroVisao(k) {
 }
 
 // Base filtrada (produto, painel, busca) — os cartões contam sobre ela.
-function asBase() {
+function asBase(semBusca) {
   var fora = asProdutosFora();
   var semGratis = document.getElementById('as-sem-gratis').checked;
   var mostraExcl = document.getElementById('as-mostrar-excluidos').checked;
   var soPainel = document.getElementById('as-so-painel').checked;
-  var q = (document.getElementById('as-busca').value || '').toLowerCase().trim();
+  var q = semBusca ? '' : asSemAcento((document.getElementById('as-busca').value || '').toLowerCase().trim());
   var qNum = q.replace(/\D/g, '');
   return (AS.dados.assinaturas || []).filter(function(a) {
     if (soPainel && !a.liberaPainel && !asAcessoPainel(a)) return false;
@@ -2676,12 +2682,47 @@ function asBase() {
     if (a.produtoNome && fora[a.produtoNome]) return false;
     if (semGratis && (a.fonte === 'acesso' || a.situacao === 'vitalicio')) return false;
     if (q) {
-      var txt = ((a.nome || '') + ' ' + (a.email || '')).toLowerCase();
-      var tel = String(a.telefone || '').replace(/\D/g, '');
-      if (txt.indexOf(q) < 0 && !(qNum.length >= 4 && tel.indexOf(qNum) >= 0)) return false;
+      if (!asCasaBusca(a, q, qNum)) return false;
     }
     return true;
   });
+}
+
+function asSemAcento(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+// Busca por nome (sem acento, todas as palavras), e-mail ou telefone (4+ dígitos, com ou sem 55).
+function asCasaBusca(a, q, qNum) {
+  var txt = asSemAcento(((a.nome || '') + ' ' + (a.email || '')).toLowerCase());
+  if (txt.indexOf(q) >= 0) return true;
+  var palavras = q.split(/\s+/).filter(Boolean);
+  if (palavras.length > 1 && palavras.every(function(w){ return txt.indexOf(w) >= 0; })) return true;
+  if (qNum.length >= 4) {
+    var tel = String(a.telefone || '').replace(/\D/g, '');
+    if (tel && (tel.indexOf(qNum) >= 0 || tel.indexOf(qNum.replace(/^55/, '')) >= 0)) return true;
+  }
+  return false;
+}
+// Busca global (desde 12/11/2026): com texto na busca, ignora o cartão e os filtros
+// e mostra a pessoa inteira (todas as assinaturas e acessos, ativas e encerradas).
+function asRenderBusca(qBruto) {
+  var q = asSemAcento(qBruto.toLowerCase()), qNum = q.replace(/\D/g, '');
+  var info = document.getElementById('as-busca-info');
+  if (q.length < 2) { info.style.display = 'block'; info.textContent = 'Digite ao menos 2 letras.'; document.getElementById('as-lista').innerHTML = ''; return; }
+  var achadas = [];
+  Object.keys(AS.pessoas || {}).forEach(function(pid) {
+    if (AS.pessoas[pid].some(function(a){ return asCasaBusca(a, q, qNum); })) achadas.push(pid);
+  });
+  var t = function(x){ return x ? new Date(x).getTime() : 0; };
+  var ord = function(L){ return L.slice().sort(function(a, b){ return (asAtiva(b) - asAtiva(a)) || (t(b.fim || b.inicio) - t(a.fim || a.inicio)); }); };
+  achadas.sort(function(x, y){ return (AS.pessoas[y].some(asAtiva) - AS.pessoas[x].some(asAtiva)) || String(AS.pessoas[x][0].nome || '').localeCompare(String(AS.pessoas[y][0].nome || ''), 'pt-BR'); });
+  info.style.display = 'block';
+  info.innerHTML = achadas.length + ' pessoa' + (achadas.length === 1 ? '' : 's') + ' para "' + escapeHtml(qBruto) + '" em todas as assinaturas (cartões e filtros não se aplicam à busca). <a href="#" onclick="event.preventDefault();document.getElementById(\'as-busca\').value=\'\';asRender()">Limpar busca</a>';
+  var alvo = document.getElementById('as-lista');
+  if (!achadas.length) { alvo.innerHTML = '<div class="as-vazio">Ninguém encontrado. Confira a grafia ou busque pelo telefone/e-mail.</div>'; return; }
+  var mostrar = achadas.slice(0, AS.limite);
+  alvo.innerHTML = '<div class="as-dica">Duplo clique na linha (ou em "histórico") abre todas as assinaturas da pessoa.</div>' +
+    '<table class="as-tabela"><thead><tr><th>Membro</th><th>Assinaturas e acessos</th></tr></thead><tbody>' +
+    mostrar.map(function(pid){ return asLinhaPessoa(pid, ord(AS.pessoas[pid])); }).join('') + '</tbody></table>' +
+    (achadas.length > AS.limite ? '<button class="btn btn-copy as-mais" onclick="AS.limite+=100;asRender()">Mostrar mais (' + (achadas.length - AS.limite) + ')</button>' : '');
 }
 
 var AS_VISOES = {
@@ -2697,7 +2738,7 @@ var AS_VISOES = {
   todas:     { t: 'Todas', c: 'k-neutro', f: function(){ return true; }, ord: 'inicioDesc' }
 };
 
-function asVisao(v) { AS.visao = v; AS.limite = 100; asRender(); }
+function asVisao(v) { AS.visao = v; AS.limite = 100; var b = document.getElementById('as-busca'); if (b) b.value = ''; asRender(); }
 
 // ── Ex-clientes (desde 12/11/2026) ────────────────────────────────────────────
 // Pessoa (e-mail ou telefone, asIndexarPessoas) sem NENHUMA assinatura ou
@@ -2804,7 +2845,8 @@ function asRender() {
 
   var exBar = document.getElementById('as-ex-filtros');
   if (exBar) { exBar.style.display = AS.visao === 'exclientes' ? 'flex' : 'none'; if (AS.visao === 'exclientes') asExMontarOfertas(); }
-  var base = asBase();
+  var qBusca = (document.getElementById('as-busca').value || '').trim();
+  var base = asBase(true);
   document.getElementById('as-kpis').innerHTML = Object.keys(AS_VISOES).map(function(k) {
     var v = AS_VISOES[k];
     var vistos = {}; base.filter(asFiltroVisao(k)).forEach(function(a){ vistos[a._pessoa || a.id] = 1; });
@@ -2813,6 +2855,9 @@ function asRender() {
       '<div class="as-kpi-t">' + v.t + '</div><div class="as-kpi-v">' + n + '</div></button>';
   }).join('');
 
+  var infoBusca = document.getElementById('as-busca-info');
+  if (qBusca) { asRenderBusca(qBusca); asDivergencias(); return; }
+  infoBusca.style.display = 'none';
   var visao = AS_VISOES[AS.visao];
   var lista = base.filter(asFiltroVisao(AS.visao));
   var t = function(x){ return x ? new Date(x).getTime() : 0; };
