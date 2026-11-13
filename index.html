@@ -2902,9 +2902,15 @@ function asRender() {
   asDivergencias();
 }
 
+// Telefone legível (12/11/2026): +55 31 99999-8888; estrangeiro fica +DDI resto.
+function asFmtTel(d) {
+  d = String(d || '').replace(/\D/g, '');
+  var m = d.match(/^55(\d{2})(\d{4,5})(\d{4})$/);
+  return m ? '+55 ' + m[1] + ' ' + m[2] + '-' + m[3] : (d ? '+' + d : '');
+}
 function asLinha(a) {
   var tel = String(a.telefone || '').replace(/\D/g, '');
-  var contato = escapeHtml(a.email || '') + (tel ? ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener">WhatsApp</a>' : '');
+  var contato = escapeHtml(a.email || '') + (tel ? ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + asFmtTel(tel) + '</a>' : '');
   var dias = '';
   if (a.diasRestantes !== null && a.diasRestantes !== undefined && a.situacao !== 'encerrada') {
     var cls = a.diasRestantes <= 7 ? 'urg' : (a.diasRestantes <= 30 ? 'med' : '');
@@ -2969,7 +2975,7 @@ function asLinhaPessoa(pid, naVisao) {
   var tel = String(a0.telefone || todas.map(function(a){ return a.telefone; }).filter(Boolean)[0] || '').replace(/\D/g, '');
   var emails = {}; todas.forEach(function(a){ if (a.email) emails[a.email] = 1; });
   var nAtivas = todas.filter(asAtiva).length;
-  var contato = Object.keys(emails).map(escapeHtml).join(' · ') + (tel ? ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">WhatsApp</a>' : '');
+  var contato = Object.keys(emails).map(escapeHtml).join(' · ') + (tel ? ' · <a href="https://wa.me/' + tel + '" target="_blank" rel="noopener" title="Abrir no WhatsApp" onclick="event.stopPropagation()">' + asFmtTel(tel) + '</a>' : '');
   return '<tr class="as-pessoa" ondblclick="asHistorico(\'' + pid + '\')">' +
     '<td data-l="Membro"><div class="as-nome">' + escapeHtml(a0.nome || a0.email || '(sem nome)') + '</div><div class="as-sub">' + contato + '</div>' +
       '<div class="as-sub">' + nAtivas + ' ativa' + (nAtivas === 1 ? '' : 's') + ' · ' + todas.length + ' no total · <a href="#" onclick="event.preventDefault();asHistorico(\'' + pid + '\')">histórico</a></div></td>' +
