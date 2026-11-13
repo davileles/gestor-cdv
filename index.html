@@ -998,6 +998,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="arCarregar()">↻ Atualizar</button>
     </div>
     <div class="as-aviso">Todas as ofertas de todos os produtos da Hubla. Em cada uma, você decide se ela dá acesso ao painel: <strong>Libera o painel</strong>, <strong>Só com prazo</strong> (libera enquanto a assinatura tiver data de fim; a vitalícia não libera) ou <strong>Não libera</strong>. Oferta sem regra salva segue a regra de fábrica (as 7 ofertas de antes). Antes de salvar, o gestor mostra quem ganha e quem perde o direito.</div>
+    <div class="as-aviso"><strong>Tempo de acesso:</strong> quanto tempo cada compra paga dá. O prazo passa a ser <em>último pagamento + tempo da oferta</em>, calculado aqui, não pela Hubla (mesmo que a Hubla dê mais). <strong>Ciclo pago</strong> = o período da assinatura recorrente (mensal, trimestral, anual); <strong>O da Hubla</strong> = continua valendo o prazo da Hubla. Reembolso do último pagamento encerra o acesso. Acesso gratuito liberado à mão segue a data da Hubla. Vale para o painel, os grupos (Tico) e o Google Contatos.</div>
     <div class="ar-barra">
       <span id="ar-resumo"></span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2034,7 +2035,30 @@ function gcCarregar() {
 // (POST /hubla/regras-acesso/simular), salva (POST /hubla/regras-acesso) e
 // libera quem passou a ter direito (POST /hubla/regras-acesso/aplicar). Quem
 // perde o direito sai pela visão "Exceções".
-var AR = { dados: null, mudou: {}, grupos: {}, aberto: null };
+var AR = { dados: null, mudou: {}, grupos: {}, tempos: {}, aberto: null };
+// Tempo de acesso por oferta (desde 13/11/2026): o prazo de quem pagou é
+// calculado pelo sistema (último pagamento + tempo), não pela Hubla.
+var AR_TEMPO_ROT = { hubla: 'O da Hubla', ciclo: 'Ciclo pago (recorrente)', vitalicio: 'Vitalício', dias: 'Dias', meses: 'Meses', anos: 'Anos' };
+function arTempo(o) { return AR.tempos[o.ofertaId] !== undefined ? AR.tempos[o.ofertaId] : (o.tempo || null); }
+function arTempoChave(t) { return t ? t.tipo + (t.valor ? ':' + t.valor : '') : 'hubla'; }
+function arTempoMudou(o) { return AR.tempos[o.ofertaId] !== undefined && arTempoChave(AR.tempos[o.ofertaId]) !== arTempoChave(o.tempo); }
+function arMudarTempo(id, campo, v) {
+  var o = (AR.dados.ofertas || []).filter(function(x){ return x.ofertaId === id; })[0]; if (!o) return;
+  var t = arTempo(o); t = t ? { tipo: t.tipo, valor: t.valor } : { tipo: 'hubla' };
+  if (campo === 'tipo') { t.tipo = v; if (['dias', 'meses', 'anos'].indexOf(v) >= 0) t.valor = t.valor || (v === 'anos' ? 1 : v === 'meses' ? 12 : 30); else delete t.valor; }
+  else t.valor = Math.max(1, parseInt(v, 10) || 1);
+  AR.tempos[id] = t.tipo === 'hubla' ? null : t;
+  document.getElementById('ar-impacto').innerHTML = '';
+  arRender();
+}
+function arTempoHublaTexto(h) {
+  var k = Object.keys(h || {}); if (!k.length) return '';
+  k.sort(function(a, b){ return h[b] - h[a]; });
+  return 'Hubla deu: ' + k.slice(0, 3).map(function(x){
+    var p = x.split(':'), r = p[0] === 'vitalicio' ? 'vitalício' : p[0] === 'ciclo' ? 'ciclo de ' + p[1] + ' ' + (p[1] === '1' ? 'mês' : 'meses') : p[1] + ' ' + (p[1] === '1' ? 'mês' : 'meses');
+    return r + ' (' + h[x] + ')';
+  }).join(', ');
+}
 var AR_ROT = { libera: 'Libera o painel', nao: 'Não libera', prazo: 'Só com prazo (vitalício não)' };
 function arPost(rota, corpo) {
   return fetch(AS_PROXY + rota, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo || {}) })
@@ -2044,7 +2068,7 @@ function arCarregar() {
   document.getElementById('ar-sinc').textContent = 'Carregando…';
   fetch(AS_PROXY + '/hubla/regras-acesso').then(function(r){ return r.json(); }).then(function(d) {
     if (!d.ok) throw new Error(d.erro || 'falha ao ler as regras');
-    AR.dados = d; AR.mudou = {}; AR.grupos = {}; AR.aberto = null;
+    AR.dados = d; AR.mudou = {}; AR.grupos = {}; AR.tempos = {}; AR.aberto = null;
     document.getElementById('ar-impacto').innerHTML = '';
     document.getElementById('ar-sinc').innerHTML = (d.regrasSalvas
       ? 'Regras salvas em <strong>' + new Date(d.atualizadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + '</strong>'
@@ -2096,7 +2120,7 @@ function arRender() {
   var todas = (AR.dados && AR.dados.ofertas) || [];
   var nExcl = todas.filter(function(o){ return o.produtoExcluido; }).length;
   var lista = AR.mostrarExcluidos ? todas : todas.filter(function(o){ return !o.produtoExcluido; });
-  var nMud = Object.keys(AR.mudou).length + lista.filter(function(o){ return !AR.mudou[o.ofertaId] && arGruposMudou(o); }).length;
+  var nMud = Object.keys(AR.mudou).length + lista.filter(function(o){ return !AR.mudou[o.ofertaId] && (arGruposMudou(o) || arTempoMudou(o)); }).length;
   var nLib = lista.filter(function(o){ return arRegra(o) !== 'nao'; }).length;
   document.getElementById('ar-resumo').innerHTML = '<strong>' + nLib + '</strong> de ' + lista.length + ' ofertas liberam o painel' +
     (nMud ? ' · <strong style="color:var(--accent)">' + nMud + ' alteração' + (nMud > 1 ? 'ões' : '') + ' não salva' + (nMud > 1 ? 's' : '') + '</strong>' : '') +
@@ -2107,7 +2131,7 @@ function arRender() {
       prodAtual = o.produtoNome;
       var doProd = lista.filter(function(x){ return x.produtoNome === prodAtual; });
       var ativos = doProd.reduce(function(s, x){ return s + (x.pessoasAtivas || 0); }, 0);
-      linhas.push('<tr class="ar-prod"><td colspan="5">' + escapeHtml(prodAtual || '(sem produto)') + ' <span class="as-sub" style="display:inline;font-weight:600">· ' + doProd.length + ' oferta' + (doProd.length > 1 ? 's' : '') + ' · ' + ativos + ' com assinatura ativa</span></td></tr>');
+      linhas.push('<tr class="ar-prod"><td colspan="6">' + escapeHtml(prodAtual || '(sem produto)') + ' <span class="as-sub" style="display:inline;font-weight:600">· ' + doProd.length + ' oferta' + (doProd.length > 1 ? 's' : '') + ' · ' + ativos + ' com assinatura ativa</span></td></tr>');
     }
     var r = arRegra(o);
     var sel = '<select class="ar-sel" onchange="arMudar(\'' + escapeHtml(o.ofertaId) + '\', this.value)">' +
@@ -2118,16 +2142,23 @@ function arRender() {
       (gs.length ? gs.length + ' grupo' + (gs.length > 1 ? 's' : '') : 'Nenhum grupo') + (AR.aberto === o.ofertaId ? ' ▴' : ' ▾') + '</button>' +
       (gs.length ? '<div class="as-sub">' + gs.slice(0, 3).map(function(j){ return escapeHtml(arNomeGrupo(j)); }).join(', ') + (gs.length > 3 ? ' e mais ' + (gs.length - 3) : '') + '</div>' : '') +
       (arGruposMudou(o) ? '<div class="as-sub" style="color:var(--accent)">alterado (não salvo)</div>' : '');
-    linhas.push('<tr class="' + (AR.mudou[o.ofertaId] || arGruposMudou(o) ? 'ar-mudou' : '') + '">' +
+    var tp = arTempo(o), tk = tp ? tp.tipo : 'hubla', oidT = escapeHtml(o.ofertaId);
+    var selT = '<select class="ar-sel" onchange="arMudarTempo(\'' + oidT + '\', \'tipo\', this.value)">' +
+      ['anos', 'ciclo', 'dias', 'meses', 'hubla', 'vitalicio'].map(function(k){ return '<option value="' + k + '"' + (k === tk ? ' selected' : '') + '>' + AR_TEMPO_ROT[k] + '</option>'; }).join('') + '</select>' +
+      (['dias', 'meses', 'anos'].indexOf(tk) >= 0 ? ' <input type="number" min="1" max="3650" value="' + (tp.valor || 1) + '" style="width:64px;margin-top:4px" onchange="arMudarTempo(\'' + oidT + '\', \'valor\', this.value)"/>' : '') +
+      '<div class="as-sub">' + escapeHtml(arTempoHublaTexto(o.tempoHubla)) + '</div>' +
+      (arTempoMudou(o) ? '<div class="as-sub" style="color:var(--accent)">alterado (não salvo)</div>' : '');
+    linhas.push('<tr class="' + (AR.mudou[o.ofertaId] || arGruposMudou(o) || arTempoMudou(o) ? 'ar-mudou' : '') + '">' +
       '<td data-l="Oferta"><div class="as-nome">' + escapeHtml(o.ofertaNome || '(sem nome)') + '</div><div class="as-sub">' +
         (o.arquivada ? 'arquivada na Hubla · ' : '') + (o.soEmAssinaturas ? 'fora do catálogo atual · ' : '') + o.assinaturas + ' assinatura' + (o.assinaturas === 1 ? '' : 's') + ' no total</div></td>' +
       '<td data-l="Com assinatura ativa">' + o.pessoasAtivas + (o.vitalicias ? ' <span class="as-sub" style="display:inline">(' + o.vitalicias + ' vitalícia' + (o.vitalicias > 1 ? 's' : '') + (o.vitaliciasConcedidas ? ', ' + o.vitaliciasConcedidas + ' concedida' + (o.vitaliciasConcedidas > 1 ? 's' : '') : '') + ')</span>' : '') + '</td>' +
       '<td data-l="Já no painel">' + o.ativasNoPainel + '</td>' +
       '<td data-l="Regra">' + sel + '<div class="as-sub">' + origem + '</div></td>' +
-      '<td data-l="Grupos">' + btnG + '</td></tr>');
+      '<td data-l="Grupos">' + btnG + '</td>' +
+      '<td data-l="Tempo de acesso">' + selT + '</td></tr>');
     if (AR.aberto === o.ofertaId) {
       var oid = escapeHtml(o.ofertaId);
-      linhas.push('<tr><td colspan="5"><div class="ar-gpainel">' +
+      linhas.push('<tr><td colspan="6"><div class="ar-gpainel">' +
         '<div class="ar-gacoes"><button type="button" onclick="arGruposTodos(\'' + oid + '\', true)">Marcar todos</button><button type="button" onclick="arGruposTodos(\'' + oid + '\', false)">Desmarcar todos</button>' +
         '<button type="button" onclick="arCopiarGrupos(\'' + oid + '\')">Copiar estes grupos para as outras ofertas de ' + escapeHtml(o.produtoNome || 'este produto') + '</button></div>' +
         '<div class="ar-glista">' + ((AR.dados.grupos || []).map(function(g) {
@@ -2139,11 +2170,11 @@ function arRender() {
     }
   });
   document.getElementById('ar-lista').innerHTML = !lista.length ? '<div class="as-vazio">Nenhuma oferta. Rode "⇅ Buscar na Hubla" na visão Assinaturas.</div>' :
-    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Com assinatura ativa</th><th>Já no painel</th><th>Painel</th><th>Grupos</th></tr></thead><tbody>' + linhas.join('') + '</tbody></table>';
+    '<table class="as-tabela"><thead><tr><th>Oferta</th><th>Com assinatura ativa</th><th>Já no painel</th><th>Painel</th><th>Grupos</th><th>Tempo de acesso</th></tr></thead><tbody>' + linhas.join('') + '</tbody></table>';
 }
 function arTodas() {
   var o = {};
-  ((AR.dados && AR.dados.ofertas) || []).forEach(function(x){ o[x.ofertaId] = { regra: arRegra(x), grupos: arGrupos(x) }; });
+  ((AR.dados && AR.dados.ofertas) || []).forEach(function(x){ o[x.ofertaId] = { regra: arRegra(x), grupos: arGrupos(x), tempo: arTempo(x) || { tipo: 'hubla' } }; });
   return o;
 }
 function arPessoas(lista, perde) {
