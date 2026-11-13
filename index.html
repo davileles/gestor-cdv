@@ -981,6 +981,16 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <button class="dash-chip" id="as-v-grupos" onclick="asTrocaVisao('grupos')">Grupos × acesso</button>
     <button class="dash-chip" id="as-v-acesso" onclick="asTrocaVisao('acesso')">Exceções</button>
     <button class="dash-chip" id="as-v-regras" onclick="asTrocaVisao('regras')">Regras de acesso</button>
+    <button class="dash-chip" id="as-v-contatos" onclick="asTrocaVisao('contatos')">Google Contatos</button>
+  </div>
+  <div id="as-bloco-contatos" style="display:none">
+    <div class="as-topo">
+      <div class="as-sinc" id="gc-sinc">—</div>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="gcCarregar()">↻ Atualizar</button>
+    </div>
+    <div class="as-aviso">O nome de cada aluno no seu Google Contatos fica <strong>Nome SIGLA dd/mm/aa</strong>, pela última assinatura que dá acesso a grupos (TRC, EDV, CDV, CDVP; vitalício = VIT). Quem atualiza é o script <a href="https://github.com/davileles/painel-cdv/blob/main/google-contatos/Codigo.gs" target="_blank" rel="noopener">Codigo.gs</a> na sua conta Google: acha o contato pelo telefone ou e-mail, troca só a sigla e a data, cria quem não está na agenda e marca com "Alunos CDV · Ativos" ou "Alunos CDV · Vencidos". Aqui aparece o resultado da última rodada do script.</div>
+    <div id="gc-previa"></div>
+    <div id="gc-relatorio"></div>
   </div>
   <div id="as-bloco-regras" style="display:none">
     <div class="as-topo">
@@ -1720,7 +1730,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
   var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/contatos','/hubla/contatos/relatorio'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -1961,13 +1971,61 @@ function asTrocaVisao(v) {
   document.getElementById('as-v-grupos').classList.toggle('on', v === 'grupos');
   document.getElementById('as-v-acesso').classList.toggle('on', v === 'acesso');
   document.getElementById('as-v-regras').classList.toggle('on', v === 'regras');
+  document.getElementById('as-v-contatos').classList.toggle('on', v === 'contatos');
+  document.getElementById('as-bloco-contatos').style.display = v === 'contatos' ? '' : 'none';
   document.getElementById('as-bloco-assin').style.display = v === 'assin' ? '' : 'none';
   document.getElementById('as-bloco-grupos').style.display = v === 'grupos' ? '' : 'none';
   document.getElementById('as-bloco-acesso').style.display = v === 'acesso' ? '' : 'none';
   document.getElementById('as-bloco-regras').style.display = v === 'regras' ? '' : 'none';
   if (v === 'acesso') { apCarregar(); return; }
   if (v === 'regras') { if (!AR.dados) arCarregar(); return; }
+  if (v === 'contatos') { gcCarregar(); return; }
   asAbrir();
+}
+
+// ── Google Contatos (desde 13/11/2026) ──
+// GET /hubla/contatos = lista que o Apps Script usa (prévia por sigla);
+// GET /hubla/contatos/relatorio = última rodada do script (ensaio ou valendo).
+function gcCarregar() {
+  var sinc = document.getElementById('gc-sinc');
+  sinc.textContent = 'Carregando…';
+  var j = function(r){ return r.json(); };
+  Promise.all([
+    fetch(AS_PROXY + '/hubla/contatos').then(j),
+    fetch(AS_PROXY + '/hubla/contatos/relatorio').then(j),
+  ]).then(function(rs) {
+    var l = rs[0], rel = rs[1];
+    if (!l.ok) throw new Error(l.erro || 'falha na lista');
+    var por = {};
+    (l.contatos || []).forEach(function(x){ var k = x.sigla + (x.vitalicio ? ' VIT' : ''); por[k] = por[k] || { at: 0, ve: 0 }; por[k][x.ativo ? 'at' : 've']++; });
+    var lin = Object.keys(por).sort().map(function(k){ return '<tr><td><strong>' + escapeHtml(k) + '</strong></td><td>' + por[k].at + '</td><td>' + por[k].ve + '</td></tr>'; });
+    var sem = (l.ofertasSemSigla || []).map(function(o){ return escapeHtml(o.oferta) + ' (' + o.registros + ')'; }).join(' · ');
+    document.getElementById('gc-previa').innerHTML =
+      '<h4 class="ap-h">Alunos na lista: ' + l.total + ' (' + l.ativos + ' com acesso ativo)</h4>' +
+      '<table class="as-tabela"><thead><tr><th>Sigla</th><th>Ativos</th><th>Vencidos</th></tr></thead><tbody>' + lin.join('') + '</tbody></table>' +
+      (sem ? '<div class="as-aviso" style="margin-top:8px">Dão grupo, mas não têm sigla (ficam fora do nome): ' + sem + '</div>' : '');
+    var u = rel && rel.ultimo;
+    if (!u) {
+      sinc.textContent = 'O script ainda não rodou.';
+      document.getElementById('gc-relatorio').innerHTML = '<div class="as-aviso">Rode <strong>ensaio</strong> no Apps Script: o resultado aparece aqui sem mudar nada na agenda.</div>';
+      return;
+    }
+    var t = u.totais || {};
+    var quando = new Date(u.recebidoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    sinc.textContent = 'Última rodada: ' + quando + ' · ' + (u.modo === 'valendo' ? 'valendo' : 'ensaio (nada foi mudado)') + (u.completo === false ? ' · parou no limite de tempo' : '');
+    var kp = [['Alunos', t.alunos], ['Contatos na agenda', t.contatosNaAgenda], [u.modo === 'valendo' ? 'Nomes trocados' : 'Nomes a trocar', u.modo === 'valendo' ? t.atualizados : t.atualizar],
+      [u.modo === 'valendo' ? 'Contatos criados' : 'Contatos a criar', u.modo === 'valendo' ? t.criados : t.criar], ['Já certos', t.iguais], ['Conflitos', t.conflitos]];
+    var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">' + kp.map(function(k){
+      return '<div class="as-kpi" style="cursor:default"><div style="font-size:18px;font-weight:700">' + (k[1] == null ? '—' : k[1]) + '</div><div style="font-size:11px;color:var(--muted)">' + k[0] + '</div></div>'; }).join('') + '</div>';
+    var at = u.atualizar || [], cr = u.criar || [], er = u.erros || [];
+    if (at.length) html += '<h4 class="ap-h">Nomes ' + (u.modo === 'valendo' ? 'trocados' : 'que vão mudar') + ' (' + at.length + ')</h4><table class="as-tabela"><thead><tr><th>Hoje</th><th>Fica</th></tr></thead><tbody>' +
+      at.slice(0, 300).map(function(a){ return '<tr><td>' + escapeHtml(a.de) + '</td><td><strong>' + escapeHtml(a.para) + '</strong></td></tr>'; }).join('') + '</tbody></table>' + (at.length > 300 ? '<div class="as-aviso">… e mais ' + (at.length - 300) + '.</div>' : '');
+    if (cr.length) html += '<h4 class="ap-h" style="margin-top:14px">Contatos ' + (u.modo === 'valendo' ? 'criados' : 'que vão ser criados') + ' (' + cr.length + ')</h4><table class="as-tabela"><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th></tr></thead><tbody>' +
+      cr.slice(0, 300).map(function(a){ return '<tr><td>' + escapeHtml(a.nome) + '</td><td>' + escapeHtml(a.telefone) + '</td><td>' + escapeHtml(a.email) + '</td></tr>'; }).join('') + '</tbody></table>' + (cr.length > 300 ? '<div class="as-aviso">… e mais ' + (cr.length - 300) + '.</div>' : '');
+    if (er.length) html += '<h4 class="ap-h" style="margin-top:14px">Avisos (' + er.length + ')</h4><table class="as-tabela"><tbody>' +
+      er.slice(0, 100).map(function(e){ return '<tr><td>' + escapeHtml(e.tipo === 'conflito' ? 'Contato "' + e.contato + '" bate com dois alunos: ficou com ' + e.outro + ', não com ' + e.aluno : (e.tipo + ': ' + (e.erro || ''))) + '</td></tr>'; }).join('') + '</tbody></table>';
+    document.getElementById('gc-relatorio').innerHTML = html;
+  }).catch(function(e) { sinc.textContent = 'Erro: ' + e.message; });
 }
 
 // ── Regras de acesso (desde 11/11/2026) ──
