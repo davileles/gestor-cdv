@@ -452,6 +452,11 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .bl-doc{border:1px solid var(--border);border-radius:10px;padding:8px;font-size:11.5px;color:var(--muted);text-align:center;background:var(--bg)}
 .bl-doc img{width:100%;height:150px;object-fit:contain;border-radius:6px;background:#000;cursor:zoom-in;display:block;margin-bottom:6px}
 .bl-doc a{font-weight:700}
+.bl-sug{margin-top:10px;border:1px dashed rgba(245,166,35,.55);border-radius:10px;padding:10px 12px;background:rgba(245,166,35,.06)}
+.bl-sug-t{font-size:12px;font-weight:800;color:#f5a623;margin-bottom:6px}
+.bl-sug-i{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--border)}
+.bl-sug-i:first-of-type{border-top:none}
+.bl-sug-i b{font-size:13px}.bl-sug-i span{display:block;font-size:12px;color:var(--muted)}
 .bl-tel{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;font-size:12px}
 .bl-tel input{width:170px;padding:6px 9px;font-size:12px}
 .bl-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:12px 0}
@@ -1015,11 +1020,12 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="blCarregar()">🔄 Atualizar</button>
       </div>
     </div>
-    <div class="as-aviso">Formulário público: <a href="https://painel.clubedoviajante.com.br/balcao/" target="_blank" rel="noopener">painel.clubedoviajante.com.br/balcao/</a>. Aprovar ou reprovar vale para a pessoa (CPF): a decisão mais recente é a que conta. O telefone do WhatsApp de cada verificação sai do formulário, do CPF nas faturas da Hubla, do e-mail na Hubla ou, por último, do nome idêntico na Hubla (marcado <b>por nome</b> — confira). Quem não tem telefone não é reconhecido no grupo: vincule à mão.</div>
+    <div class="as-aviso">Formulário público: <a href="https://painel.clubedoviajante.com.br/balcao/" target="_blank" rel="noopener">painel.clubedoviajante.com.br/balcao/</a>. Aprovar ou reprovar vale para a pessoa (CPF): a decisão mais recente é a que conta. O telefone do WhatsApp de cada verificação sai do formulário, do CPF nas faturas da Hubla ou do e-mail na Hubla. Quando só o nome bate, aparece em <b>Sugestões de vínculo</b> para você confirmar (enquanto não decide, a pessoa não é removida do grupo). Quem fica sem telefone não é reconhecido no grupo: vincule à mão.</div>
     <div class="bl-filtros">
       <button class="dash-chip on" data-f="pendente" onclick="blFiltro('pendente')">Pendentes <span id="bl-n-pendente"></span></button>
       <button class="dash-chip" data-f="aprovado" onclick="blFiltro('aprovado')">Aprovados <span id="bl-n-aprovado"></span></button>
       <button class="dash-chip" data-f="reprovado" onclick="blFiltro('reprovado')">Reprovados <span id="bl-n-reprovado"></span></button>
+      <button class="dash-chip" data-f="sug" onclick="blFiltro('sug')">Sugestões de vínculo <span id="bl-n-sug"></span></button>
       <button class="dash-chip" data-f="semtel" onclick="blFiltro('semtel')">Aprovados sem telefone <span id="bl-n-semtel"></span></button>
       <button class="dash-chip" data-f="todos" onclick="blFiltro('todos')">Todos</button>
       <input type="text" id="bl-busca" placeholder="Buscar nome, CPF, e-mail ou telefone" oninput="blRender()" style="flex:1;min-width:200px"/>
@@ -1800,7 +1806,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir','/balcao/verificacoes/status','/balcao/verificacoes/telefone','/balcao/vincular'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir','/balcao/verificacoes/status','/balcao/verificacoes/telefone','/balcao/verificacoes/sugestao','/balcao/vincular'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
   var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/contatos','/hubla/contatos/relatorio','/balcao/verificacoes','/balcao/grupo','/balcao/arquivo/'];
   var _orig = window.fetch.bind(window);
@@ -2141,14 +2147,15 @@ function blPessoas() {
 }
 function blRender() {
   var pessoas = blPessoas();
-  var n = { pendente: 0, aprovado: 0, reprovado: 0, semtel: 0 };
-  pessoas.forEach(function(r){ n[r.situacaoPessoa] = (n[r.situacaoPessoa] || 0) + 1; if (r.situacaoPessoa === 'aprovado' && !(r.telefonesChave || []).length) n.semtel++; });
+  var n = { pendente: 0, aprovado: 0, reprovado: 0, semtel: 0, sug: 0 };
+  pessoas.forEach(function(r){ n[r.situacaoPessoa] = (n[r.situacaoPessoa] || 0) + 1; if (r.situacaoPessoa === 'aprovado' && !(r.telefonesChave || []).length) n.semtel++; if ((r.sugestoes || []).length) n.sug++; });
   Object.keys(n).forEach(function(k){ var el = document.getElementById('bl-n-' + k); if (el) el.textContent = '(' + n[k] + ')'; });
   var bg = document.getElementById('balcao-badge'); if (bg) { bg.textContent = n.pendente; bg.style.display = n.pendente ? '' : 'none'; }
   document.getElementById('bl-sinc').textContent = pessoas.length + ' pessoa' + (pessoas.length === 1 ? '' : 's') + ' · ' + n.aprovado + ' aprovada' + (n.aprovado === 1 ? '' : 's') + ' · ' + n.pendente + ' pendente' + (n.pendente === 1 ? '' : 's');
   var q = (document.getElementById('bl-busca').value || '').toLowerCase().trim(), qd = q.replace(/\D/g, '');
   var lista = pessoas.filter(function(r){
-    if (BL.filtro === 'semtel') { if (r.situacaoPessoa !== 'aprovado' || (r.telefonesChave || []).length) return false; }
+    if (BL.filtro === 'sug') { if (!(r.sugestoes || []).length) return false; }
+    else if (BL.filtro === 'semtel') { if (r.situacaoPessoa !== 'aprovado' || (r.telefonesChave || []).length) return false; }
     else if (BL.filtro !== 'todos' && r.situacaoPessoa !== BL.filtro) return false;
     if (!q) return true;
     var alvo = [r.nome, r.email].concat((r.vinculo && r.vinculo.emails) || []).join(' ').toLowerCase();
@@ -2162,7 +2169,8 @@ function blRender() {
 }
 function blItem(r) {
   var v = r.vinculo || {}, tels = r.telefonesChave || [];
-  var fontes = (v.fontes || []).map(function(f){ return { cpf: 'CPF na Hubla', email: 'e-mail na Hubla', nome: 'por nome — confira' }[f] || f; });
+  var fontes = (v.fontes || []).map(function(f){ return { cpf: 'CPF na Hubla', email: 'e-mail na Hubla' }[f] || f; });
+  if (r.vinculoAceito) fontes.push('vínculo aceito por você');
   var meta = 'CPF ' + blCpf(r.cpf) + (r.nascimento ? ' · nasc. ' + blDataBR(r.nascimento + 'T12:00:00') : '') + ' · enviado em ' + blDataBR(r.recebidoEm) +
     (r.origem === 'forms' ? ' · <span class="bl-sel info">planilha antiga</span>' : ' · formulário') + (r.reenvios > 1 ? ' · ' + r.reenvios + ' envios' : '');
   var contato = [r.email ? escapeHtml(r.email) : '', r.tel ? blTel(r.tel) : ''].filter(Boolean).join(' · ');
@@ -2179,8 +2187,25 @@ function blItem(r) {
   return '<div class="bl-item" id="bl-it-' + r.id + '"><div class="bl-top"><div><div class="bl-nome">' + escapeHtml(r.nome || '—') + '<span class="bl-sel ' + r.situacaoPessoa + '">' + (BL_ROT[r.situacaoPessoa] || r.situacaoPessoa) + '</span></div>' +
     '<div class="bl-meta">' + meta + (contato ? '<br>' + contato : '') + '<br>' + pix + '<br>' + vinc + (manuais ? ' ' + manuais : '') +
     (r.obs ? '<br><i>' + escapeHtml(r.obs) + '</i>' : '') + '</div></div><div class="bl-acoes">' + acoes.join('') + '</div></div>' +
+    blSugHtml(r) +
     '<div class="bl-tel"><input type="tel" id="bl-tel-' + r.id + '" placeholder="Outro WhatsApp (com DDD)"/><button class="btn" style="width:auto;margin:0;font-size:11px;padding:6px 10px;background:#3f3f3f;color:#ddd" onclick="blTelefone(\'' + r.id + '\')">🔗 Vincular telefone</button></div>' +
     '<div class="bl-docs" id="bl-docs-' + r.id + '" style="display:none"></div></div>';
+}
+// Sugestões de vínculo: pessoa da Hubla com nome parecido. O Davi confirma ou recusa.
+function blSugHtml(r) {
+  var s = r.sugestoes || [];
+  if (!s.length) return '';
+  return '<div class="bl-sug"><div class="bl-sug-t">É uma destas pessoas da Hubla?</div>' + s.map(function(x) {
+    return '<div class="bl-sug-i"><div><b>' + escapeHtml(x.nome || '—') + '</b><span>' + blTel(x.telefone) + (x.email ? ' · ' + escapeHtml(x.email) : '') +
+      ((x.produtos || []).length ? ' · ' + escapeHtml(x.produtos.join(', ')) : '') + '</span></div><div class="bl-acoes">' +
+      '<button class="ok" onclick="blSugestao(\'' + r.id + '\',\'' + escapeHtml(x.telefone) + '\',true)">✓ É esta pessoa</button>' +
+      '<button class="no" onclick="blSugestao(\'' + r.id + '\',\'' + escapeHtml(x.telefone) + '\',false)">✕ Não é</button></div></div>';
+  }).join('') + '</div>';
+}
+function blSugestao(id, telefone, aceitar) {
+  fetch(AS_PROXY + '/balcao/verificacoes/sugestao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, telefone: telefone, aceitar: !!aceitar }) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); return blCarregar(); })
+    .catch(function(e){ alert('Não consegui salvar: ' + e.message); });
 }
 function blStatus(id, status) {
   var obs = '';
@@ -2200,7 +2225,7 @@ function blVincular() {
   document.getElementById('bl-sinc').textContent = 'Refazendo vínculos com a Hubla (pode levar 1 minuto)…';
   fetch(AS_PROXY + '/balcao/vincular', { method: 'POST' }).then(function(r){ return r.json(); }).then(function(d){
     if (!d.ok) throw new Error(d.erro || 'falha');
-    alert('Vínculos refeitos: ' + d.atualizados + ' atualizado(s); ' + d.semVinculo + ' registro(s) ainda sem telefone.' + (d.faturasHubla ? '' : '\n(As faturas da Hubla não foram lidas: confira a HUBLA_API_KEY.)'));
+    alert('Vínculos refeitos: ' + d.atualizados + ' atualizado(s); ' + d.semVinculo + ' registro(s) ainda sem telefone; ' + (d.comSugestao || 0) + ' com sugestão para você conferir.' + (d.faturasHubla ? '' : '\n(As faturas da Hubla não foram lidas: confira a HUBLA_API_KEY.)'));
     blCarregar();
   }).catch(function(e){ document.getElementById('bl-sinc').textContent = 'Erro: ' + e.message; });
 }
