@@ -1031,12 +1031,12 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <div class="as-sinc" id="bl-g-sinc">—</div>
       <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="blGrupoCarregar(true)">🔄 Reler o grupo</button>
     </div>
-    <div class="as-aviso">No grupo do Balcão só fica quem tem assinatura que dá o grupo <b>e</b> verificação aprovada. Quem tem a assinatura mas não foi aprovado (não enviou o formulário ou foi reprovado) sai pelo Tico depois do prazo abaixo, no ritmo da remoção (janela, teto do dia). Quem enviou o formulário e está aguardando sua análise nunca sai. Quem não tem assinatura segue as regras de sempre (sem cadastro, vencido).</div>
+    <div class="as-aviso">No grupo do Balcão só fica quem tem assinatura que dá o grupo <b>e</b> verificação aprovada. Quem tem a assinatura mas não foi aprovado (não enviou o formulário ou foi reprovado) sai pelo Tico: quem entra sem verificação sai na hora; quem já estava no grupo entra na fila de remoção (janela e teto do dia). Quem enviou o formulário e está aguardando sua análise nunca sai. Quem não tem assinatura segue as regras de sempre (sem cadastro, vencido).</div>
     <div class="card" style="padding:14px 16px">
       <label class="chk-box" style="margin:0"><input type="checkbox" id="bl-exigir" onchange="blSalvarCfg()"/> Remover do grupo quem não tem verificação aprovada</label>
       <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;font-size:13px">
-        Prazo depois que o sistema vê a pessoa no grupo:
-        <input type="number" id="bl-espera" min="1" max="720" style="width:90px" onchange="blSalvarCfg()"/> horas
+        Espera antes de entrar na fila (0 = na hora):
+        <input type="number" id="bl-espera" min="0" max="720" style="width:90px" onchange="blSalvarCfg()"/> horas
         <span class="as-sinc" id="bl-cfg-est"></span>
       </div>
     </div>
@@ -2241,7 +2241,7 @@ function blGrupoCarregar(forcar) {
 function blGrupoRender() {
   var d = BL.grupo, c = d.config || {};
   document.getElementById('bl-exigir').checked = !!c.balcaoExigirVerificacao;
-  document.getElementById('bl-espera').value = c.esperaVerificacaoH || 48;
+  document.getElementById('bl-espera').value = c.esperaVerificacaoH != null ? c.esperaVerificacaoH : 0;
   document.getElementById('bl-cfg-est').textContent = 'Remoção pelo Tico: ' + (c.modo === 'on' ? 'ligada' : c.modo === 'sombra' ? 'só lista (sombra)' : 'desligada') + (c.pausado ? ' · PAUSADA' : '');
   document.getElementById('bl-g-sinc').textContent = 'Grupo lido em ' + (d.gruposLidosEm ? new Date(d.gruposLidosEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
   if (!(d.grupos || []).length) { document.getElementById('bl-g-resumo').innerHTML = '<div class="as-sinc">Nenhum grupo do Balcão encontrado (Grupos → papel "balcao").</div>'; document.getElementById('bl-g-lista').innerHTML = ''; return; }
@@ -2256,7 +2256,7 @@ function blGrupoRender() {
   document.getElementById('bl-dl-pessoas').innerHTML = blPessoas().filter(function(r){ return r.situacaoPessoa === 'aprovado'; })
     .map(function(r){ return '<option value="' + escapeHtml((r.nome || '') + ' · CPF ' + blCpf(r.cpf)) + '"></option>'; }).join('');
   document.getElementById('bl-g-lista').innerHTML = pes.length ? pes.map(function(p) {
-    var sai = p.situacao === 'nao_verificado' ? (c.balcaoExigirVerificacao ? (p.saiEm ? ' · sai a partir de ' + new Date(p.saiEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ' · prazo começa na próxima rodada') : ' · remoção desligada') : '';
+    var sai = p.situacao === 'nao_verificado' ? (c.balcaoExigirVerificacao ? (!c.esperaVerificacaoH ? ' · na fila de remoção' : p.saiEm ? ' · sai a partir de ' + new Date(p.saiEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ' · prazo começa na próxima rodada') : ' · remoção desligada') : '';
     var vinc = p.situacao === 'nao_verificado' ? '<div class="bl-tel"><input list="bl-dl-pessoas" id="bl-gv-' + p.chave + '" placeholder="Já é verificado? Busque o nome" style="width:260px"/><button class="btn" style="width:auto;margin:0;font-size:11px;padding:6px 10px;background:#3f3f3f;color:#ddd" onclick="blGrupoVincular(\'' + p.chave + '\',\'' + p.telefone + '\')">🔗 Vincular este telefone</button></div>' : '';
     return '<div class="bl-item"><div class="bl-nome">' + escapeHtml(p.nome || blTel(p.telefone)) + '<span class="bl-sel ' + p.situacao + '">' + (BL_ROT[p.situacao] || p.situacao) + '</span></div>' +
       '<div class="bl-meta">' + blTel(p.telefone) + (p.email ? ' · ' + escapeHtml(p.email) : '') + ((p.produtos || []).length ? ' · ' + escapeHtml(p.produtos.join(', ')) : '') + sai + '</div>' + vinc + '</div>';
@@ -2271,7 +2271,7 @@ function blGrupoVincular(chave, telefone) {
   blTelefone(r.id, telefone);
 }
 function blSalvarCfg() {
-  var corpo = { balcaoExigirVerificacao: document.getElementById('bl-exigir').checked, esperaVerificacaoH: parseInt(document.getElementById('bl-espera').value, 10) || 48 };
+  var corpo = { balcaoExigirVerificacao: document.getElementById('bl-exigir').checked, esperaVerificacaoH: Math.max(0, parseInt(document.getElementById('bl-espera').value, 10) || 0) };
   fetch(AS_PROXY + '/hubla/grupos-remocao/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
     .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); document.getElementById('bl-cfg-est').textContent = 'Salvo.'; blGrupoCarregar(false); })
     .catch(function(e){ alert('Não consegui salvar: ' + e.message); });
