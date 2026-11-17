@@ -433,6 +433,31 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .as-grupos-tags{display:flex;flex-wrap:wrap;gap:4px}
 .as-grupo-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--muted);white-space:nowrap}
 .as-aviso{font-size:12px;color:var(--muted2);margin:-4px 0 12px}
+.bl-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bl-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.bl-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.bl-nome{font-weight:800;font-size:14px}
+.bl-meta{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.6}
+.bl-sel{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.4px;margin-left:6px;vertical-align:1px}
+.bl-sel.pendente{background:rgba(245,166,35,.15);color:#f5a623}
+.bl-sel.aprovado{background:rgba(52,199,89,.15);color:#34c759}
+.bl-sel.reprovado,.bl-sel.nao_verificado{background:rgba(255,88,94,.15);color:#ff585e}
+.bl-sel.verificacao_pendente{background:rgba(245,166,35,.15);color:#f5a623}
+.bl-sel.info{background:rgba(18,110,255,.14);color:#5b9bff}
+.bl-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.bl-acoes button{font-family:var(--font);font-size:12px;font-weight:700;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2,var(--surface));color:var(--text);cursor:pointer}
+.bl-acoes button.ok{background:#1f7a3d;border-color:#1f7a3d;color:#fff}
+.bl-acoes button.no{background:transparent;border-color:#ff585e;color:#ff585e}
+.bl-docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.bl-doc{border:1px solid var(--border);border-radius:10px;padding:8px;font-size:11.5px;color:var(--muted);text-align:center;background:var(--bg)}
+.bl-doc img{width:100%;height:150px;object-fit:contain;border-radius:6px;background:#000;cursor:zoom-in;display:block;margin-bottom:6px}
+.bl-doc a{font-weight:700}
+.bl-tel{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center;font-size:12px}
+.bl-tel input{width:170px;padding:6px 9px;font-size:12px}
+.bl-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:12px 0}
+.bl-kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.bl-kpi b{display:block;font-size:20px}
+.bl-kpi span{font-size:11.5px;color:var(--muted)}
 .as-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .as-sinc{font-size:12px;color:var(--muted2)}
 .as-sinc strong{color:var(--muted)}
@@ -727,6 +752,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div class="side-group">Relacionamento</div>
   <button class="main-tab" id="tab-campanha">📣 Campanhas</button>
   <button class="main-tab" id="tab-entrada">👥 Reentrada</button>
+  <button class="main-tab" id="tab-balcao">🔐 Balcão<span class="alerta-badge" id="balcao-badge" style="display:none">0</span></button>
   <div class="side-group">Administração</div>
   <button class="main-tab" id="tab-gradm">🛡️ Grupos</button>
   <button class="main-tab" id="tab-config">⚙️ Configurações</button>
@@ -975,6 +1001,51 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 </div>
 
 <!-- ══ PAINEL ASSINATURAS (Hubla → proxy /hubla/assinaturas) ══ -->
+<!-- ══ PAINEL BALCÃO (verificação dos membros, desde 17/11/2026) ══ -->
+<div class="main-panel" id="panel-balcao">
+  <div class="as-visoes">
+    <button class="dash-chip on" id="bl-v-pedidos" onclick="blVisao('pedidos')">Verificações</button>
+    <button class="dash-chip" id="bl-v-grupo" onclick="blVisao('grupo')">No grupo do Balcão</button>
+  </div>
+  <div id="bl-bloco-pedidos">
+    <div class="as-topo">
+      <div class="as-sinc" id="bl-sinc">—</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="blVincular()">🔗 Refazer vínculos</button>
+        <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="blCarregar()">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div class="as-aviso">Formulário público: <a href="https://painel.clubedoviajante.com.br/balcao/" target="_blank" rel="noopener">painel.clubedoviajante.com.br/balcao/</a>. Aprovar ou reprovar vale para a pessoa (CPF): a decisão mais recente é a que conta. O telefone do WhatsApp de cada verificação sai do formulário, do CPF nas faturas da Hubla, do e-mail na Hubla ou, por último, do nome idêntico na Hubla (marcado <b>por nome</b> — confira). Quem não tem telefone não é reconhecido no grupo: vincule à mão.</div>
+    <div class="bl-filtros">
+      <button class="dash-chip on" data-f="pendente" onclick="blFiltro('pendente')">Pendentes <span id="bl-n-pendente"></span></button>
+      <button class="dash-chip" data-f="aprovado" onclick="blFiltro('aprovado')">Aprovados <span id="bl-n-aprovado"></span></button>
+      <button class="dash-chip" data-f="reprovado" onclick="blFiltro('reprovado')">Reprovados <span id="bl-n-reprovado"></span></button>
+      <button class="dash-chip" data-f="semtel" onclick="blFiltro('semtel')">Aprovados sem telefone <span id="bl-n-semtel"></span></button>
+      <button class="dash-chip" data-f="todos" onclick="blFiltro('todos')">Todos</button>
+      <input type="text" id="bl-busca" placeholder="Buscar nome, CPF, e-mail ou telefone" oninput="blRender()" style="flex:1;min-width:200px"/>
+    </div>
+    <div id="bl-lista"></div>
+  </div>
+  <div id="bl-bloco-grupo" style="display:none">
+    <div class="as-topo">
+      <div class="as-sinc" id="bl-g-sinc">—</div>
+      <button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px;padding:7px 14px;width:auto;margin:0" onclick="blGrupoCarregar(true)">🔄 Reler o grupo</button>
+    </div>
+    <div class="as-aviso">No grupo do Balcão só fica quem tem assinatura que dá o grupo <b>e</b> verificação aprovada. Quem tem a assinatura mas não foi aprovado (não enviou o formulário ou foi reprovado) sai pelo Tico depois do prazo abaixo, no ritmo da remoção (janela, teto do dia). Quem enviou o formulário e está aguardando sua análise nunca sai. Quem não tem assinatura segue as regras de sempre (sem cadastro, vencido).</div>
+    <div class="card" style="padding:14px 16px">
+      <label class="chk-box" style="margin:0"><input type="checkbox" id="bl-exigir" onchange="blSalvarCfg()"/> Remover do grupo quem não tem verificação aprovada</label>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;font-size:13px">
+        Prazo depois que o sistema vê a pessoa no grupo:
+        <input type="number" id="bl-espera" min="1" max="720" style="width:90px" onchange="blSalvarCfg()"/> horas
+        <span class="as-sinc" id="bl-cfg-est"></span>
+      </div>
+    </div>
+    <div id="bl-g-resumo"></div>
+    <div id="bl-g-lista"></div>
+    <datalist id="bl-dl-pessoas"></datalist>
+  </div>
+</div>
+
 <div class="main-panel" id="panel-assin">
   <div class="as-visoes">
     <button class="dash-chip on" id="as-v-assin" onclick="asTrocaVisao('assin')">Assinaturas</button>
@@ -1729,9 +1800,9 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 // navegador, pede uma vez. 401 = chave errada → apaga e pede de novo na próxima.
 (function(){
   var PROXY = 'https://cdv-proxy-production.up.railway.app';
-  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir'];
+  var ROTAS = ['/ofertas/aprovar','/ofertas/aprovar-e-enviar','/ofertas/enviar','/ofertas/publicar','/ofertas/rejeitar','/ofertas/rejeitar-todas','/ofertas/mensagem/','/passagens/excluir','/hubla/assinaturas/sincronizar','/ofertas/prorrogar','/hubla/painel/excecoes','/hubla/painel/excecoes/excluir','/hubla/painel/retirar-acesso','/hubla/regras-acesso','/hubla/regras-acesso/simular','/hubla/regras-acesso/aplicar','/hubla/grupos-remocao/config','/hubla/grupos-remocao/retomar','/hubla/grupos-remocao/rodar','/hubla/grupos-remocao/excecao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/painel/ajustes/excluir','/balcao/verificacoes/status','/balcao/verificacoes/telefone','/balcao/vincular'];
   // Leituras de conteúdo (desde 13/10/2026 também exigem a chave).
-  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/contatos','/hubla/contatos/relatorio'];
+  var ROTAS_GET = ['/conteudo/','/ofertas/mensagem/','/ofertas/pendentes','/ofertas/enviadas','/passagens/listar','/voos/precos','/hubla/assinaturas','/hubla/grupos-auditoria','/hubla/painel/sem-assinatura','/hubla/painel/excecoes','/hubla/regras-acesso','/hubla/grupos-remocao','/hubla/grupos-clube','/hubla/painel/ajustes','/hubla/contatos','/hubla/contatos/relatorio','/balcao/verificacoes','/balcao/grupo','/balcao/arquivo/'];
   var _orig = window.fetch.bind(window);
   function lerChave(){
     var k = '';
@@ -2027,6 +2098,183 @@ function gcCarregar() {
       er.slice(0, 100).map(function(e){ return '<tr><td>' + escapeHtml(e.tipo === 'conflito' ? 'Contato "' + e.contato + '" bate com dois alunos: ficou com ' + e.outro + ', não com ' + e.aluno : (e.tipo + ': ' + (e.erro || ''))) + '</td></tr>'; }).join('') + '</tbody></table>';
     document.getElementById('gc-relatorio').innerHTML = html;
   }).catch(function(e) { sinc.textContent = 'Erro: ' + e.message; });
+}
+
+// ── Balcão: verificação dos membros (desde 17/11/2026) ──
+// Lista as verificações (formulário painel.clubedoviajante.com.br/balcao/ +
+// importadas da planilha antiga), aprova/reprova, mostra os documentos e quem
+// está no grupo do Balcão sem verificação aprovada. Rotas do proxy em balcao.js.
+var BL = { lista: [], filtro: 'pendente', visao: 'pedidos', grupo: null, limite: 60 };
+var BL_ROT = { pendente: 'Pendente', aprovado: 'Aprovado', reprovado: 'Reprovado', nao_verificado: 'Não verificado',
+  verificacao_pendente: 'Aguardando análise', sem_cadastro: 'Sem cadastro', vencido: 'Vencido', sem_direito: 'Sem direito', concierge: 'Concierge', excecao: 'Exceção' };
+var BL_ARQ = { documento: 'Documento com foto', selfie: 'Selfie com documento', comprovante: 'Comprovante de endereço', instagram: 'Print do Instagram', termo: 'Termo assinado (GOV.BR)' };
+function blDataBR(s) { if (!s) return '—'; var d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); }
+function blCpf(c) { c = String(c || ''); return c.length === 11 ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : c; }
+function blTel(t) { t = String(t || '').replace(/\D/g, ''); if (t.length >= 12 && t.indexOf('55') === 0) t = t.slice(2); return t.length >= 10 ? '(' + t.slice(0, 2) + ') ' + t.slice(2, t.length - 4) + '-' + t.slice(-4) : t; }
+function blAbrir() { if (BL.visao === 'grupo') blGrupoCarregar(false); else blCarregar(); }
+function blVisao(v) {
+  BL.visao = v;
+  document.getElementById('bl-v-pedidos').classList.toggle('on', v === 'pedidos');
+  document.getElementById('bl-v-grupo').classList.toggle('on', v === 'grupo');
+  document.getElementById('bl-bloco-pedidos').style.display = v === 'pedidos' ? '' : 'none';
+  document.getElementById('bl-bloco-grupo').style.display = v === 'grupo' ? '' : 'none';
+  blAbrir();
+}
+function blCarregar() {
+  document.getElementById('bl-sinc').textContent = 'Carregando…';
+  return fetch(AS_PROXY + '/balcao/verificacoes').then(function(r){ return r.json(); }).then(function(d) {
+    if (!d || !d.ok) throw new Error((d && d.erro) || 'falha');
+    BL.lista = (d.data || []).slice().sort(function(a, b){ return String(b.recebidoEm || '').localeCompare(String(a.recebidoEm || '')); });
+    blRender();
+  }).catch(function(e){ document.getElementById('bl-sinc').textContent = 'Erro: ' + e.message; });
+}
+function blFiltro(f) {
+  BL.filtro = f; BL.limite = 60;
+  Array.prototype.forEach.call(document.querySelectorAll('#bl-bloco-pedidos .bl-filtros .dash-chip'), function(b){ b.classList.toggle('on', b.getAttribute('data-f') === f); });
+  blRender();
+}
+// Uma linha por pessoa: o registro mais recente do CPF (os outros contam como reenvios).
+function blPessoas() {
+  var por = {};
+  BL.lista.forEach(function(r){ var k = r.cpf || r.id; if (!por[k] || String(r.recebidoEm || '') > String(por[k].recebidoEm || '')) por[k] = r; });
+  return Object.keys(por).map(function(k){ return por[k]; });
+}
+function blRender() {
+  var pessoas = blPessoas();
+  var n = { pendente: 0, aprovado: 0, reprovado: 0, semtel: 0 };
+  pessoas.forEach(function(r){ n[r.situacaoPessoa] = (n[r.situacaoPessoa] || 0) + 1; if (r.situacaoPessoa === 'aprovado' && !(r.telefonesChave || []).length) n.semtel++; });
+  Object.keys(n).forEach(function(k){ var el = document.getElementById('bl-n-' + k); if (el) el.textContent = '(' + n[k] + ')'; });
+  var bg = document.getElementById('balcao-badge'); if (bg) { bg.textContent = n.pendente; bg.style.display = n.pendente ? '' : 'none'; }
+  document.getElementById('bl-sinc').textContent = pessoas.length + ' pessoa' + (pessoas.length === 1 ? '' : 's') + ' · ' + n.aprovado + ' aprovada' + (n.aprovado === 1 ? '' : 's') + ' · ' + n.pendente + ' pendente' + (n.pendente === 1 ? '' : 's');
+  var q = (document.getElementById('bl-busca').value || '').toLowerCase().trim(), qd = q.replace(/\D/g, '');
+  var lista = pessoas.filter(function(r){
+    if (BL.filtro === 'semtel') { if (r.situacaoPessoa !== 'aprovado' || (r.telefonesChave || []).length) return false; }
+    else if (BL.filtro !== 'todos' && r.situacaoPessoa !== BL.filtro) return false;
+    if (!q) return true;
+    var alvo = [r.nome, r.email].concat((r.vinculo && r.vinculo.emails) || []).join(' ').toLowerCase();
+    if (alvo.indexOf(q) > -1) return true;
+    if (qd.length >= 4) return [r.cpf, r.tel].concat(r.telefonesChave || []).join(' ').indexOf(qd) > -1;
+    return false;
+  });
+  var html = lista.slice(0, BL.limite).map(blItem).join('');
+  if (lista.length > BL.limite) html += '<button class="btn" style="background:#3f3f3f;color:#aaa;font-size:12px" onclick="BL.limite+=100;blRender()">Mostrar mais (' + (lista.length - BL.limite) + ')</button>';
+  document.getElementById('bl-lista').innerHTML = html || '<div class="as-sinc">Nada aqui.</div>';
+}
+function blItem(r) {
+  var v = r.vinculo || {}, tels = r.telefonesChave || [];
+  var fontes = (v.fontes || []).map(function(f){ return { cpf: 'CPF na Hubla', email: 'e-mail na Hubla', nome: 'por nome — confira' }[f] || f; });
+  var meta = 'CPF ' + blCpf(r.cpf) + (r.nascimento ? ' · nasc. ' + blDataBR(r.nascimento + 'T12:00:00') : '') + ' · enviado em ' + blDataBR(r.recebidoEm) +
+    (r.origem === 'forms' ? ' · <span class="bl-sel info">planilha antiga</span>' : ' · formulário') + (r.reenvios > 1 ? ' · ' + r.reenvios + ' envios' : '');
+  var contato = [r.email ? escapeHtml(r.email) : '', r.tel ? blTel(r.tel) : ''].filter(Boolean).join(' · ');
+  var pix = r.pix ? 'PIX ' + escapeHtml(String(r.pix.tipo || '').toUpperCase()) + ' ' + escapeHtml(r.pix.tipo === 'cpf' ? blCpf(r.pix.chave) : String(r.pix.chave || '')) + (r.pix.banco ? ' · ' + escapeHtml(r.pix.banco) : '') : 'PIX não informado';
+  var visto = {}, mostrar = [r.tel].concat(v.telefones || []).filter(function(t){ var k = String(t || '').replace(/\D/g, '').slice(-8); if (!t || visto[k]) return false; visto[k] = 1; return true; });
+  var vinc = tels.length ? 'WhatsApp: ' + (mostrar.length ? mostrar.map(function(t){ return blTel(t); }).join(', ') : 'só os vinculados à mão') + (fontes.length ? ' <span class="as-sinc">(' + escapeHtml(fontes.join(', ')) + ')</span>' : '')
+    : '<span style="color:#ff585e">Sem telefone vinculado — não é reconhecido no grupo</span>';
+  var manuais = (r.telefonesManuais || []).map(function(t){ return '<span class="bl-sel info">' + blTel(t) + ' <a href="#" onclick="blTelefone(\'' + r.id + '\',\'' + t + '\',true);return false" title="Tirar">✕</a></span>'; }).join(' ');
+  var acoes = [];
+  if (r.situacaoPessoa !== 'aprovado') acoes.push('<button class="ok" onclick="blStatus(\'' + r.id + '\',\'aprovado\')">✓ Aprovar</button>');
+  if (r.situacaoPessoa !== 'reprovado') acoes.push('<button class="no" onclick="blStatus(\'' + r.id + '\',\'reprovado\')">✕ Reprovar</button>');
+  if (r.situacaoPessoa !== 'pendente') acoes.push('<button onclick="blStatus(\'' + r.id + '\',\'pendente\')">Voltar a pendente</button>');
+  acoes.push('<button onclick="blDocs(\'' + r.id + '\')">📄 Documentos</button>');
+  return '<div class="bl-item" id="bl-it-' + r.id + '"><div class="bl-top"><div><div class="bl-nome">' + escapeHtml(r.nome || '—') + '<span class="bl-sel ' + r.situacaoPessoa + '">' + (BL_ROT[r.situacaoPessoa] || r.situacaoPessoa) + '</span></div>' +
+    '<div class="bl-meta">' + meta + (contato ? '<br>' + contato : '') + '<br>' + pix + '<br>' + vinc + (manuais ? ' ' + manuais : '') +
+    (r.obs ? '<br><i>' + escapeHtml(r.obs) + '</i>' : '') + '</div></div><div class="bl-acoes">' + acoes.join('') + '</div></div>' +
+    '<div class="bl-tel"><input type="tel" id="bl-tel-' + r.id + '" placeholder="Outro WhatsApp (com DDD)"/><button class="btn" style="width:auto;margin:0;font-size:11px;padding:6px 10px;background:#3f3f3f;color:#ddd" onclick="blTelefone(\'' + r.id + '\')">🔗 Vincular telefone</button></div>' +
+    '<div class="bl-docs" id="bl-docs-' + r.id + '" style="display:none"></div></div>';
+}
+function blStatus(id, status) {
+  var obs = '';
+  if (status === 'reprovado') { obs = prompt('Motivo da reprovação (fica registrado):', ''); if (obs === null) return; }
+  fetch(AS_PROXY + '/balcao/verificacoes/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, status: status, obs: obs }) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); return blCarregar(); })
+    .catch(function(e){ alert('Não consegui salvar: ' + e.message); });
+}
+function blTelefone(id, tel, remover) {
+  var t = tel || (document.getElementById('bl-tel-' + id) || {}).value || '';
+  if (String(t).replace(/\D/g, '').length < 10) { alert('Informe o WhatsApp com DDD.'); return; }
+  fetch(AS_PROXY + '/balcao/verificacoes/telefone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, telefone: t, remover: !!remover }) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); return BL.visao === 'grupo' ? blGrupoCarregar(true) : blCarregar(); })
+    .catch(function(e){ alert('Não consegui vincular: ' + e.message); });
+}
+function blVincular() {
+  document.getElementById('bl-sinc').textContent = 'Refazendo vínculos com a Hubla (pode levar 1 minuto)…';
+  fetch(AS_PROXY + '/balcao/vincular', { method: 'POST' }).then(function(r){ return r.json(); }).then(function(d){
+    if (!d.ok) throw new Error(d.erro || 'falha');
+    alert('Vínculos refeitos: ' + d.atualizados + ' atualizado(s); ' + d.semVinculo + ' registro(s) ainda sem telefone.' + (d.faturasHubla ? '' : '\n(As faturas da Hubla não foram lidas: confira a HUBLA_API_KEY.)'));
+    blCarregar();
+  }).catch(function(e){ document.getElementById('bl-sinc').textContent = 'Erro: ' + e.message; });
+}
+function blDocs(id) {
+  var box = document.getElementById('bl-docs-' + id);
+  if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+  box.style.display = '';
+  var r = BL.lista.filter(function(x){ return x.id === id; })[0] || {};
+  var arqs = r.arquivos || {};
+  box.innerHTML = Object.keys(BL_ARQ).map(function(c) {
+    var a = arqs[c];
+    if (!a) return '<div class="bl-doc">' + BL_ARQ[c] + '<br><i>não enviado</i></div>';
+    if (a.link) return '<div class="bl-doc">' + BL_ARQ[c] + '<br>' + String(a.link).split(/\s+/).filter(Boolean).map(function(l, i){ return '<a href="' + escapeHtml(l) + '" target="_blank" rel="noopener">Abrir no Drive' + (i ? ' (' + (i + 1) + ')' : '') + '</a>'; }).join('<br>') + '</div>';
+    return '<div class="bl-doc" id="bl-doc-' + id + '-' + c + '">' + BL_ARQ[c] + '<br><i>carregando…</i></div>';
+  }).join('');
+  Object.keys(BL_ARQ).forEach(function(c) {
+    var a = arqs[c]; if (!a || a.link) return;
+    fetch(AS_PROXY + '/balcao/arquivo/' + encodeURIComponent(id) + '/' + c).then(function(res){ if (!res.ok) throw new Error('HTTP ' + res.status); return res.blob(); }).then(function(b) {
+      var url = URL.createObjectURL(b), el = document.getElementById('bl-doc-' + id + '-' + c);
+      if (!el) return;
+      el.innerHTML = (/^image\//.test(b.type) ? '<img src="' + url + '" onclick="window.open(this.src)" alt=""/>' : '') + BL_ARQ[c] + '<br><a href="' + url + '" target="_blank" rel="noopener">' + (/pdf/.test(b.type) ? 'Abrir PDF' : 'Abrir em tamanho real') + '</a>';
+    }).catch(function(e){ var el = document.getElementById('bl-doc-' + id + '-' + c); if (el) el.innerHTML = BL_ARQ[c] + '<br><i>erro: ' + escapeHtml(e.message) + '</i>'; });
+  });
+}
+
+// ── Visão "No grupo do Balcão" ──
+function blGrupoCarregar(forcar) {
+  document.getElementById('bl-g-sinc').textContent = 'Lendo o grupo no WhatsApp…';
+  var p1 = fetch(AS_PROXY + '/balcao/grupo' + (forcar ? '?forcar=1' : '')).then(function(r){ return r.json(); });
+  var p2 = BL.lista.length ? Promise.resolve(null) : fetch(AS_PROXY + '/balcao/verificacoes').then(function(r){ return r.json(); });
+  return Promise.all([p1, p2]).then(function(rs) {
+    var d = rs[0];
+    if (!d || !d.ok) throw new Error((d && d.erro) || 'falha');
+    if (rs[1] && rs[1].ok) BL.lista = rs[1].data || [];
+    BL.grupo = d; blGrupoRender();
+  }).catch(function(e){ document.getElementById('bl-g-sinc').textContent = 'Erro: ' + e.message; });
+}
+function blGrupoRender() {
+  var d = BL.grupo, c = d.config || {};
+  document.getElementById('bl-exigir').checked = !!c.balcaoExigirVerificacao;
+  document.getElementById('bl-espera').value = c.esperaVerificacaoH || 48;
+  document.getElementById('bl-cfg-est').textContent = 'Remoção pelo Tico: ' + (c.modo === 'on' ? 'ligada' : c.modo === 'sombra' ? 'só lista (sombra)' : 'desligada') + (c.pausado ? ' · PAUSADA' : '');
+  document.getElementById('bl-g-sinc').textContent = 'Grupo lido em ' + (d.gruposLidosEm ? new Date(d.gruposLidosEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—');
+  if (!(d.grupos || []).length) { document.getElementById('bl-g-resumo').innerHTML = '<div class="as-sinc">Nenhum grupo do Balcão encontrado (Grupos → papel "balcao").</div>'; document.getElementById('bl-g-lista').innerHTML = ''; return; }
+  document.getElementById('bl-g-resumo').innerHTML = d.grupos.map(function(g) {
+    var k = function(v, t){ return '<div class="bl-kpi"><b>' + (v || 0) + '</b><span>' + t + '</span></div>'; };
+    return '<h4 style="margin:14px 0 0">' + escapeHtml(g.nome) + '</h4><div class="bl-kpis">' + k(g.participantes, 'participantes') + k(g.ativo, 'verificados com assinatura') +
+      k(g.naoVerificado, 'não verificados') + k(g.verificacaoPendente, 'aguardando análise') + k(g.semCadastro, 'sem cadastro') + k(g.vencido, 'vencidos') + k(g.semDireito, 'sem direito') + k(g.admins, 'admins') + '</div>';
+  }).join('');
+  var ordem = { nao_verificado: 0, verificacao_pendente: 1, sem_cadastro: 2, vencido: 3, sem_direito: 4, concierge: 5, excecao: 6 };
+  var pes = (d.pessoas || []).slice().sort(function(a, b){ return (ordem[a.situacao] - ordem[b.situacao]) || String(a.nome || a.telefone).localeCompare(String(b.nome || b.telefone), 'pt-BR'); });
+  // Pessoas para vincular (datalist): verificações aprovadas, pela pessoa.
+  document.getElementById('bl-dl-pessoas').innerHTML = blPessoas().filter(function(r){ return r.situacaoPessoa === 'aprovado'; })
+    .map(function(r){ return '<option value="' + escapeHtml((r.nome || '') + ' · CPF ' + blCpf(r.cpf)) + '"></option>'; }).join('');
+  document.getElementById('bl-g-lista').innerHTML = pes.length ? pes.map(function(p) {
+    var sai = p.situacao === 'nao_verificado' ? (c.balcaoExigirVerificacao ? (p.saiEm ? ' · sai a partir de ' + new Date(p.saiEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ' · prazo começa na próxima rodada') : ' · remoção desligada') : '';
+    var vinc = p.situacao === 'nao_verificado' ? '<div class="bl-tel"><input list="bl-dl-pessoas" id="bl-gv-' + p.chave + '" placeholder="Já é verificado? Busque o nome" style="width:260px"/><button class="btn" style="width:auto;margin:0;font-size:11px;padding:6px 10px;background:#3f3f3f;color:#ddd" onclick="blGrupoVincular(\'' + p.chave + '\',\'' + p.telefone + '\')">🔗 Vincular este telefone</button></div>' : '';
+    return '<div class="bl-item"><div class="bl-nome">' + escapeHtml(p.nome || blTel(p.telefone)) + '<span class="bl-sel ' + p.situacao + '">' + (BL_ROT[p.situacao] || p.situacao) + '</span></div>' +
+      '<div class="bl-meta">' + blTel(p.telefone) + (p.email ? ' · ' + escapeHtml(p.email) : '') + ((p.produtos || []).length ? ' · ' + escapeHtml(p.produtos.join(', ')) : '') + sai + '</div>' + vinc + '</div>';
+  }).join('') : '<div class="as-sinc">Todos os participantes estão verificados e com assinatura.</div>';
+}
+function blGrupoVincular(chave, telefone) {
+  var v = (document.getElementById('bl-gv-' + chave) || {}).value || '';
+  var cpf = (v.match(/CPF ([\d.\-]+)/) || [])[1];
+  var r = cpf && blPessoas().filter(function(x){ return blCpf(x.cpf) === cpf; })[0];
+  if (!r) { alert('Escolha a pessoa na lista (nome · CPF).'); return; }
+  if (!confirm('Vincular ' + blTel(telefone) + ' à verificação de ' + r.nome + '?')) return;
+  blTelefone(r.id, telefone);
+}
+function blSalvarCfg() {
+  var corpo = { balcaoExigirVerificacao: document.getElementById('bl-exigir').checked, esperaVerificacaoH: parseInt(document.getElementById('bl-espera').value, 10) || 48 };
+  fetch(AS_PROXY + '/hubla/grupos-remocao/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); document.getElementById('bl-cfg-est').textContent = 'Salvo.'; blGrupoCarregar(false); })
+    .catch(function(e){ alert('Não consegui salvar: ' + e.message); });
 }
 
 // ── Regras de acesso (desde 11/11/2026) ──
@@ -3159,7 +3407,7 @@ function toggleSidebar(forcar) {
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') toggleSidebar(false); });
 
 function switchMain(name) {
-  ['oferta','milhas','alertas','enviadas','dash','assin','buscavoos','ofertas','campanha','entrada','gradm','config'].forEach(function(id) {
+  ['oferta','milhas','alertas','enviadas','dash','assin','buscavoos','ofertas','campanha','entrada','balcao','gradm','config'].forEach(function(id) {
     document.getElementById('tab-'+id).classList.toggle('active', id===name);
     document.getElementById('panel-'+id).classList.toggle('active', id===name);
   });
@@ -3174,6 +3422,7 @@ function switchMain(name) {
   if (name === 'ofertas') carregarOfertasPendentes();
   if (name === 'campanha') campAoAbrir();
   if (name === 'entrada') reAoAbrir();
+  if (name === 'balcao') blAbrir();
   if (name === 'gradm') ggAbrir();
   if (name === 'config') cfgCarregar();
   // Guarda a aba no endereço (#aba) para o refresh voltar nela
@@ -3181,7 +3430,7 @@ function switchMain(name) {
 }
 
 // Refresh: reabre a aba que estava no endereço (#aba) em vez da página inicial
-var ABAS_MAIN = ['oferta','milhas','alertas','enviadas','dash','assin','buscavoos','ofertas','campanha','entrada','gradm','config'];
+var ABAS_MAIN = ['oferta','milhas','alertas','enviadas','dash','assin','buscavoos','ofertas','campanha','entrada','balcao','gradm','config'];
 function abaDoEndereco() {
   var h = (location.hash || '').replace(/^#/, '');
   return ABAS_MAIN.indexOf(h) >= 0 ? h : '';
@@ -9695,6 +9944,7 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('tab-ofertas').addEventListener('click', function(){ switchMain('ofertas'); });
   document.getElementById('tab-campanha').addEventListener('click', function(){ switchMain('campanha'); });
   document.getElementById('tab-entrada').addEventListener('click', function(){ switchMain('entrada'); });
+  document.getElementById('tab-balcao').addEventListener('click', function(){ switchMain('balcao'); });
   document.getElementById('tab-gradm').addEventListener('click', function(){ switchMain('gradm'); });
   document.getElementById('tab-config').addEventListener('click', function(){ switchMain('config'); });
   var cfgCorpo = document.getElementById('camp-cfg-corpo');
