@@ -1102,6 +1102,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <select id="ap-oferta" class="ap-largo" onchange="apMostrarDireito()"><option value="">Sem oferta — acesso total (painel e todos os grupos)</option></select>
         <input type="date" id="ap-fim" title="Vale até (em branco = sem fim)" onchange="apMostrarDireito()"/>
         <input type="text" id="ap-just" class="ap-largo" placeholder="Justificativa (obrigatória) — ex.: parceiro, cortesia, cliente do concierge"/>
+        <label class="ap-largo" style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer" title="Sem esta marca, a pessoa precisa da verificação do Balcão aprovada para ficar no grupo do Balcão (cliente do concierge já fica sem o formulário)"><input type="checkbox" id="ap-balcao" style="width:auto;margin:0"/> 🔐 Liberado no Balcão sem verificação (não precisa preencher o formulário)</label>
         <div style="display:flex;gap:6px">
           <button class="btn" id="ap-btn-salvar" style="width:auto;margin:0;font-size:12px;padding:8px 14px;flex:1" onclick="apSalvarExcecao()">Adicionar exceção</button>
           <button class="btn" id="ap-btn-cancelar" style="display:none;width:auto;margin:0;font-size:12px;padding:8px 12px;background:#3f3f3f;color:#ddd" onclick="apLimparForm()">Cancelar</button>
@@ -2560,7 +2561,7 @@ function apRender() {
       var dir = !x.valida ? '<span class="as-badge as-b-sem_cadastro">vencida</span>' : apTextoDireito(o, x.fim) + (o && !x.email && (x.regra === 'libera' || x.regra === 'prazo') ? '<div class="as-sub">sem e-mail: o painel não vale</div>' : '');
       return '<tr><td data-l="Pessoa"><div class="as-nome">' + escapeHtml(x.nome || x.nomeMembro || '(sem nome)') + '</div><div class="as-sub">' + escapeHtml(x.email || '') + (x.email && tel ? ' · ' : '') + (tel ? '+' + tel : '') + '</div>' + (st ? '<div class="as-sub">' + st + '</div>' : '') + '</td>' +
         '<td data-l="Oferta">' + of + '</td>' +
-        '<td data-l="Dá direito a"><div class="ap-just">' + dir + '</div></td>' +
+        '<td data-l="Dá direito a"><div class="ap-just">' + dir + '</div>' + (x.balcaoSemVerificacao ? '<div class="as-sub">🔐 Balcão sem verificação</div>' : '') + '</td>' +
         '<td data-l="Até">' + (x.fim ? asData(x.fim + 'T12:00:00-03:00') : 'sem fim') + '</td>' +
         '<td data-l="Justificativa"><div class="ap-just">' + escapeHtml(x.justificativa || '') + '</div><div class="as-sub">desde ' + asData(x.criadoEm) + '</div></td>' +
         '<td><button class="btn" style="width:auto;margin:0;font-size:11px;padding:5px 10px;background:var(--surface2);color:var(--text)" onclick="apEditar(\'' + escapeHtml(x.id) + '\')">Editar</button> ' +
@@ -2585,6 +2586,7 @@ function apRender() {
 function apLimparForm() {
   AP.editId = null;
   ['ap-email', 'ap-nome', 'ap-tel', 'ap-fim', 'ap-just', 'ap-oferta'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('ap-balcao').checked = false;
   document.getElementById('ap-btn-salvar').textContent = 'Adicionar exceção';
   document.getElementById('ap-btn-cancelar').style.display = 'none';
   document.getElementById('ap-form-tit').textContent = 'Exceções — acesso sem assinatura na Hubla';
@@ -2609,6 +2611,7 @@ function apEditar(id) {
   document.getElementById('ap-oferta').value = x.ofertaId || '';
   document.getElementById('ap-fim').value = x.fim || '';
   document.getElementById('ap-just').value = x.justificativa || '';
+  document.getElementById('ap-balcao').checked = !!x.balcaoSemVerificacao;
   document.getElementById('ap-btn-salvar').textContent = 'Salvar alterações';
   document.getElementById('ap-btn-cancelar').style.display = '';
   document.getElementById('ap-form-tit').textContent = 'Editando exceção de ' + (x.nome || x.email || ('+' + x.telefone));
@@ -2617,7 +2620,7 @@ function apEditar(id) {
 }
 function apSalvarExcecao() {
   var v = function(id){ return document.getElementById(id).value.trim(); };
-  var corpo = { id: AP.editId || '', nome: v('ap-nome'), email: v('ap-email'), telefone: v('ap-tel').replace(/\D/g, ''), ofertaId: v('ap-oferta'), fim: v('ap-fim'), justificativa: v('ap-just') };
+  var corpo = { id: AP.editId || '', nome: v('ap-nome'), email: v('ap-email'), telefone: v('ap-tel').replace(/\D/g, ''), ofertaId: v('ap-oferta'), fim: v('ap-fim'), justificativa: v('ap-just'), balcaoSemVerificacao: document.getElementById('ap-balcao').checked };
   if (!corpo.email && !corpo.telefone) { alert('Informe o e-mail (para o painel) ou o telefone (para os grupos).'); return; }
   if (corpo.telefone && corpo.telefone.length < 10) { alert('Telefone com DDD, ex.: 31 99999-8888.'); return; }
   if (!corpo.justificativa) { alert('Escreva a justificativa: por que essa pessoa tem acesso sem assinatura?'); document.getElementById('ap-just').focus(); return; }
