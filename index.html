@@ -446,6 +446,7 @@ body[data-tema="light"] textarea.out{color:var(--text)}
 .bl-sel.info{background:rgba(18,110,255,.14);color:#5b9bff}
 .bl-acoes{display:flex;gap:6px;flex-wrap:wrap}
 .bl-acoes button{font-family:var(--font);font-size:12px;font-weight:700;padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface2,var(--surface));color:var(--text);cursor:pointer}
+.bl-acoes button{margin:0;min-height:0;line-height:1.2}
 .bl-acoes button.ok{background:#1f7a3d;border-color:#1f7a3d;color:#fff}
 .bl-acoes button.no{background:transparent;border-color:#ff585e;color:#ff585e}
 .bl-docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
@@ -2212,7 +2213,12 @@ function blStatus(id, status) {
   var obs = '';
   if (status === 'reprovado') { obs = prompt('Motivo da reprovação (fica registrado):', ''); if (obs === null) return; }
   fetch(AS_PROXY + '/balcao/verificacoes/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, status: status, obs: obs }) })
-    .then(function(r){ return r.json(); }).then(function(d){ if (!d.ok) throw new Error(d.erro || 'falha'); return blCarregar(); })
+    .then(function(r){ return r.json(); }).then(function(d){
+      if (!d.ok) throw new Error(d.erro || 'falha');
+      // Aprovação: o tico-02 avisa a pessoa e cuida da entrada no grupo (link ou inclusão).
+      if (status === 'aprovado' && d.aviso && d.aviso.ok === false) alert('Aprovado, mas o aviso no WhatsApp não saiu: ' + (d.aviso.erro || 'falha') + '\nAvise a pessoa manualmente.');
+      return blCarregar();
+    })
     .catch(function(e){ alert('Não consegui salvar: ' + e.message); });
 }
 function blTelefone(id, tel, remover) {
