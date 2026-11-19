@@ -2341,12 +2341,15 @@ function nfItem(n, teste) {
   if ((n.erros || []).length) h += '<div class="bl-meta" style="color:#ff585e;margin-top:6px">' + n.erros.map(function(e){ return nfEsc((e.codigo ? e.codigo + ': ' : '') + e.descricao + (e.complemento ? ' (' + e.complemento + ')' : '')); }).join('<br>') + '</div>';
   if (n.motivo) h += '<div class="bl-meta">' + (n.status === 'cancelada' ? 'Cancelada' + (n.canceladaEm ? ' em ' + nfData(n.canceladaEm, true) : '') + (n.canceladaPor === 'reembolso' ? ' (automático, venda reembolsada)' : '') + ': ' : 'Motivo: ') + nfEsc(n.motivo) + '</div>';
   if (n.status === 'emitida' && n.vendaReembolsadaEm) h += '<div class="bl-meta" style="color:#f5a623">Venda ' + nfEsc(n.statusFatura || 'reembolsada') + ' na Hubla' + (n.reembolsoTotal ? (NF.d.config.cancelarReembolso !== false && NF.d.config.modo === 'producao' ? ': a nota será cancelada automaticamente.' : ': cancele a nota.') : ' (reembolso parcial): confira e cancele se for o caso.') + '</div>';
+  if (n.reemissaoDe) h += '<div class="bl-meta">↻ Emitida de novo no lugar de uma nota cancelada</div>';
+  if (n.substituidaPor) h += '<div class="bl-meta">↻ Substituída por uma nota nova</div>';
   if ((n.cancelamentoErros || []).length) h += '<div class="bl-meta" style="color:#ff585e">Cancelamento recusado: ' + n.cancelamentoErros.map(function(e){ return nfEsc((e.codigo ? e.codigo + ': ' : '') + e.descricao + (e.complemento ? ' (' + e.complemento + ')' : '')); }).join('<br>') + '</div>';
   var ac = [];
   var aberta = ['pendente', 'erro', 'verificar'].indexOf(n.status) >= 0;
   if (n.chave) { ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'pdf\')">📄 PDF</button>'); if (n.temXml) ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'xml\')">📥 XML</button>'); }
   if (n.temEvento) ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'evento\')">📥 XML do cancelamento</button>');
   if (n.status === 'emitida') ac.push('<button class="no" onclick="nfCancelar(\'' + n.id + '\',' + (teste ? 'true' : 'false') + ')">✕ Cancelar nota</button>');
+  if (n.status === 'cancelada' && !n.substituidaPor && !teste) ac.push('<button class="ok" onclick="nfReemitir(\'' + n.id + '\',' + (teste ? 'true' : 'false') + ')">↻ Emitir de novo</button>');
   if (!teste) {
     if (aberta && NF.d.config.modo === 'producao') ac.push('<button class="ok" onclick="nfEmitir(\'' + n.id + '\')">📄 Emitir agora</button>');
     if (aberta || n.status === 'venda_reembolsada') ac.push('<button onclick="nfTeste(\'' + n.id + '\')">🧪 Teste</button>');
@@ -2586,6 +2589,31 @@ function nfSituacao(id, acao) {
   var motivo = '';
   if (acao === 'ignorar' || acao === 'cancelada') { motivo = prompt(acao === 'ignorar' ? 'Por que não emitir esta nota?' : 'Cancelou no Emissor Nacional? Motivo:'); if (motivo === null) return; }
   nfApi('POST', '/notas/situacao', { id: id, acao: acao, motivo: motivo }).then(nfCarregar).catch(function(e){ alert('Erro: ' + e.message); });
+}
+// Emitir de novo uma nota cancelada (mesmo fluxo do Tica Promos): mesmos dados,
+// competência e valor ajustáveis.
+function nfDataIso(txt) {
+  txt = String(txt || '').trim();
+  if (!txt) return '';
+  var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(txt);
+  if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  return /^\d{4}-\d{2}-\d{2}$/.test(txt) ? txt : null;
+}
+function nfReemitir(id, teste) {
+  var l = (teste ? NF.d.testes : NF.d.notas) || [];
+  var n = l.filter(function(x){ return x.id === id; })[0] || {};
+  var atual = n.competenciaUsada || n.competencia || '';
+  var c = prompt('Competência da nota nova (DD/MM/AAAA).\nA anterior era ' + (atual ? atual.split('-').reverse().join('/') : '—') + '. Deixe vazio para usar a regra do produto fiscal.', atual ? atual.split('-').reverse().join('/') : '');
+  if (c === null) return;
+  var comp = nfDataIso(c);
+  if (comp === null) { alert('Data inválida. Use DD/MM/AAAA.'); return; }
+  var v = prompt('Valor da nota nova (R$):', String(n.valor || '').replace('.', ','));
+  if (v === null) return;
+  if (!confirm('Emitir de novo esta nota' + (teste ? ' (homologação)' : '') + ' com os mesmos dados' + (comp ? ', competência ' + comp.split('-').reverse().join('/') : '') + ' e valor R$ ' + v + '?')) return;
+  nfApi('POST', '/notas/reemitir', { id: id, teste: !!teste, competencia: comp, valor: v }).then(function(r){
+    alert(r.naFila ? r.aviso : (r.ok && (r.chave || r.jaEmitida) ? 'Nota emitida de novo.' : 'A nota nova foi criada, mas a emissão falhou: ' + ((r.erros || []).map(function(e){ return e.codigo + ' ' + e.descricao; }).join('; ') || r.erro || 'veja na lista')));
+    nfCarregar();
+  }).catch(function(e){ alert('Erro: ' + e.message); nfCarregar(); });
 }
 function nfCancelar(id, teste) {
   var m = prompt('Motivo do cancelamento:\n1 = Erro na emissão\n2 = Serviço não prestado (venda desfeita / reembolso)\n9 = Outros', '2');
