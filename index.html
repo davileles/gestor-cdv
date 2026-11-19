@@ -39,6 +39,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text
 .nf-salvar{display:flex;gap:12px;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
 .nf-prod{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .nf-prod-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-weight:700;font-size:13px}
+.nf-fechado .nf-prod-topo{margin-bottom:0}
 .nf-prod .nf-form input,.nf-prod .nf-form textarea{background:var(--surface)}
 .nf-ativo{display:inline-flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap}
 .nf-form textarea{min-height:58px;resize:vertical}
@@ -2396,7 +2397,8 @@ function nfRenderConfig() {
   document.getElementById('nf-cert').innerHTML = cert.ok
     ? 'Certificado: <strong>' + nfEsc(cert.titular) + '</strong> · válido até ' + nfData(cert.validoAte) + ' (' + cert.diasRestantes + ' dias)'
     : 'Certificado: ' + nfEsc(cert.erro || 'indisponível');
-  NF.produtosEd = (d.produtos || []).map(function(p){ return Object.assign({}, p); });
+  var abertos = {}; (NF.produtosEd || []).forEach(function(p){ if (p._aberto) abertos[p.id || p.nome] = 1; });
+  NF.produtosEd = (d.produtos || []).map(function(p){ return Object.assign({}, p, { _aberto: !!(abertos[p.id] || abertos[p.nome]) }); });
   NF.ofertasEd = Object.assign({}, d.ofertas || {});
   // Oferta marcada com o próprio produto padrão não é exceção: sai da lista (vale ao salvar).
   Object.keys(NF.ofertasEd).forEach(function(k){ if (NF.ofertasEd[k] === c.produtoPadrao) delete NF.ofertasEd[k]; });
@@ -2436,17 +2438,29 @@ function nfRenderProdutos() {
     ['descricao', 'Descrição na nota', 'nf-cheio', true], ['infoCompl', 'Informação complementar', 'nf-cheio', true]];
   var dicas = { descricao: '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', infoCompl: 'Opcional.' };
   document.getElementById('nf-produtos').innerHTML = NF.produtosEd.map(function(p, i){
-    return '<div class="nf-prod"><div class="nf-prod-topo"><span>' + nfEsc(p.nome || 'Produto fiscal') + '</span><span style="display:flex;gap:14px;align-items:center">' +
+    // Minimizado por padrão (19/11/2026): clique no topo abre/fecha os campos.
+    var aberto = !!p._aberto, bt = 'class="btn" style="width:auto;margin:0;padding:5px 10px;font-size:11px;background:var(--surface);color:var(--muted)"';
+    var resumo = [p.cTribNac && ('Tributação ' + p.cTribNac), p.cNBS && ('NBS ' + p.cNBS), p.ativo === false && 'inativo'].filter(Boolean).join(' · ');
+    return '<div class="nf-prod' + (aberto ? '' : ' nf-fechado') + '"><div class="nf-prod-topo" style="cursor:pointer" onclick="if(!event.target.closest(\'button,input,label\'))nfAbrirProduto(' + i + ')">' +
+      '<span>' + (aberto ? '▾ ' : '▸ ') + nfEsc(p.nome || 'Produto fiscal') + (resumo ? ' <span style="font-weight:500;color:var(--muted)">· ' + nfEsc(resumo) + '</span>' : '') + '</span><span style="display:flex;gap:14px;align-items:center">' +
       '<label class="nf-ativo"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label>' +
-      '<button class="btn" style="width:auto;margin:0;padding:5px 10px;font-size:11px;background:var(--surface);color:var(--muted)" onclick="nfRemoverProduto(' + i + ')">🗑️ Remover</button></span></div>' +
-      '<div class="nf-form">' + campos.map(function(c){
+      '<button ' + bt + ' onclick="nfDuplicarProduto(' + i + ')">⧉ Duplicar</button>' +
+      '<button ' + bt + ' onclick="nfRemoverProduto(' + i + ')">🗑️ Remover</button></span></div>' +
+      (aberto ? '' : '</div>') + (!aberto ? '' : '<div class="nf-form">' + campos.map(function(c){
         var cod = /^c(TribNac|TribMun|NBS)$/.test(c[0]);
         var on = 'oninput="NF.produtosEd[' + i + '].' + c[0] + '=this.value' + (cod ? ';this.parentNode.querySelector(\'.nf-dica\').textContent=nfDescCodigo(\'' + c[0] + '\',this.value)' : '') + '"';
         var ctl = c[3] ? '<textarea rows="2" ' + on + '>' + nfEsc(p[c[0]]) + '</textarea>' : '<input type="text" value="' + nfEsc(p[c[0]]) + '" ' + on + '/>';
         var dica = cod ? nfDescCodigo(c[0], p[c[0]]) : (dicas[c[0]] || '');
         return '<label' + (c[2] ? ' class="' + c[2] + '"' : '') + '><span class="nf-rot">' + c[1] + '</span>' + ctl + (dica || cod ? '<span class="nf-dica">' + nfEsc(dica) + '</span>' : '') + '</label>';
-      }).join('') + '</div></div>';
+      }).join('') + '</div></div>');
   }).join('');
+}
+function nfAbrirProduto(i) { var p = NF.produtosEd[i]; if (p) { p._aberto = !p._aberto; nfRenderProdutos(); } }
+function nfDuplicarProduto(i) {
+  var p = NF.produtosEd[i]; if (!p) return;
+  var c = Object.assign({}, p, { id: '', nome: (p.nome || 'Produto fiscal') + ' (cópia)', _aberto: true });
+  NF.produtosEd.splice(i + 1, 0, c);
+  nfRenderProdutos();
 }
 function nfRemoverProduto(i) {
   var p = NF.produtosEd[i]; if (!p) return;
@@ -2457,7 +2471,7 @@ function nfRemoverProduto(i) {
   nfRenderProdutos();
 }
 function nfAddProduto() {
-  NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', descricao: '{produto}', infoCompl: '', ativo: true });
+  NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', descricao: '{produto}', infoCompl: '', ativo: true, _aberto: true });
   nfRenderProdutos();
 }
 // Exceções (19/11/2026): toda oferta usa o produto padrão; só as exceções ficam em NF.ofertasEd.
@@ -2498,7 +2512,7 @@ function nfSalvarConfig(btn) {
       serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')), cancelarReembolso: document.getElementById('nf-c-cancreemb').checked },
     empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'), pTotTribSN: g('nf-e-ptot'),
       opSimpNac: Number(g('nf-e-opsn')), regApTribSN: Number(g('nf-e-regap')), regEspTrib: Number(g('nf-e-regesp')) },
-    produtos: NF.produtosEd, ofertas: NF.ofertasEd,
+    produtos: NF.produtosEd.map(function(p){ var x = Object.assign({}, p); delete x._aberto; return x; }), ofertas: NF.ofertasEd,
   };
   if (corpo.config.modo === 'producao' && NF.d.config.modo !== 'producao' &&
       !confirm('Ligar a emissão em PRODUÇÃO? As vendas pagas a partir de ' + (corpo.config.emitirDesde || '?') + ' vão gerar notas fiscais válidas. Desligue o eNotas na Hubla no mesmo dia.')) return;
