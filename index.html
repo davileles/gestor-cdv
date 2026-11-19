@@ -1128,21 +1128,24 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Não trocar depois de emitir.</span></label>
         <label><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Para oferta sem produto escolhido.</span></label>
         <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
+        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados nas notas da Hubla. Só deste painel.</span></label>
       </div>
       <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
       <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
     </div>
     <div class="card">
       <div class="nf-titulo">Empresa emissora</div>
-      <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas). Só a alíquota do Simples fica separada em cada painel.<span id="nf-e-sinc"></span></div>
+      <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas). A alíquota do Simples fica separada em cada painel (aqui, no cartão Emissão).<span id="nf-e-sinc"></span></div>
       <div class="nf-form">
         <label class="nf-largo"><span class="nf-rot">Razão social</span><input type="text" id="nf-e-razao"/></label>
         <label><span class="nf-rot">CNPJ</span><input type="text" id="nf-e-cnpj" inputmode="numeric"/></label>
         <label><span class="nf-rot">Inscrição municipal</span><input type="text" id="nf-e-im" inputmode="numeric"/></label>
-        <label><span class="nf-rot">Município (IBGE)</span><input type="text" id="nf-e-cmun" inputmode="numeric"/><span class="nf-dica">3106200 = Belo Horizonte.</span></label>
         <label><span class="nf-rot">Telefone</span><input type="text" id="nf-e-fone" inputmode="numeric"/></label>
         <label><span class="nf-rot">E-mail</span><input type="text" id="nf-e-email"/></label>
-        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados na nota. Só deste painel.</span></label>
+        <label><span class="nf-rot">Município (IBGE)</span><input type="text" id="nf-e-cmun" inputmode="numeric"/><span class="nf-dica">3106200 = Belo Horizonte.</span></label>
+        <label><span class="nf-rot">Opção no Simples</span><select id="nf-e-opsn"><option value="1">1 · Não optante</option><option value="2">2 · MEI</option><option value="3">3 · Optante: ME ou EPP</option></select><span class="nf-dica">Situação da empresa no Simples Nacional.</span></label>
+        <label><span class="nf-rot">Apuração no Simples</span><select id="nf-e-regap"><option value="1">1 · Tudo pelo Simples (DAS)</option><option value="2">2 · ISS fora do Simples</option><option value="3">3 · Tudo fora do Simples</option></select><span class="nf-dica">Como os tributos são apurados.</span></label>
+        <label><span class="nf-rot">Regime especial</span><select id="nf-e-regesp"><option value="0">0 · Nenhum</option><option value="1">1 · Ato cooperado</option><option value="2">2 · Estimativa</option><option value="3">3 · Microempresa municipal</option><option value="4">4 · Notário ou registrador</option><option value="5">5 · Profissional autônomo</option><option value="6">6 · Sociedade de profissionais</option></select><span class="nf-dica">Regime especial de tributação do ISS.</span></label>
       </div>
       <div class="as-sinc" id="nf-cert" style="margin-top:14px"></div>
     </div>
@@ -2377,6 +2380,7 @@ function nfRenderConfig() {
   var ea = d.empresaAtualizada;
   document.getElementById('nf-e-sinc').textContent = ea && ea.em ? ' Última mudança: ' + nfData(ea.em, true) + ' pelo ' + (ea.por === 'tica-promos' ? 'Tica Promos' : 'Gestão CDV') + '.' : '';
   v('nf-e-razao', e.razao); v('nf-e-cnpj', e.cnpj); v('nf-e-im', e.im); v('nf-e-cmun', e.cMun); v('nf-e-fone', e.fone); v('nf-e-email', e.email); v('nf-e-ptot', e.pTotTribSN);
+  v('nf-e-opsn', String(e.opSimpNac == null ? 3 : e.opSimpNac)); v('nf-e-regap', String(e.regApTribSN == null ? 1 : e.regApTribSN)); v('nf-e-regesp', String(e.regEspTrib == null ? 0 : e.regEspTrib));
   document.getElementById('nf-cert').innerHTML = cert.ok
     ? 'Certificado: <strong>' + nfEsc(cert.titular) + '</strong> · válido até ' + nfData(cert.validoAte) + ' (' + cert.diasRestantes + ' dias)'
     : 'Certificado: ' + nfEsc(cert.erro || 'indisponível');
@@ -2423,7 +2427,8 @@ function nfSalvarConfig() {
   var corpo = {
     config: { modo: g('nf-c-modo'), emitirDesde: g('nf-c-desde') || null, diasEspera: Number(g('nf-c-espera')), competencia: g('nf-c-comp'),
       serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')), cancelarReembolso: document.getElementById('nf-c-cancreemb').checked },
-    empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'), pTotTribSN: g('nf-e-ptot') },
+    empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'), pTotTribSN: g('nf-e-ptot'),
+      opSimpNac: Number(g('nf-e-opsn')), regApTribSN: Number(g('nf-e-regap')), regEspTrib: Number(g('nf-e-regesp')) },
     produtos: NF.produtosEd, ofertas: NF.ofertasEd,
   };
   if (corpo.config.modo === 'producao' && NF.d.config.modo !== 'producao' &&
