@@ -2259,9 +2259,9 @@ function blTel(t) { t = String(t || '').replace(/\D/g, ''); if (t.length >= 12 &
 // proxy (painel-cdv/notas-fiscais.js + nfse.js); aqui só fila, ações e configuração.
 var NF = { d: null, visao: 'fila', filtro: 'pendente', limite: 80 };
 var NF_ROTULO = { pendente: 'Pendente', enviando: 'Enviando', verificar: 'Verificar', emitida: 'Emitida', erro: 'Com erro',
-  venda_reembolsada: 'Venda reembolsada', ignorada: 'Ignorada', cancelada: 'Cancelada' };
+  venda_reembolsada: 'Venda reembolsada', ignorada: 'Ignorada', cancelada: 'Cancelada', antes_do_corte: 'Fica com o eNotas' };
 var NF_COR = { pendente: 'pendente', enviando: 'info', verificar: 'pendente', emitida: 'aprovado', erro: 'reprovado',
-  venda_reembolsada: 'info', ignorada: 'info', cancelada: 'reprovado' };
+  venda_reembolsada: 'info', ignorada: 'info', cancelada: 'reprovado', antes_do_corte: 'info' };
 function nfEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function nfData(iso, hora) {
   if (!iso) return '—';
@@ -2294,7 +2294,7 @@ function nfRodar() {
   document.getElementById('nf-sinc').textContent = 'Buscando vendas na Hubla…';
   nfApi('POST', '/notas/rodar', {}).then(function(d){
     var r = d.rodada || {};
-    var msg = r.erro || r.erroFila || (r.pulou ? 'Emissão desligada' : ((r.novas || 0) + ' venda(s) nova(s) na fila' + (r.emitidas ? ', ' + r.emitidas + ' nota(s) emitida(s)' : '') + (r.canceladas ? ', ' + r.canceladas + ' cancelada(s) por reembolso' : '') + (r.erros ? ', ' + r.erros + ' com erro' : '')));
+    var msg = r.erro || r.erroFila || (r.pulou ? 'Emissão desligada' : ((r.novas || 0) + ' venda(s) nova(s) na fila' + (r.emitidas ? ', ' + r.emitidas + ' nota(s) emitida(s)' : '') + (r.canceladas ? ', ' + r.canceladas + ' cancelada(s) por reembolso' : '') + (r.antesDoCorte ? ', ' + r.antesDoCorte + ' paga(s) antes do corte saíram da fila (ficam com o eNotas)' : '') + (r.transicao ? ', ' + r.transicao + ' reembolso(s) de venda do eNotas para cancelar lá' : '') + (r.erros ? ', ' + r.erros + ' com erro' : '')));
     alert(msg); nfCarregar();
   }).catch(function(e){ alert('Erro: ' + e.message); nfCarregar(); });
 }
@@ -2313,8 +2313,26 @@ function nfRenderTudo() {
   var reemb = (d.notas || []).filter(function(n){ return n.status === 'emitida' && n.vendaReembolsadaEm && (!autoCanc || !n.reembolsoTotal || (n.cancelamentoErros || []).length); });
   if (reemb.length) avisos.push(reemb.length + ' nota(s) emitida(s) de venda reembolsada depois precisam de você: veja em Emitidas e use "Cancelar nota".');
   if (r && (r.erro || r.erroFila)) avisos.push('Última rodada: ' + nfEsc(r.erro || r.erroFila));
-  document.getElementById('nf-status').innerHTML = avisos.map(function(a){ return '<div class="bl-sug" style="margin:0 0 10px"><div class="bl-sug-t">⚠ ' + a + '</div></div>'; }).join('');
+  document.getElementById('nf-status').innerHTML = avisos.map(function(a){ return '<div class="bl-sug" style="margin:0 0 10px"><div class="bl-sug-t">⚠ ' + a + '</div></div>'; }).join('') + nfTransicaoHtml();
   nfRender(); nfRenderTestes(); nfRenderConfig(); nfRenderAvulsa();
+}
+// Reembolsos, depois do corte, de vendas pagas antes dele: a nota é do eNotas (em garantia),
+// que não fica sabendo do reembolso com a integração desligada. Cancelar lá e marcar aqui.
+function nfTransicaoHtml() {
+  var l = (NF.d.transicao || []), ab = l.filter(function(x){ return !x.resolvidaEm; });
+  if (!l.length) return '';
+  var h = '<div class="bl-sug" style="margin:0 0 10px"><div class="bl-sug-t">⚠ ' + (ab.length ? ab.length + ' reembolso(s) de venda que é do eNotas: cancele a nota lá (ainda em garantia) e marque aqui.' : 'Reembolsos de vendas do eNotas: todos resolvidos.') + '</div>';
+  h += (NF.transAberta ? l : ab).map(function(x){
+    return '<div class="bl-meta" style="margin-top:8px"><b>' + nfEsc(x.nome || '(sem nome)') + '</b> · ' + nfEsc(x.docMascarado || '') + (x.email ? ' · ' + nfEsc(x.email) : '') +
+      ' · ' + nfReais(x.valor) + '<br>Pago ' + nfData(x.pagaEm, true) + ' · ' + nfEsc(x.statusFatura) + ' ' + nfData(x.reembolsoEm, true) +
+      (x.resolvidaEm ? ' · ✓ resolvido ' + nfData(x.resolvidaEm, true) + ' <button onclick="nfTransicao(\'' + nfEsc(x.faturaId) + '\',\'reabrir\')">Reabrir</button>'
+        : ' <button class="ok" onclick="nfTransicao(\'' + nfEsc(x.faturaId) + '\',\'resolvido\')">✓ Já cancelei no eNotas</button>') + '</div>';
+  }).join('');
+  if (l.length > ab.length) h += '<div class="bl-meta" style="margin-top:8px"><a href="#" onclick="NF.transAberta=!NF.transAberta;nfRenderTudo();return false">' + (NF.transAberta ? 'Esconder resolvidos' : 'Ver resolvidos (' + (l.length - ab.length) + ')') + '</a></div>';
+  return h + '</div>';
+}
+function nfTransicao(faturaId, acao) {
+  nfApi('POST', '/notas/transicao', { faturaId: faturaId, acao: acao }).then(nfCarregar).catch(function(e){ alert('Erro: ' + e.message); });
 }
 function nfFiltro(f) { NF.filtro = f; NF.limite = 80; nfRender(); }
 function nfProdNome(id) { var p = ((NF.d && NF.d.produtos) || []).filter(function(x){ return x.id === id; })[0]; return p ? p.nome : id; }
@@ -2368,7 +2386,7 @@ function nfRender() {
   if (!NF.d) return;
   var notas = NF.d.notas || [], cont = {};
   notas.forEach(function(n){ cont[n.status] = (cont[n.status] || 0) + 1; });
-  var fs = [['pendente', 'Pendentes'], ['erro', 'Com erro'], ['verificar', 'Verificar'], ['emitida', 'Emitidas'], ['venda_reembolsada', 'Reembolsadas'], ['ignorada', 'Não emitir'], ['cancelada', 'Canceladas'], ['todas', 'Todas']];
+  var fs = [['pendente', 'Pendentes'], ['erro', 'Com erro'], ['verificar', 'Verificar'], ['emitida', 'Emitidas'], ['venda_reembolsada', 'Reembolsadas'], ['ignorada', 'Não emitir'], ['antes_do_corte', 'Com o eNotas'], ['cancelada', 'Canceladas'], ['todas', 'Todas']];
   document.getElementById('nf-filtros').innerHTML = fs.map(function(f){
     var n = f[0] === 'todas' ? notas.length : (cont[f[0]] || 0);
     return '<button class="dash-chip' + (NF.filtro === f[0] ? ' on' : '') + '" onclick="nfFiltro(\'' + f[0] + '\')">' + f[1] + ' <span>' + n + '</span></button>';
