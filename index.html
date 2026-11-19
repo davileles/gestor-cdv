@@ -1162,10 +1162,11 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     </div>
     <div class="card">
       <div class="nf-titulo">5. Ofertas da Hubla → produto fiscal</div>
-      <div class="as-aviso" style="margin:0 0 12px">Cada oferta da Hubla aponta para um produto fiscal. Oferta sem escolha usa o produto fiscal padrão.</div>
+      <div class="as-aviso" style="margin:0 0 12px">Toda oferta da Hubla usa o produto fiscal padrão. Cadastre aqui só as exceções: ofertas que saem com outro produto fiscal. Se você trocar o padrão, todas as ofertas sem exceção passam a usar o novo.</div>
       <div class="nf-form" style="margin-bottom:14px">
-        <label class="nf-largo"><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Para oferta sem produto escolhido.</span></label>
+        <label class="nf-largo"><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Vale para todas as ofertas que não estão nas exceções.</span></label>
       </div>
+      <div class="nf-rot" style="margin-bottom:6px">Exceções</div>
       <div id="nf-ofertas"></div>
     </div>
     <button class="btn" style="background:var(--accent);color:#fff" onclick="nfSalvarConfig()">💾 Salvar configuração</button>
@@ -2376,7 +2377,7 @@ function nfRenderTestes() {
 }
 function nfRenderAvulsa() {
   var sel = document.getElementById('nf-a-prod'), atual = sel.value;
-  sel.innerHTML = nfProdOptions(atual || 'afiliados');
+  sel.innerHTML = nfProdOptions(atual || (NF.d.config || {}).produtoPadrao);
 }
 function nfRenderConfig() {
   var d = NF.d, c = d.config || {}, e = d.empresa || {}, cert = d.certificado || {};
@@ -2394,6 +2395,8 @@ function nfRenderConfig() {
     : 'Certificado: ' + nfEsc(cert.erro || 'indisponível');
   NF.produtosEd = (d.produtos || []).map(function(p){ return Object.assign({}, p); });
   NF.ofertasEd = Object.assign({}, d.ofertas || {});
+  // Oferta marcada com o próprio produto padrão não é exceção: sai da lista (vale ao salvar).
+  Object.keys(NF.ofertasEd).forEach(function(k){ if (NF.ofertasEd[k] === c.produtoPadrao) delete NF.ofertasEd[k]; });
   nfRenderProdutos(); nfRenderOfertas();
 }
 // Significado dos códigos da nota (19/11/2026). Mesma tabela da aba 🧾 Notas Fiscais
@@ -2454,19 +2457,34 @@ function nfAddProduto() {
   NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', descricao: '{produto}', infoCompl: '', ativo: true });
   nfRenderProdutos();
 }
+// Exceções (19/11/2026): toda oferta usa o produto padrão; só as exceções ficam em NF.ofertasEd.
 function nfRenderOfertas() {
-  var of = (NF.d.ofertasHubla || []).filter(function(o){ return !o.arquivada || NF.ofertasEd[o.id]; });
-  var grupos = {};
-  of.forEach(function(o){ (grupos[o.produtoNome || '(sem produto)'] = grupos[o.produtoNome || '(sem produto)'] || []).push(o); });
+  var todas = NF.d.ofertasHubla || [], porId = {};
+  todas.forEach(function(o){ porId[o.id] = o; });
   var prods = NF.produtosEd.filter(function(p){ return p.id; }).slice().sort(function(a, b){ return a.nome.localeCompare(b.nome, 'pt-BR'); });
-  function opts(sel) { return '<option value="">(padrão)</option>' + prods.map(function(p){ return '<option value="' + nfEsc(p.id) + '"' + (p.id === sel ? ' selected' : '') + '>' + nfEsc(p.nome) + '</option>'; }).join(''); }
-  var nomes = Object.keys(grupos).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
-  document.getElementById('nf-ofertas').innerHTML = nomes.length ? nomes.map(function(g){
-    return '<div class="bl-item"><div class="bl-nome" style="margin-bottom:6px">' + nfEsc(g) + '</div>' + grupos[g].map(function(o){
-      return '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:4px 0;border-top:1px solid var(--border);font-size:13px"><span>' + nfEsc(o.nome) + '</span>' +
-        '<select style="width:auto;min-width:200px;padding:6px 30px 6px 9px;font-size:12px" onchange="if(this.value)NF.ofertasEd[\'' + o.id + '\']=this.value;else delete NF.ofertasEd[\'' + o.id + '\']">' + opts(NF.ofertasEd[o.id]) + '</select></div>';
-    }).join('') + '</div>';
-  }).join('') : '<div class="as-sinc">Nenhuma oferta da Hubla conhecida ainda (rode "Buscar na Hubla" na aba Assinaturas).</div>';
+  function opts(sel) { return prods.map(function(p){ return '<option value="' + nfEsc(p.id) + '"' + (p.id === sel ? ' selected' : '') + '>' + nfEsc(p.nome) + '</option>'; }).join(''); }
+  function rotulo(o) { return (o.produtoNome ? o.produtoNome + ' · ' : '') + (o.nome || '(sem nome)'); }
+  var sel = 'style="width:auto;min-width:200px;padding:6px 30px 6px 9px;font-size:12px"';
+  var exc = Object.keys(NF.ofertasEd).map(function(id){ return porId[id] || { id: id, nome: 'Oferta ' + id, produtoNome: '' }; })
+    .sort(function(a, b){ return rotulo(a).localeCompare(rotulo(b), 'pt-BR'); });
+  var html = exc.length ? exc.map(function(o){
+    return '<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border);font-size:13px"><span>' + nfEsc(rotulo(o)) + '</span>' +
+      '<span style="display:flex;gap:8px;align-items:center"><select ' + sel + ' onchange="NF.ofertasEd[\'' + o.id + '\']=this.value">' + opts(NF.ofertasEd[o.id]) + '</select>' +
+      '<button class="btn" style="width:auto;margin:0;padding:5px 10px;font-size:11px;background:var(--surface);color:var(--muted)" onclick="delete NF.ofertasEd[\'' + o.id + '\'];nfRenderOfertas()">✕</button></span></div>';
+  }).join('') : '<div class="as-sinc" style="margin-bottom:8px">Nenhuma exceção: todas as ofertas usam o produto padrão.</div>';
+  var livres = todas.filter(function(o){ return !o.arquivada && !NF.ofertasEd[o.id]; }).sort(function(a, b){ return rotulo(a).localeCompare(rotulo(b), 'pt-BR'); });
+  html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">' +
+    (livres.length ? '<select id="nf-exc-oferta" ' + sel + '><option value="">Escolha a oferta…</option>' + livres.map(function(o){ return '<option value="' + nfEsc(o.id) + '">' + nfEsc(rotulo(o)) + '</option>'; }).join('') + '</select>' +
+      '<select id="nf-exc-prod" ' + sel + '>' + opts('') + '</select>' +
+      '<button class="btn" style="width:auto;margin:0;padding:7px 12px;font-size:12px" onclick="nfAddExcecao()">➕ Adicionar exceção</button>'
+      : '<span class="as-sinc">' + (todas.length ? 'Todas as ofertas já têm exceção.' : 'Nenhuma oferta da Hubla conhecida ainda (rode "Buscar na Hubla" na aba Assinaturas).') + '</span>') + '</div>';
+  document.getElementById('nf-ofertas').innerHTML = html;
+}
+function nfAddExcecao() {
+  var o = document.getElementById('nf-exc-oferta').value, p = document.getElementById('nf-exc-prod').value;
+  if (!o) return alert('Escolha a oferta.');
+  if (!p) return alert('Escolha o produto fiscal.');
+  NF.ofertasEd[o] = p; nfRenderOfertas();
 }
 function nfSalvarConfig() {
   var g = function(id){ return document.getElementById(id).value; };
