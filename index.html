@@ -36,6 +36,7 @@ label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text
 @media(max-width:620px){.nf-form .nf-largo{grid-column:auto}}
 .nf-dica{font-size:11px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;line-height:1.35}
 .nf-titulo{font-weight:800;margin-bottom:6px}
+.nf-salvar{display:flex;gap:12px;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
 .nf-prod{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
 .nf-prod-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-weight:700;font-size:13px}
 .nf-prod .nf-form input,.nf-prod .nf-form textarea{background:var(--surface)}
@@ -1134,6 +1135,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <label><span class="nf-rot">Apuração no Simples</span><select id="nf-e-regap"><option value="1">1 · Tudo pelo Simples (DAS)</option><option value="2">2 · ISS fora do Simples</option><option value="3">3 · Tudo fora do Simples</option></select><span class="nf-dica">Como os tributos são apurados.</span></label>
         <label><span class="nf-rot">Regime especial</span><select id="nf-e-regesp"><option value="0">0 · Nenhum</option><option value="1">1 · Ato cooperado</option><option value="2">2 · Estimativa</option><option value="3">3 · Microempresa municipal</option><option value="4">4 · Notário ou registrador</option><option value="5">5 · Profissional autônomo</option><option value="6">6 · Sociedade de profissionais</option></select><span class="nf-dica">Regime especial de tributação do ISS.</span></label>
       </div>
+      <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
     </div>
     <div class="card">
       <div class="nf-titulo">2. Certificado digital A1</div>
@@ -1145,6 +1147,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <div class="as-aviso" style="margin:0 0 10px">Só os produtos do Clube do Viajante: os do Tica Promos ficam no painel do Tica e não aparecem aqui. Cada produto fiscal diz como a nota sai: código do serviço, NBS e texto. Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
       <div id="nf-produtos"></div>
       <div class="bl-acoes"><button onclick="nfAddProduto()">➕ Novo produto fiscal</button></div>
+      <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
     </div>
     <div class="card">
       <div class="nf-titulo" style="margin-bottom:12px">4. Emissão</div>
@@ -1159,6 +1162,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       </div>
       <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
       <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
+      <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
     </div>
     <div class="card">
       <div class="nf-titulo">5. Ofertas da Hubla → produto fiscal</div>
@@ -1168,9 +1172,8 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       </div>
       <div class="nf-rot" style="margin-bottom:6px">Exceções</div>
       <div id="nf-ofertas"></div>
+      <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
     </div>
-    <button class="btn" style="background:var(--accent);color:#fff" onclick="nfSalvarConfig()">💾 Salvar configuração</button>
-    <div class="as-sinc" id="nf-c-res" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -2486,7 +2489,9 @@ function nfAddExcecao() {
   if (!p) return alert('Escolha o produto fiscal.');
   NF.ofertasEd[o] = p; nfRenderOfertas();
 }
-function nfSalvarConfig() {
+function nfSalvarConfig(btn) {
+  // Cada cartão tem o seu 💾 Salvar (19/11/2026); todos gravam a configuração inteira e a resposta aparece ao lado do botão clicado.
+  var res = function(t){ document.querySelectorAll('.nf-c-res').forEach(function(el){ el.textContent = ''; }); var el = btn && btn.parentNode.querySelector('.nf-c-res'); if (el) el.textContent = t; else if (t.indexOf('Erro') === 0) alert(t); };
   var g = function(id){ return document.getElementById(id).value; };
   var corpo = {
     config: { modo: g('nf-c-modo'), emitirDesde: g('nf-c-desde') || null, diasEspera: Number(g('nf-c-espera')), competencia: g('nf-c-comp'),
@@ -2497,9 +2502,9 @@ function nfSalvarConfig() {
   };
   if (corpo.config.modo === 'producao' && NF.d.config.modo !== 'producao' &&
       !confirm('Ligar a emissão em PRODUÇÃO? As vendas pagas a partir de ' + (corpo.config.emitirDesde || '?') + ' vão gerar notas fiscais válidas. Desligue o eNotas na Hubla no mesmo dia.')) return;
-  document.getElementById('nf-c-res').textContent = 'Salvando…';
-  nfApi('POST', '/notas/config', corpo).then(function(){ document.getElementById('nf-c-res').textContent = 'Configuração salva.'; return nfCarregar(); })
-    .catch(function(e){ document.getElementById('nf-c-res').textContent = 'Erro: ' + e.message; });
+  res('Salvando…');
+  nfApi('POST', '/notas/config', corpo).then(function(){ res('✅ Salvo.'); return nfCarregar(); })
+    .catch(function(e){ res('Erro: ' + e.message); });
 }
 function nfEmitir(id) {
   if (!confirm('Emitir esta nota fiscal agora (válida)?')) return;
