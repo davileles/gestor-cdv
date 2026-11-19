@@ -1118,24 +1118,11 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   </div>
 
   <div id="nf-bloco-config" style="display:none">
+    <!-- Mesma ordem da aba 🧾 Notas Fiscais do Tica Promos: primeiro o que é comum
+         (empresa, certificado, produtos fiscais, emissão), depois o que é só deste painel. -->
     <div class="card">
-      <div class="nf-titulo" style="margin-bottom:12px">Emissão</div>
-      <div class="nf-form">
-        <label><span class="nf-rot">Modo</span><select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select><span class="nf-dica">Só em Produção as notas saem sozinhas.</span></label>
-        <label><span class="nf-rot">Emitir a partir de</span><input type="date" id="nf-c-desde"/><span class="nf-dica">Vendas pagas desta data em diante.</span></label>
-        <label><span class="nf-rot">Dias de espera</span><input type="number" id="nf-c-espera" min="0" max="60"/><span class="nf-dica">Depois do pagamento (7 = prazo de desistência).</span></label>
-        <label><span class="nf-rot">Competência</span><select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option></select><span class="nf-dica">Data que vai na nota como competência.</span></label>
-        <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Não trocar depois de emitir.</span></label>
-        <label><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Para oferta sem produto escolhido.</span></label>
-        <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
-        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados nas notas da Hubla. Só deste painel.</span></label>
-      </div>
-      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
-      <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
-    </div>
-    <div class="card">
-      <div class="nf-titulo">Empresa emissora</div>
-      <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas). A alíquota do Simples fica separada em cada painel (aqui, no cartão Emissão).<span id="nf-e-sinc"></span></div>
+      <div class="nf-titulo">1. Empresa emissora</div>
+      <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas).<span id="nf-e-sinc"></span></div>
       <div class="nf-form">
         <label class="nf-largo"><span class="nf-rot">Razão social</span><input type="text" id="nf-e-razao"/></label>
         <label><span class="nf-rot">CNPJ</span><input type="text" id="nf-e-cnpj" inputmode="numeric"/></label>
@@ -1147,17 +1134,38 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <label><span class="nf-rot">Apuração no Simples</span><select id="nf-e-regap"><option value="1">1 · Tudo pelo Simples (DAS)</option><option value="2">2 · ISS fora do Simples</option><option value="3">3 · Tudo fora do Simples</option></select><span class="nf-dica">Como os tributos são apurados.</span></label>
         <label><span class="nf-rot">Regime especial</span><select id="nf-e-regesp"><option value="0">0 · Nenhum</option><option value="1">1 · Ato cooperado</option><option value="2">2 · Estimativa</option><option value="3">3 · Microempresa municipal</option><option value="4">4 · Notário ou registrador</option><option value="5">5 · Profissional autônomo</option><option value="6">6 · Sociedade de profissionais</option></select><span class="nf-dica">Regime especial de tributação do ISS.</span></label>
       </div>
-      <div class="as-sinc" id="nf-cert" style="margin-top:14px"></div>
     </div>
     <div class="card">
-      <div class="nf-titulo">Produtos fiscais</div>
-      <div class="as-aviso" style="margin:0 0 10px">Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
+      <div class="nf-titulo">2. Certificado digital A1</div>
+      <div class="as-sinc" id="nf-cert" style="margin:0 0 6px"></div>
+      <div class="nf-dica">Neste painel o certificado fica no servidor do Clube do Viajante (Railway, variáveis NFSE_CERT_PFX e NFSE_CERT_SENHA). O Tica Promos guarda a própria cópia: ao renovar o certificado, troque nos dois.</div>
+    </div>
+    <div class="card">
+      <div class="nf-titulo">3. Produtos fiscais</div>
+      <div class="as-aviso" style="margin:0 0 10px">Cada produto fiscal diz como a nota sai: código do serviço, NBS e texto. Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
       <div id="nf-produtos"></div>
       <div class="bl-acoes"><button onclick="nfAddProduto()">➕ Novo produto fiscal</button></div>
     </div>
     <div class="card">
-      <div class="nf-titulo">Ofertas da Hubla → produto fiscal</div>
-      <div class="as-aviso" style="margin:0 0 10px">Oferta sem escolha usa o produto fiscal padrão.</div>
+      <div class="nf-titulo" style="margin-bottom:12px">4. Emissão</div>
+      <div class="nf-form">
+        <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Clube do Viajante = 900, Tica Promos = 70. Cada painel tem a sua para os números nunca repetirem. Não trocar depois de emitir.</span></label>
+        <label><span class="nf-rot">Competência</span><select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option></select><span class="nf-dica">Data que vai na nota como competência.</span></label>
+        <label><span class="nf-rot">Modo</span><select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select><span class="nf-dica">Só em Produção as notas saem sozinhas.</span></label>
+        <label><span class="nf-rot">Emitir a partir de</span><input type="date" id="nf-c-desde"/><span class="nf-dica">Vendas pagas desta data em diante.</span></label>
+        <label><span class="nf-rot">Dias de espera</span><input type="number" id="nf-c-espera" min="0" max="60"/><span class="nf-dica">Depois do pagamento (7 = prazo de desistência).</span></label>
+        <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
+        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados nas notas da Hubla.</span></label>
+      </div>
+      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
+      <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
+    </div>
+    <div class="card">
+      <div class="nf-titulo">5. Ofertas da Hubla → produto fiscal</div>
+      <div class="as-aviso" style="margin:0 0 12px">Cada oferta da Hubla aponta para um produto fiscal. Oferta sem escolha usa o produto fiscal padrão.</div>
+      <div class="nf-form" style="margin-bottom:14px">
+        <label class="nf-largo"><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Para oferta sem produto escolhido.</span></label>
+      </div>
       <div id="nf-ofertas"></div>
     </div>
     <button class="btn" style="background:var(--accent);color:#fff" onclick="nfSalvarConfig()">💾 Salvar configuração</button>
@@ -2388,21 +2396,59 @@ function nfRenderConfig() {
   NF.ofertasEd = Object.assign({}, d.ofertas || {});
   nfRenderProdutos(); nfRenderOfertas();
 }
+// Significado dos códigos da nota (19/11/2026). Mesma tabela da aba 🧾 Notas Fiscais
+// do Tica Promos (NS2_ITENS_LC116 / NS2_NBS): mudou uma, muda a outra.
+// Código de tributação nacional = item da lista de serviços (LC 116) em 4 dígitos
+// + desdobramento nacional em 2 (ex.: 170601 = item 17.06, desdobramento 01).
+var NF_ITENS_LC116 = {
+  '0802': 'Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos (cursos)',
+  '0902': 'Agenciamento, organização, promoção e execução de programas de turismo, passeios, viagens e hospedagens',
+  '1005': 'Agenciamento, corretagem ou intermediação de bens não abrangidos em outros itens',
+  '1009': 'Representação de qualquer natureza, inclusive comercial',
+  '1701': 'Assessoria ou consultoria de qualquer natureza',
+  '1706': 'Propaganda e publicidade, inclusive promoção de vendas e planejamento de campanhas'
+};
+var NF_NBS = {
+  '114061900': 'Serviços de propaganda não classificados em outras posições',
+  '122051900': 'Serviços educacionais (código das notas antigas do eNotas)'
+};
+function nfDescCodigo(tipo, v) {
+  v = String(v || '').replace(/\D/g, '');
+  if (!v) return { cTribNac: 'Código do serviço na lista nacional (LC 116), 6 dígitos.', cTribMun: 'Desdobramento do município. Em BH, 001.', cNBS: 'Classificação do serviço na Receita (NBS), 9 dígitos.' }[tipo] || '';
+  if (tipo === 'cTribNac') {
+    if (v.length !== 6) return '⚠️ Precisa de 6 dígitos.';
+    var item = NF_ITENS_LC116[v.slice(0, 4)];
+    return item ? '→ Item ' + Number(v.slice(0, 2)) + '.' + v.slice(2, 4) + ': ' + item + '.' : '⚠️ Item ' + Number(v.slice(0, 2)) + '.' + v.slice(2, 4) + ' não está na lista deste painel: confira no Emissor Nacional.';
+  }
+  if (tipo === 'cNBS') return v.length !== 9 ? '⚠️ Precisa de 9 dígitos.' : (NF_NBS[v] ? '→ ' + NF_NBS[v] + '.' : 'Confira a descrição no Emissor Nacional.');
+  if (tipo === 'cTribMun') return v === '001' ? '→ Opção 001 de Belo Horizonte para o código nacional.' : 'Desdobramento do município (em BH, 001).';
+  return '';
+}
 function nfRenderProdutos() {
-  // [campo, rótulo, explicação, classe, textarea?]
-  var campos = [['nome', 'Nome', '', 'nf-cheio'], ['cTribNac', 'Tributação nacional', '6 dígitos (ex.: 170601).'], ['cTribMun', 'Código municipal', 'Em BH, 001.'],
-    ['cNBS', 'NBS', '9 dígitos.'], ['descricao', 'Descrição na nota', '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', 'nf-cheio', true],
-    ['infoCompl', 'Informação complementar', 'Opcional.', 'nf-cheio', true]];
+  // [campo, rótulo, classe, textarea?] — mesma ordem do Tica Promos
+  var campos = [['nome', 'Nome', 'nf-cheio'], ['cTribNac', 'Tributação nacional'], ['cTribMun', 'Código municipal'], ['cNBS', 'NBS'],
+    ['descricao', 'Descrição na nota', 'nf-cheio', true], ['infoCompl', 'Informação complementar', 'nf-cheio', true]];
+  var dicas = { descricao: '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', infoCompl: 'Opcional.' };
   document.getElementById('nf-produtos').innerHTML = NF.produtosEd.map(function(p, i){
-    var on = 'oninput="NF.produtosEd[' + i + '].' ;
-    return '<div class="nf-prod"><div class="nf-prod-topo"><span>' + nfEsc(p.nome || 'Produto fiscal') + '</span>' +
-      '<label class="nf-ativo"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label></div>' +
+    return '<div class="nf-prod"><div class="nf-prod-topo"><span>' + nfEsc(p.nome || 'Produto fiscal') + '</span><span style="display:flex;gap:14px;align-items:center">' +
+      '<label class="nf-ativo"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label>' +
+      '<button class="btn" style="width:auto;margin:0;padding:5px 10px;font-size:11px;background:var(--surface);color:var(--muted)" onclick="nfRemoverProduto(' + i + ')">🗑️ Remover</button></span></div>' +
       '<div class="nf-form">' + campos.map(function(c){
-        var ctl = c[4] ? '<textarea rows="2" ' + on + c[0] + '=this.value">' + nfEsc(p[c[0]]) + '</textarea>'
-          : '<input type="text" value="' + nfEsc(p[c[0]]) + '" ' + on + c[0] + '=this.value"/>';
-        return '<label' + (c[3] ? ' class="' + c[3] + '"' : '') + '><span class="nf-rot">' + c[1] + '</span>' + ctl + (c[2] ? '<span class="nf-dica">' + nfEsc(c[2]) + '</span>' : '') + '</label>';
+        var cod = /^c(TribNac|TribMun|NBS)$/.test(c[0]);
+        var on = 'oninput="NF.produtosEd[' + i + '].' + c[0] + '=this.value' + (cod ? ';this.parentNode.querySelector(\'.nf-dica\').textContent=nfDescCodigo(\'' + c[0] + '\',this.value)' : '') + '"';
+        var ctl = c[3] ? '<textarea rows="2" ' + on + '>' + nfEsc(p[c[0]]) + '</textarea>' : '<input type="text" value="' + nfEsc(p[c[0]]) + '" ' + on + '/>';
+        var dica = cod ? nfDescCodigo(c[0], p[c[0]]) : (dicas[c[0]] || '');
+        return '<label' + (c[2] ? ' class="' + c[2] + '"' : '') + '><span class="nf-rot">' + c[1] + '</span>' + ctl + (dica || cod ? '<span class="nf-dica">' + nfEsc(dica) + '</span>' : '') + '</label>';
       }).join('') + '</div></div>';
   }).join('');
+}
+function nfRemoverProduto(i) {
+  var p = NF.produtosEd[i]; if (!p) return;
+  var usado = p.id && (p.id === document.getElementById('nf-c-padrao').value || Object.keys(NF.ofertasEd).some(function(k){ return NF.ofertasEd[k] === p.id; }));
+  if (usado) return alert('"' + p.nome + '" é o produto padrão ou está escolhido numa oferta da Hubla. Troque antes de remover.');
+  if (!confirm('Remover o produto fiscal "' + (p.nome || 'sem nome') + '"? Notas já emitidas não mudam. Vale depois de salvar.')) return;
+  NF.produtosEd.splice(i, 1);
+  nfRenderProdutos();
 }
 function nfAddProduto() {
   NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', descricao: '{produto}', infoCompl: '', ativo: true });
