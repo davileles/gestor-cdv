@@ -1119,7 +1119,8 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
       <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
     </div>
     <div class="card">
-      <div style="font-weight:800;margin-bottom:10px">Empresa emissora</div>
+      <div style="font-weight:800;margin-bottom:6px">Empresa emissora</div>
+      <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas). Só a alíquota do Simples fica separada em cada painel.<span id="nf-e-sinc"></span></div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
         <label>Razão social<input type="text" id="nf-e-razao"/></label>
         <label>CNPJ<input type="text" id="nf-e-cnpj" inputmode="numeric"/></label>
@@ -2359,6 +2360,8 @@ function nfRenderConfig() {
   v('nf-c-serie', c.serie); v('nf-c-lote', c.loteMax);
   document.getElementById('nf-c-cancreemb').checked = c.cancelarReembolso !== false;
   document.getElementById('nf-c-padrao').innerHTML = nfProdOptions(c.produtoPadrao);
+  var ea = d.empresaAtualizada;
+  document.getElementById('nf-e-sinc').textContent = ea && ea.em ? ' Última mudança: ' + nfData(ea.em, true) + ' pelo ' + (ea.por === 'tica-promos' ? 'Tica Promos' : 'Gestão CDV') + '.' : '';
   v('nf-e-razao', e.razao); v('nf-e-cnpj', e.cnpj); v('nf-e-im', e.im); v('nf-e-cmun', e.cMun); v('nf-e-fone', e.fone); v('nf-e-email', e.email); v('nf-e-ptot', e.pTotTribSN);
   document.getElementById('nf-cert').innerHTML = cert.ok
     ? 'Certificado: <strong>' + nfEsc(cert.titular) + '</strong> · válido até ' + nfData(cert.validoAte) + ' (' + cert.diasRestantes + ' dias)'
