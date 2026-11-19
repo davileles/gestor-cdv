@@ -1115,6 +1115,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
         <label>Produto fiscal padrão<select id="nf-c-padrao"></select></label>
         <label>Notas por rodada (máx.)<input type="number" id="nf-c-lote" min="1" max="50"/></label>
       </div>
+      <label class="chk-box" style="margin-top:10px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
       <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
     </div>
     <div class="card">
@@ -2252,7 +2253,7 @@ function nfRodar() {
   document.getElementById('nf-sinc').textContent = 'Buscando vendas na Hubla…';
   nfApi('POST', '/notas/rodar', {}).then(function(d){
     var r = d.rodada || {};
-    var msg = r.erro || r.erroFila || (r.pulou ? 'Emissão desligada' : ((r.novas || 0) + ' venda(s) nova(s) na fila' + (r.emitidas ? ', ' + r.emitidas + ' nota(s) emitida(s)' : '') + (r.erros ? ', ' + r.erros + ' com erro' : '')));
+    var msg = r.erro || r.erroFila || (r.pulou ? 'Emissão desligada' : ((r.novas || 0) + ' venda(s) nova(s) na fila' + (r.emitidas ? ', ' + r.emitidas + ' nota(s) emitida(s)' : '') + (r.canceladas ? ', ' + r.canceladas + ' cancelada(s) por reembolso' : '') + (r.erros ? ', ' + r.erros + ' com erro' : '')));
     alert(msg); nfCarregar();
   }).catch(function(e){ alert('Erro: ' + e.message); nfCarregar(); });
 }
@@ -2267,8 +2268,9 @@ function nfRenderTudo() {
   else if (cert.diasRestantes < 30) avisos.push('O certificado digital vence em ' + cert.diasRestantes + ' dias (' + nfData(cert.validoAte) + ').');
   if (!d.hublaApi) avisos.push('HUBLA_API_KEY não configurada: as vendas da Hubla não entram na fila.');
   if (c.modo !== 'desligado' && !c.emitirDesde) avisos.push('Defina "emitir vendas pagas a partir de" na Configuração.');
-  var reemb = (d.notas || []).filter(function(n){ return n.status === 'emitida' && n.vendaReembolsadaEm; });
-  if (reemb.length) avisos.push(reemb.length + ' nota(s) emitida(s) de venda reembolsada depois: cancele no Emissor Nacional e marque como cancelada.');
+  var autoCanc = c.cancelarReembolso !== false && c.modo === 'producao';
+  var reemb = (d.notas || []).filter(function(n){ return n.status === 'emitida' && n.vendaReembolsadaEm && (!autoCanc || !n.reembolsoTotal || (n.cancelamentoErros || []).length); });
+  if (reemb.length) avisos.push(reemb.length + ' nota(s) emitida(s) de venda reembolsada depois precisam de você: veja em Emitidas e use "Cancelar nota".');
   if (r && (r.erro || r.erroFila)) avisos.push('Última rodada: ' + nfEsc(r.erro || r.erroFila));
   document.getElementById('nf-status').innerHTML = avisos.map(function(a){ return '<div class="bl-sug" style="margin:0 0 10px"><div class="bl-sug-t">⚠ ' + a + '</div></div>'; }).join('');
   nfRender(); nfRenderTestes(); nfRenderConfig(); nfRenderAvulsa();
@@ -2296,10 +2298,14 @@ function nfItem(n, teste) {
     meta.join(' · ') + '</div></div><div style="text-align:right"><div class="bl-nome">' + nfReais(n.valor) + '</div>' +
     '<div class="bl-meta">' + nfEsc(nfProdNome(n.produtoFiscalId)) + '</div></div></div>';
   if ((n.erros || []).length) h += '<div class="bl-meta" style="color:#ff585e;margin-top:6px">' + n.erros.map(function(e){ return nfEsc((e.codigo ? e.codigo + ': ' : '') + e.descricao + (e.complemento ? ' (' + e.complemento + ')' : '')); }).join('<br>') + '</div>';
-  if (n.motivo) h += '<div class="bl-meta">Motivo: ' + nfEsc(n.motivo) + '</div>';
+  if (n.motivo) h += '<div class="bl-meta">' + (n.status === 'cancelada' ? 'Cancelada' + (n.canceladaEm ? ' em ' + nfData(n.canceladaEm, true) : '') + (n.canceladaPor === 'reembolso' ? ' (automático, venda reembolsada)' : '') + ': ' : 'Motivo: ') + nfEsc(n.motivo) + '</div>';
+  if (n.status === 'emitida' && n.vendaReembolsadaEm) h += '<div class="bl-meta" style="color:#f5a623">Venda ' + nfEsc(n.statusFatura || 'reembolsada') + ' na Hubla' + (n.reembolsoTotal ? (NF.d.config.cancelarReembolso !== false && NF.d.config.modo === 'producao' ? ': a nota será cancelada automaticamente.' : ': cancele a nota.') : ' (reembolso parcial): confira e cancele se for o caso.') + '</div>';
+  if ((n.cancelamentoErros || []).length) h += '<div class="bl-meta" style="color:#ff585e">Cancelamento recusado: ' + n.cancelamentoErros.map(function(e){ return nfEsc((e.codigo ? e.codigo + ': ' : '') + e.descricao + (e.complemento ? ' (' + e.complemento + ')' : '')); }).join('<br>') + '</div>';
   var ac = [];
   var aberta = ['pendente', 'erro', 'verificar'].indexOf(n.status) >= 0;
   if (n.chave) { ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'pdf\')">📄 PDF</button>'); if (n.temXml) ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'xml\')">📥 XML</button>'); }
+  if (n.temEvento) ac.push('<button onclick="nfBaixar(\'' + n.id + '\',\'evento\')">📥 XML do cancelamento</button>');
+  if (n.status === 'emitida') ac.push('<button class="no" onclick="nfCancelar(\'' + n.id + '\',' + (teste ? 'true' : 'false') + ')">✕ Cancelar nota</button>');
   if (!teste) {
     if (aberta && NF.d.config.modo === 'producao') ac.push('<button class="ok" onclick="nfEmitir(\'' + n.id + '\')">📄 Emitir agora</button>');
     if (aberta || n.status === 'venda_reembolsada') ac.push('<button onclick="nfTeste(\'' + n.id + '\')">🧪 Teste</button>');
@@ -2309,7 +2315,7 @@ function nfItem(n, teste) {
       ac.push('<button class="no" onclick="nfSituacao(\'' + n.id + '\',\'ignorar\')">🚫 Não emitir</button>');
     }
     if (n.status === 'ignorada' || n.status === 'venda_reembolsada') ac.push('<button onclick="nfSituacao(\'' + n.id + '\',\'reativar\')">🔁 Voltar para a fila</button>');
-    if (n.status === 'emitida') ac.push('<button class="no" onclick="nfSituacao(\'' + n.id + '\',\'cancelada\')">Marcar como cancelada</button>');
+    if (n.status === 'emitida') ac.push('<button onclick="nfSituacao(\'' + n.id + '\',\'cancelada\')">Já cancelei no portal</button>');
   }
   if (ac.length) h += '<div class="bl-acoes" style="margin-top:10px">' + ac.join('') + '</div>';
   return h + '</div>';
@@ -2351,6 +2357,7 @@ function nfRenderConfig() {
   function v(id, x) { var el = document.getElementById(id); if (document.activeElement !== el) el.value = x == null ? '' : x; }
   v('nf-c-modo', c.modo); v('nf-c-desde', c.emitirDesde); v('nf-c-espera', c.diasEspera); v('nf-c-comp', c.competencia);
   v('nf-c-serie', c.serie); v('nf-c-lote', c.loteMax);
+  document.getElementById('nf-c-cancreemb').checked = c.cancelarReembolso !== false;
   document.getElementById('nf-c-padrao').innerHTML = nfProdOptions(c.produtoPadrao);
   v('nf-e-razao', e.razao); v('nf-e-cnpj', e.cnpj); v('nf-e-im', e.im); v('nf-e-cmun', e.cMun); v('nf-e-fone', e.fone); v('nf-e-email', e.email); v('nf-e-ptot', e.pTotTribSN);
   document.getElementById('nf-cert').innerHTML = cert.ok
@@ -2390,7 +2397,7 @@ function nfSalvarConfig() {
   var g = function(id){ return document.getElementById(id).value; };
   var corpo = {
     config: { modo: g('nf-c-modo'), emitirDesde: g('nf-c-desde') || null, diasEspera: Number(g('nf-c-espera')), competencia: g('nf-c-comp'),
-      serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')) },
+      serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')), cancelarReembolso: document.getElementById('nf-c-cancreemb').checked },
     empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'), pTotTribSN: g('nf-e-ptot') },
     produtos: NF.produtosEd, ofertas: NF.ofertasEd,
   };
@@ -2415,6 +2422,19 @@ function nfSituacao(id, acao) {
   var motivo = '';
   if (acao === 'ignorar' || acao === 'cancelada') { motivo = prompt(acao === 'ignorar' ? 'Por que não emitir esta nota?' : 'Cancelou no Emissor Nacional? Motivo:'); if (motivo === null) return; }
   nfApi('POST', '/notas/situacao', { id: id, acao: acao, motivo: motivo }).then(nfCarregar).catch(function(e){ alert('Erro: ' + e.message); });
+}
+function nfCancelar(id, teste) {
+  var m = prompt('Motivo do cancelamento:\n1 = Erro na emissão\n2 = Serviço não prestado (venda desfeita / reembolso)\n9 = Outros', '2');
+  if (m === null) return;
+  m = String(m).trim(); if (['1', '2', '9'].indexOf(m) < 0) { alert('Use 1, 2 ou 9.'); return; }
+  var j = prompt('Justificativa (mínimo 15 caracteres):', m === '2' ? 'Venda cancelada com reembolso integral ao cliente.' : '');
+  if (j === null) return;
+  if (j.trim().length < 15) { alert('A justificativa precisa de pelo menos 15 caracteres.'); return; }
+  if (!confirm('Cancelar esta nota no Emissor Nacional' + (teste ? ' (homologação)' : '') + '? Não dá para desfazer.')) return;
+  nfApi('POST', '/notas/cancelar', { id: id, teste: !!teste, motivo: Number(m), justificativa: j.trim() }).then(function(r){
+    alert(r.ok ? 'Nota cancelada.' : 'Cancelamento recusado: ' + (r.erros || []).map(function(e){ return e.codigo + ' ' + e.descricao; }).join('; '));
+    nfCarregar();
+  }).catch(function(e){ alert('Erro: ' + e.message); nfCarregar(); });
 }
 function nfTrocarProduto(id, pf) { nfApi('POST', '/notas/situacao', { id: id, acao: 'produto', produtoFiscalId: pf }).then(nfCarregar).catch(function(e){ alert('Erro: ' + e.message); }); }
 function nfTomador(id) {
