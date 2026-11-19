@@ -1140,12 +1140,17 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     </div>
     <div class="card">
       <div class="nf-titulo">2. Certificado digital A1</div>
-      <div class="as-sinc" id="nf-cert" style="margin:0 0 6px"></div>
-      <div class="nf-dica">Neste painel o certificado fica no servidor do Clube do Viajante (Railway, variáveis NFSE_CERT_PFX e NFSE_CERT_SENHA). O Tica Promos guarda a própria cópia: ao renovar o certificado, troque nos dois.</div>
+      <div class="as-sinc" id="nf-cert" style="margin:0 0 12px"></div>
+      <div class="nf-form">
+        <label><span class="nf-rot">Arquivo .pfx</span><input type="file" id="nf-pfx" accept=".pfx,.p12"/></label>
+        <label><span class="nf-rot">Senha</span><input type="password" id="nf-senha" autocomplete="new-password"/></label>
+        <label><span class="nf-rot">&nbsp;</span><button class="btn" style="width:auto;margin:0" onclick="nfEnviarCert()">🔐 Cadastrar</button></label>
+      </div>
+      <div class="nf-dica">Neste painel o certificado fica guardado cifrado no servidor do Clube do Viajante, fora do site; a senha nunca volta para a tela. O Tica Promos guarda a própria cópia: ao renovar o certificado, troque nos dois.</div>
     </div>
     <div class="card">
       <div class="nf-titulo">3. Produtos fiscais do Clube do Viajante</div>
-      <div class="as-aviso" style="margin:0 0 10px">Só os produtos do Clube do Viajante: os do Tica Promos ficam no painel do Tica e não aparecem aqui. Cada produto fiscal diz como a nota sai: código do serviço, NBS e texto. Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
+      <div class="as-aviso" style="margin:0 0 10px">Só os produtos do Clube do Viajante: os do Tica Promos ficam no painel do Tica e não aparecem aqui. Cada produto fiscal diz como a nota sai: código do serviço, NBS, tributos e texto. Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
       <div id="nf-produtos"></div>
       <div class="bl-acoes"><button onclick="nfAddProduto()">➕ Novo produto fiscal</button></div>
       <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
@@ -1153,20 +1158,25 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <div class="card">
       <div class="nf-titulo" style="margin-bottom:12px">4. Emissão</div>
       <div class="nf-form">
-        <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Use a série que a contabilidade indicar. Só não pode ser igual à do Tica Promos nem à do eNotas (1): mesma série + mesmo número a Sefin recusa. Não troque depois de emitir.</span></label>
-        <label><span class="nf-rot">Competência</span><select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option></select><span class="nf-dica">Data que vai na nota como competência.</span></label>
-        <label><span class="nf-rot">Modo</span><select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select><span class="nf-dica">Só em Produção as notas saem sozinhas.</span></label>
-        <label><span class="nf-rot">Emitir a partir de</span><input type="date" id="nf-c-desde"/><span class="nf-dica">Vendas pagas desta data em diante.</span></label>
-        <label><span class="nf-rot">Dias de espera</span><input type="number" id="nf-c-espera" min="0" max="60"/><span class="nf-dica">Depois do pagamento (7 = prazo de desistência).</span></label>
-        <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
-        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados nas notas da Hubla.</span></label>
+        <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Use a série que a contabilidade indicar. Só não pode ser igual à do outro painel nem à do eNotas (1): mesma série + mesmo número a Sefin recusa. Não troque depois de emitir.</span></label>
+        <label><span class="nf-rot">Competência padrão</span><select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option><option value="mes">Último dia do mês do pagamento</option></select><span class="nf-dica">Vale para o produto fiscal que estiver em "A padrão da Emissão". Pagamento = dia em que a venda foi paga; nos relatórios mensais dos programas de afiliados é o mês da comissão (vale o último dia).</span></label>
+        <label><span class="nf-rot">Modo</span><select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select><span class="nf-dica">Desligado: nada roda sozinho. Homologação: monta a fila e só sai nota de teste. Produção: notas válidas.</span></label>
+        <label><span class="nf-rot">Valor mínimo (R$)</span><input type="text" id="nf-c-minimo" inputmode="decimal"/><span class="nf-dica">Notas abaixo disso ficam de fora (0 = todas).</span></label>
       </div>
-      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
-      <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
+      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-auto"/> <b>Emitir automaticamente</b> (em Produção, as notas da fila saem sozinhas; desmarcado, só pelo botão Emitir)</label>
       <div class="nf-salvar"><button class="btn" style="width:auto;margin:0;background:var(--accent);color:#fff" onclick="nfSalvarConfig(this)">💾 Salvar</button><span class="as-sinc nf-c-res"></span></div>
     </div>
     <div class="card">
-      <div class="nf-titulo">5. Ofertas da Hubla → produto fiscal</div>
+      <div class="nf-titulo">5. Só do Clube do Viajante · vendas da Hubla</div>
+      <div class="as-aviso" style="margin:0 0 12px">De onde vêm as notas deste painel: as faturas pagas na Hubla. As opções acima valem do mesmo jeito que no Tica Promos.</div>
+      <div class="nf-form">
+        <label><span class="nf-rot">Emitir a partir de</span><input type="date" id="nf-c-desde"/><span class="nf-dica">Vendas pagas desta data em diante.</span></label>
+        <label><span class="nf-rot">Dias de espera</span><input type="number" id="nf-c-espera" min="0" max="60"/><span class="nf-dica">Depois do pagamento (7 = prazo de desistência).</span></label>
+        <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
+      </div>
+      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
+      <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
+      <div class="nf-titulo" style="margin:20px 0 6px;font-size:13px">Ofertas da Hubla → produto fiscal</div>
       <div class="as-aviso" style="margin:0 0 12px">Toda oferta da Hubla usa o produto fiscal padrão. Cadastre aqui só as exceções: ofertas que saem com outro produto fiscal. Se você trocar o padrão, todas as ofertas sem exceção passam a usar o novo.</div>
       <div class="nf-form" style="margin-bottom:14px">
         <label class="nf-largo"><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Vale para todas as ofertas que não estão nas exceções.</span></label>
@@ -2387,15 +2397,16 @@ function nfRenderConfig() {
   var d = NF.d, c = d.config || {}, e = d.empresa || {}, cert = d.certificado || {};
   function v(id, x) { var el = document.getElementById(id); if (document.activeElement !== el) el.value = x == null ? '' : x; }
   v('nf-c-modo', c.modo); v('nf-c-desde', c.emitirDesde); v('nf-c-espera', c.diasEspera); v('nf-c-comp', c.competencia);
-  v('nf-c-serie', c.serie); v('nf-c-lote', c.loteMax);
+  v('nf-c-serie', c.serie); v('nf-c-lote', c.loteMax); v('nf-c-minimo', c.minimo || 0);
+  document.getElementById('nf-c-auto').checked = c.emitirAuto !== false;
   document.getElementById('nf-c-cancreemb').checked = c.cancelarReembolso !== false;
   document.getElementById('nf-c-padrao').innerHTML = nfProdOptions(c.produtoPadrao);
   var ea = d.empresaAtualizada;
   document.getElementById('nf-e-sinc').textContent = ea && ea.em ? ' Última mudança: ' + nfData(ea.em, true) + ' pelo ' + (ea.por === 'tica-promos' ? 'Tica Promos' : 'Gestão CDV') + '.' : '';
-  v('nf-e-razao', e.razao); v('nf-e-cnpj', e.cnpj); v('nf-e-im', e.im); v('nf-e-cmun', e.cMun); v('nf-e-fone', e.fone); v('nf-e-email', e.email); v('nf-e-ptot', e.pTotTribSN);
+  v('nf-e-razao', e.razao); v('nf-e-cnpj', e.cnpj); v('nf-e-im', e.im); v('nf-e-cmun', e.cMun); v('nf-e-fone', e.fone); v('nf-e-email', e.email);
   v('nf-e-opsn', String(e.opSimpNac == null ? 3 : e.opSimpNac)); v('nf-e-regap', String(e.regApTribSN == null ? 1 : e.regApTribSN)); v('nf-e-regesp', String(e.regEspTrib == null ? 0 : e.regEspTrib));
   document.getElementById('nf-cert').innerHTML = cert.ok
-    ? 'Certificado: <strong>' + nfEsc(cert.titular) + '</strong> · válido até ' + nfData(cert.validoAte) + ' (' + cert.diasRestantes + ' dias)'
+    ? 'Certificado: <strong>' + nfEsc(cert.titular) + '</strong> · válido até ' + nfData(cert.validoAte) + ' (' + cert.diasRestantes + ' dias)' + (cert.origem === 'env' ? ' · <span style="color:var(--muted)">das variáveis do Railway</span>' : '')
     : 'Certificado: ' + nfEsc(cert.erro || 'indisponível');
   var abertos = {}; (NF.produtosEd || []).forEach(function(p){ if (p._aberto) abertos[p.id || p.nome] = 1; });
   NF.produtosEd = (d.produtos || []).map(function(p){ return Object.assign({}, p, { _aberto: !!(abertos[p.id] || abertos[p.nome]) }); });
@@ -2432,33 +2443,58 @@ function nfDescCodigo(tipo, v) {
   if (tipo === 'cTribMun') return v === '001' ? '→ Opção 001 de Belo Horizonte para o código nacional.' : 'Desdobramento do município (em BH, 001).';
   return '';
 }
+// Explicação dos tributos. Mesmos textos da aba 🧾 Notas Fiscais do Tica Promos (NS2_DESC): mudou um, muda o outro.
+var NF_DESC_TRIB = {
+  pTotTribSN: { '': 'Não informar o percentual (vai “não informado”).', _: 'Alíquota do Simples Nacional (a da guia DAS). Só informativa para o tomador; o imposto é pago no DAS.' },
+  tribISSQN: { '1': 'Operação tributável pelo ISS', '2': 'Imunidade', '3': 'Exportação de serviço', '4': 'Não incidência', _: 'Tributação do ISS nesta operação.' },
+  tpRetISSQN: { '1': 'ISS não retido: a empresa recolhe (no DAS)', '2': 'Retido pelo tomador', '3': 'Retido pelo intermediário', _: 'Quem recolhe o ISS.' },
+  cstPisCofins: { '00': 'Nenhum: no Simples, PIS e COFINS vão no DAS e não são destacados na nota', '': 'Vazio: a nota sai sem o grupo de PIS/COFINS.', _: 'Situação tributária do PIS/COFINS na nota.' }
+};
+function nfDescTrib(k, v) {
+  var d = NF_DESC_TRIB[k]; v = String(v == null ? '' : v).trim();
+  if (k === 'pTotTribSN') return v ? d._ : d[''];
+  if (Object.prototype.hasOwnProperty.call(d, v)) return (v ? '→ ' : '') + d[v];
+  return v ? '⚠️ código não reconhecido aqui. ' + d._ : d._;
+}
 function nfRenderProdutos() {
-  // [campo, rótulo, classe, textarea?] — mesma ordem do Tica Promos
+  // [campo, rótulo, classe, textarea?] — mesma ordem do Tica Promos (NS2_P_CAMPOS)
   var campos = [['nome', 'Nome', 'nf-cheio'], ['cTribNac', 'Tributação nacional'], ['cTribMun', 'Código municipal'], ['cNBS', 'NBS'],
+    ['pTotTribSN', 'Alíquota do Simples (%)'], ['tribISSQN', 'Tributação do ISS'], ['tpRetISSQN', 'ISS retido?'], ['cstPisCofins', 'PIS/COFINS (CST)'],
+    ['competencia', 'Competência'],
     ['descricao', 'Descrição na nota', 'nf-cheio', true], ['infoCompl', 'Informação complementar', 'nf-cheio', true]];
-  var dicas = { descricao: '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', infoCompl: 'Opcional.' };
+  var dicas = { descricao: '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', infoCompl: 'Opcional.', competencia: 'Data que vai na nota como competência, só para este produto.' };
+  var comps = [['', 'A padrão da Emissão'], ['emissao', 'Data de emissão'], ['pagamento', 'Data do pagamento'], ['mes', 'Último dia do mês do pagamento']];
   document.getElementById('nf-produtos').innerHTML = NF.produtosEd.map(function(p, i){
     // Minimizado por padrão (19/11/2026): clique no topo abre/fecha os campos.
     var aberto = !!p._aberto, bt = 'class="btn" style="width:auto;margin:0;padding:5px 10px;font-size:11px;background:var(--surface);color:var(--muted)"';
-    var resumo = [p.cTribNac && ('Tributação ' + p.cTribNac), p.cNBS && ('NBS ' + p.cNBS), p.ativo === false && 'inativo'].filter(Boolean).join(' · ');
+    var resumo = [p.cTribNac && ('Tributação ' + p.cTribNac), p.ativo === false && 'inativo', !p.codigosConfirmados && 'códigos não confirmados'].filter(Boolean).join(' · ');
     return '<div class="nf-prod' + (aberto ? '' : ' nf-fechado') + '"><div class="nf-prod-topo" style="cursor:pointer" onclick="if(!event.target.closest(\'button,input,label\'))nfAbrirProduto(' + i + ')">' +
       '<span>' + (aberto ? '▾ ' : '▸ ') + nfEsc(p.nome || 'Produto fiscal') + (resumo ? ' <span style="font-weight:500;color:var(--muted)">· ' + nfEsc(resumo) + '</span>' : '') + '</span><span style="display:flex;gap:14px;align-items:center">' +
       '<label class="nf-ativo"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label>' +
       '<button ' + bt + ' onclick="nfDuplicarProduto(' + i + ')">⧉ Duplicar</button>' +
       '<button ' + bt + ' onclick="nfRemoverProduto(' + i + ')">🗑️ Remover</button></span></div>' +
       (aberto ? '' : '</div>') + (!aberto ? '' : '<div class="nf-form">' + campos.map(function(c){
-        var cod = /^c(TribNac|TribMun|NBS)$/.test(c[0]);
-        var on = 'oninput="NF.produtosEd[' + i + '].' + c[0] + '=this.value' + (cod ? ';this.parentNode.querySelector(\'.nf-dica\').textContent=nfDescCodigo(\'' + c[0] + '\',this.value)' : '') + '"';
-        var ctl = c[3] ? '<textarea rows="2" ' + on + '>' + nfEsc(p[c[0]]) + '</textarea>' : '<input type="text" value="' + nfEsc(p[c[0]]) + '" ' + on + '/>';
-        var dica = cod ? nfDescCodigo(c[0], p[c[0]]) : (dicas[c[0]] || '');
+        var cod = /^c(TribNac|TribMun|NBS)$/.test(c[0]), trib = !!NF_DESC_TRIB[c[0]];
+        if (c[0] === 'competencia') {
+          return '<label><span class="nf-rot">' + c[1] + '</span><select onchange="NF.produtosEd[' + i + '].competencia=this.value">' +
+            comps.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === (p.competencia || '') ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+            '</select><span class="nf-dica">' + dicas.competencia + '</span></label>';
+        }
+        var on = 'oninput="NF.produtosEd[' + i + '].' + c[0] + '=this.value' +
+          (cod ? ';NF.produtosEd[' + i + '].codigosConfirmados=false;document.getElementById(\'nf-p-' + i + '-conf\').checked=false;this.parentNode.querySelector(\'.nf-dica\').textContent=nfDescCodigo(\'' + c[0] + '\',this.value)' : '') +
+          (trib ? ';this.parentNode.querySelector(\'.nf-dica\').textContent=nfDescTrib(\'' + c[0] + '\',this.value)' : '') + '"';
+        var ph = c[0] === 'pTotTribSN' ? ' placeholder="ex.: 6.00"' : '';
+        var ctl = c[3] ? '<textarea rows="2" ' + on + '>' + nfEsc(p[c[0]]) + '</textarea>' : '<input type="text" value="' + nfEsc(p[c[0]]) + '"' + ph + ' ' + on + '/>';
+        var dica = cod ? nfDescCodigo(c[0], p[c[0]]) : trib ? nfDescTrib(c[0], p[c[0]]) : (dicas[c[0]] || '');
         return '<label' + (c[2] ? ' class="' + c[2] + '"' : '') + '><span class="nf-rot">' + c[1] + '</span>' + ctl + (dica || cod ? '<span class="nf-dica">' + nfEsc(dica) + '</span>' : '') + '</label>';
-      }).join('') + '</div></div>');
+      }).join('') + '</div>' +
+      '<label class="chk-box" style="margin-top:12px"><input type="checkbox" id="nf-p-' + i + '-conf"' + (p.codigosConfirmados ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].codigosConfirmados=this.checked"/> <b>Códigos confirmados com o contador</b> (sem isso nada deste produto sai em produção; editar um código desmarca)</label></div>');
   }).join('');
 }
 function nfAbrirProduto(i) { var p = NF.produtosEd[i]; if (p) { p._aberto = !p._aberto; nfRenderProdutos(); } }
 function nfDuplicarProduto(i) {
   var p = NF.produtosEd[i]; if (!p) return;
-  var c = Object.assign({}, p, { id: '', nome: (p.nome || 'Produto fiscal') + ' (cópia)', _aberto: true });
+  var c = Object.assign({}, p, { id: '', nome: (p.nome || 'Produto fiscal') + ' (cópia)', codigosConfirmados: false, _aberto: true });
   NF.produtosEd.splice(i + 1, 0, c);
   nfRenderProdutos();
 }
@@ -2471,7 +2507,10 @@ function nfRemoverProduto(i) {
   nfRenderProdutos();
 }
 function nfAddProduto() {
-  NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', descricao: '{produto}', infoCompl: '', ativo: true, _aberto: true });
+  var base = NF.produtosEd[0] || {};
+  NF.produtosEd.push({ id: '', nome: 'Novo produto fiscal', cTribNac: '', cTribMun: '001', cNBS: '', pTotTribSN: base.pTotTribSN || '',
+    tribISSQN: '1', tpRetISSQN: '1', cstPisCofins: base.cstPisCofins == null ? '00' : base.cstPisCofins, tpRetPisCofins: '0', competencia: '',
+    descricao: '{produto}', infoCompl: '', codigosConfirmados: false, ativo: true, _aberto: true });
   nfRenderProdutos();
 }
 // Exceções (19/11/2026): toda oferta usa o produto padrão; só as exceções ficam em NF.ofertasEd.
@@ -2509,8 +2548,9 @@ function nfSalvarConfig(btn) {
   var g = function(id){ return document.getElementById(id).value; };
   var corpo = {
     config: { modo: g('nf-c-modo'), emitirDesde: g('nf-c-desde') || null, diasEspera: Number(g('nf-c-espera')), competencia: g('nf-c-comp'),
-      serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')), cancelarReembolso: document.getElementById('nf-c-cancreemb').checked },
-    empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'), pTotTribSN: g('nf-e-ptot'),
+      serie: g('nf-c-serie'), produtoPadrao: g('nf-c-padrao'), loteMax: Number(g('nf-c-lote')), cancelarReembolso: document.getElementById('nf-c-cancreemb').checked,
+      emitirAuto: document.getElementById('nf-c-auto').checked, minimo: g('nf-c-minimo') },
+    empresa: { razao: g('nf-e-razao'), cnpj: g('nf-e-cnpj'), im: g('nf-e-im'), cMun: g('nf-e-cmun'), fone: g('nf-e-fone'), email: g('nf-e-email'),
       opSimpNac: Number(g('nf-e-opsn')), regApTribSN: Number(g('nf-e-regap')), regEspTrib: Number(g('nf-e-regesp')) },
     produtos: NF.produtosEd.map(function(p){ var x = Object.assign({}, p); delete x._aberto; return x; }), ofertas: NF.ofertasEd,
   };
@@ -2519,6 +2559,17 @@ function nfSalvarConfig(btn) {
   res('Salvando…');
   nfApi('POST', '/notas/config', corpo).then(function(){ res('✅ Salvo.'); return nfCarregar(); })
     .catch(function(e){ res('Erro: ' + e.message); });
+}
+function nfEnviarCert() {
+  var f = document.getElementById('nf-pfx').files[0], senha = document.getElementById('nf-senha').value;
+  if (!f) return alert('Escolha o arquivo .pfx do certificado.');
+  var rd = new FileReader();
+  rd.onload = function(){
+    nfApi('POST', '/notas/certificado', { pfxB64: String(rd.result).split(',').pop(), senha: senha })
+      .then(function(r){ document.getElementById('nf-senha').value = ''; document.getElementById('nf-pfx').value = ''; alert('Certificado cadastrado: ' + (r.titular || '') + ', válido até ' + nfData(r.validoAte) + '.'); nfCarregar(); })
+      .catch(function(e){ alert('Erro: ' + e.message); });
+  };
+  rd.readAsDataURL(f);
 }
 function nfEmitir(id) {
   if (!confirm('Emitir esta nota fiscal agora (válida)?')) return;
