@@ -27,6 +27,20 @@ header{margin-bottom:2rem}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field{display:flex;flex-direction:column;gap:5px}
 label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+/* Formulários das Notas fiscais: rótulo numa linha só, explicação embaixo do campo (19/11/2026) */
+.nf-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px 12px;align-items:start}
+.nf-form>label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.nf-form>label>.nf-rot{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nf-form .nf-largo{grid-column:span 2}
+.nf-form .nf-cheio{grid-column:1/-1}
+@media(max-width:620px){.nf-form .nf-largo{grid-column:auto}}
+.nf-dica{font-size:11px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;line-height:1.35}
+.nf-titulo{font-weight:800;margin-bottom:6px}
+.nf-prod{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.nf-prod-topo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-weight:700;font-size:13px}
+.nf-prod .nf-form input,.nf-prod .nf-form textarea{background:var(--surface)}
+.nf-ativo{display:inline-flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;white-space:nowrap}
+.nf-form textarea{min-height:58px;resize:vertical}
 .tag{font-size:10px;font-weight:500;color:var(--muted2);text-transform:none;letter-spacing:0}
 input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;padding:10px 12px;width:100%;outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none}
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}
@@ -1080,16 +1094,16 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
   <div id="nf-bloco-avulsa" style="display:none">
     <div class="card">
       <div class="as-aviso" style="margin:0 0 12px">Nota para uma venda fora da Hubla (ex.: comissão de afiliados, concierge pago por fora). "Emitir teste" vai para o ambiente de homologação, sem valor fiscal.</div>
-      <div class="cfg-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-        <label>CPF ou CNPJ do tomador<input type="text" id="nf-a-doc" inputmode="numeric"/></label>
-        <label>Nome / razão social<input type="text" id="nf-a-nome"/></label>
-        <label>E-mail (opcional)<input type="text" id="nf-a-email"/></label>
-        <label>Telefone (opcional)<input type="text" id="nf-a-fone"/></label>
-        <label>Valor (R$)<input type="text" id="nf-a-valor" inputmode="decimal"/></label>
-        <label>Produto fiscal<select id="nf-a-prod"></select></label>
-        <label>Competência<input type="date" id="nf-a-comp"/></label>
+      <div class="nf-form">
+        <label><span class="nf-rot">CPF ou CNPJ</span><input type="text" id="nf-a-doc" inputmode="numeric"/><span class="nf-dica">Do tomador.</span></label>
+        <label class="nf-largo"><span class="nf-rot">Nome / razão social</span><input type="text" id="nf-a-nome"/></label>
+        <label><span class="nf-rot">E-mail</span><input type="text" id="nf-a-email"/><span class="nf-dica">Opcional.</span></label>
+        <label><span class="nf-rot">Telefone</span><input type="text" id="nf-a-fone"/><span class="nf-dica">Opcional.</span></label>
+        <label><span class="nf-rot">Valor (R$)</span><input type="text" id="nf-a-valor" inputmode="decimal"/></label>
+        <label><span class="nf-rot">Produto fiscal</span><select id="nf-a-prod"></select></label>
+        <label><span class="nf-rot">Competência</span><input type="date" id="nf-a-comp"/></label>
+        <label class="nf-cheio"><span class="nf-rot">Descrição do serviço</span><input type="text" id="nf-a-desc" placeholder="Vazio = descrição do produto fiscal"/></label>
       </div>
-      <label style="display:block;margin-top:10px">Descrição do serviço<input type="text" id="nf-a-desc" placeholder="Vazio = descrição do produto fiscal"/></label>
       <div class="bl-acoes" style="margin-top:14px">
         <button onclick="nfAvulsa(false)">🧪 Emitir teste</button>
         <button class="ok" onclick="nfAvulsa(true)">📄 Emitir nota válida</button>
@@ -1105,41 +1119,41 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
 
   <div id="nf-bloco-config" style="display:none">
     <div class="card">
-      <div style="font-weight:800;margin-bottom:10px">Emissão</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-        <label>Modo<select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select></label>
-        <label>Emitir vendas pagas a partir de<input type="date" id="nf-c-desde"/></label>
-        <label>Dias de espera após o pagamento<input type="number" id="nf-c-espera" min="0" max="60"/></label>
-        <label>Competência da nota<select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option></select></label>
-        <label>Série da DPS<input type="text" id="nf-c-serie" inputmode="numeric"/></label>
-        <label>Produto fiscal padrão<select id="nf-c-padrao"></select></label>
-        <label>Notas por rodada (máx.)<input type="number" id="nf-c-lote" min="1" max="50"/></label>
+      <div class="nf-titulo" style="margin-bottom:12px">Emissão</div>
+      <div class="nf-form">
+        <label><span class="nf-rot">Modo</span><select id="nf-c-modo"><option value="desligado">Desligado</option><option value="homologacao">Homologação (testes)</option><option value="producao">Produção (notas válidas)</option></select><span class="nf-dica">Só em Produção as notas saem sozinhas.</span></label>
+        <label><span class="nf-rot">Emitir a partir de</span><input type="date" id="nf-c-desde"/><span class="nf-dica">Vendas pagas desta data em diante.</span></label>
+        <label><span class="nf-rot">Dias de espera</span><input type="number" id="nf-c-espera" min="0" max="60"/><span class="nf-dica">Depois do pagamento (7 = prazo de desistência).</span></label>
+        <label><span class="nf-rot">Competência</span><select id="nf-c-comp"><option value="emissao">Data de emissão</option><option value="pagamento">Data do pagamento</option></select><span class="nf-dica">Data que vai na nota como competência.</span></label>
+        <label><span class="nf-rot">Série da DPS</span><input type="text" id="nf-c-serie" inputmode="numeric"/><span class="nf-dica">Não trocar depois de emitir.</span></label>
+        <label><span class="nf-rot">Produto fiscal padrão</span><select id="nf-c-padrao"></select><span class="nf-dica">Para oferta sem produto escolhido.</span></label>
+        <label><span class="nf-rot">Notas por rodada</span><input type="number" id="nf-c-lote" min="1" max="50"/><span class="nf-dica">Máximo emitido a cada 30 min.</span></label>
       </div>
-      <label class="chk-box" style="margin-top:10px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
+      <label class="chk-box" style="margin-top:16px"><input type="checkbox" id="nf-c-cancreemb"/> Cancelar a nota sozinha quando a venda for reembolsada na Hubla depois de emitida</label>
       <div class="as-aviso" style="margin:10px 0 0">Vendas pagas antes de "emitir a partir de" continuam com o eNotas: no dia de ligar a Produção, desligue a integração do eNotas com a Hubla para a mesma venda não virar duas notas.</div>
     </div>
     <div class="card">
-      <div style="font-weight:800;margin-bottom:6px">Empresa emissora</div>
+      <div class="nf-titulo">Empresa emissora</div>
       <div class="as-aviso" style="margin:0 0 10px">Cadastro único com as <b>Notas Fiscais do Tica Promos</b>: o que salvar aqui vale lá, e o que salvar lá vale aqui (a mesma empresa emite as duas). Só a alíquota do Simples fica separada em cada painel.<span id="nf-e-sinc"></span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
-        <label>Razão social<input type="text" id="nf-e-razao"/></label>
-        <label>CNPJ<input type="text" id="nf-e-cnpj" inputmode="numeric"/></label>
-        <label>Inscrição municipal<input type="text" id="nf-e-im" inputmode="numeric"/></label>
-        <label>Município (código IBGE)<input type="text" id="nf-e-cmun" inputmode="numeric"/></label>
-        <label>Telefone<input type="text" id="nf-e-fone" inputmode="numeric"/></label>
-        <label>E-mail<input type="text" id="nf-e-email"/></label>
-        <label>Tributos aproximados do Simples (%)<input type="text" id="nf-e-ptot" inputmode="decimal"/></label>
+      <div class="nf-form">
+        <label class="nf-largo"><span class="nf-rot">Razão social</span><input type="text" id="nf-e-razao"/></label>
+        <label><span class="nf-rot">CNPJ</span><input type="text" id="nf-e-cnpj" inputmode="numeric"/></label>
+        <label><span class="nf-rot">Inscrição municipal</span><input type="text" id="nf-e-im" inputmode="numeric"/></label>
+        <label><span class="nf-rot">Município (IBGE)</span><input type="text" id="nf-e-cmun" inputmode="numeric"/><span class="nf-dica">3106200 = Belo Horizonte.</span></label>
+        <label><span class="nf-rot">Telefone</span><input type="text" id="nf-e-fone" inputmode="numeric"/></label>
+        <label><span class="nf-rot">E-mail</span><input type="text" id="nf-e-email"/></label>
+        <label><span class="nf-rot">Alíquota do Simples (%)</span><input type="text" id="nf-e-ptot" inputmode="decimal"/><span class="nf-dica">Tributos aproximados na nota. Só deste painel.</span></label>
       </div>
-      <div class="as-sinc" id="nf-cert" style="margin-top:10px"></div>
+      <div class="as-sinc" id="nf-cert" style="margin-top:14px"></div>
     </div>
     <div class="card">
-      <div style="font-weight:800;margin-bottom:6px">Produtos fiscais</div>
+      <div class="nf-titulo">Produtos fiscais</div>
       <div class="as-aviso" style="margin:0 0 10px">Na descrição, <b>{produto}</b> vira o nome do produto na Hubla e <b>{oferta}</b> o nome da oferta.</div>
       <div id="nf-produtos"></div>
       <div class="bl-acoes"><button onclick="nfAddProduto()">➕ Novo produto fiscal</button></div>
     </div>
     <div class="card">
-      <div style="font-weight:800;margin-bottom:6px">Ofertas da Hubla → produto fiscal</div>
+      <div class="nf-titulo">Ofertas da Hubla → produto fiscal</div>
       <div class="as-aviso" style="margin:0 0 10px">Oferta sem escolha usa o produto fiscal padrão.</div>
       <div id="nf-ofertas"></div>
     </div>
@@ -2371,11 +2385,19 @@ function nfRenderConfig() {
   nfRenderProdutos(); nfRenderOfertas();
 }
 function nfRenderProdutos() {
-  var campos = [['nome', 'Nome'], ['cTribNac', 'Cód. tributação nacional'], ['cTribMun', 'Cód. municipal'], ['cNBS', 'NBS'], ['descricao', 'Descrição na nota'], ['infoCompl', 'Informação complementar']];
+  // [campo, rótulo, explicação, classe, textarea?]
+  var campos = [['nome', 'Nome', '', 'nf-cheio'], ['cTribNac', 'Tributação nacional', '6 dígitos (ex.: 170601).'], ['cTribMun', 'Código municipal', 'Em BH, 001.'],
+    ['cNBS', 'NBS', '9 dígitos.'], ['descricao', 'Descrição na nota', '{produto} = nome do produto na Hubla · {oferta} = nome da oferta.', 'nf-cheio', true],
+    ['infoCompl', 'Informação complementar', 'Opcional.', 'nf-cheio', true]];
   document.getElementById('nf-produtos').innerHTML = NF.produtosEd.map(function(p, i){
-    return '<div class="bl-item"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">' +
-      campos.map(function(c){ return '<label style="font-size:12px">' + c[1] + '<input type="text" value="' + nfEsc(p[c[0]]) + '" oninput="NF.produtosEd[' + i + '].' + c[0] + '=this.value"/></label>'; }).join('') +
-      '</div><label class="chk-box" style="margin-top:8px"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label></div>';
+    var on = 'oninput="NF.produtosEd[' + i + '].' ;
+    return '<div class="nf-prod"><div class="nf-prod-topo"><span>' + nfEsc(p.nome || 'Produto fiscal') + '</span>' +
+      '<label class="nf-ativo"><input type="checkbox"' + (p.ativo !== false ? ' checked' : '') + ' onchange="NF.produtosEd[' + i + '].ativo=this.checked"/> Ativo</label></div>' +
+      '<div class="nf-form">' + campos.map(function(c){
+        var ctl = c[4] ? '<textarea rows="2" ' + on + c[0] + '=this.value">' + nfEsc(p[c[0]]) + '</textarea>'
+          : '<input type="text" value="' + nfEsc(p[c[0]]) + '" ' + on + c[0] + '=this.value"/>';
+        return '<label' + (c[3] ? ' class="' + c[3] + '"' : '') + '><span class="nf-rot">' + c[1] + '</span>' + ctl + (c[2] ? '<span class="nf-dica">' + nfEsc(c[2]) + '</span>' : '') + '</label>';
+      }).join('') + '</div></div>';
   }).join('');
 }
 function nfAddProduto() {
