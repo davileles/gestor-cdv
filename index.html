@@ -4128,6 +4128,22 @@ REGRAS GERAIS:
 3. NUNCA mencione ou cite a fonte/blog de onde veio a informação.
 4. Retorne SOMENTE JSON válido, sem markdown, sem texto antes ou depois.
 
+CATEGORIA (escolha UMA pelo conteúdo — ela define o padrão da mensagem):
+- "transferencia" = transferência de pontos/milhas de um programa ou banco para outro COM BÔNUS (ex: "Livelo x LATAM com 27% de bônus", "transferência bonificada", "milhas extras ao transferir"). Qualquer bônus percentual ao transferir é "transferencia", mesmo com milhas fixas extras na 1ª transferência ou teto por CPF.
+- "compra" = compra direta de pontos/milhas com dinheiro.
+- "compra_bonificada" = ganhar pontos/milhas ou cashback por real/dólar GASTO numa loja ou parceiro.
+- "clube" = clube de assinatura de pontos/milhas. "cartao" = cartão de crédito. "geral" = o resto.
+As regras de COMPRA BONIFICADA valem SOMENTE para "compra_bonificada": em qualquer outra categoria deixe "loja" e "importante" vazios.
+
+TRANSFERÊNCIA BONIFICADA (categoria "transferencia"):
+- "titulo": template exato: "[X]% de bônus ao transferir pontos de [Origem] para [Destino]". Use "Até [X]%..." SOMENTE se houver percentuais diferentes por perfil. Origem = programa/banco de onde saem os pontos (ex: Livelo, Esfera, Itaú); Destino = programa que recebe (ex: LATAM Pass, Smiles, Azul Fidelidade). Use o nome oficial do programa (ex: "Latam" → "LATAM Pass").
+- "programa": "[Origem] e [Destino]".
+- "bonus": percentual(is) e extras de forma objetiva (ex: "27% de bônus para todos os clientes + 2.000 milhas na 1ª transferência").
+- "resumo": 2 a 3 frases com origem, destino, bônus e para quem vale.
+- "restricoes": uma condição por item — cada percentual por perfil, bônus fixo da 1ª transferência, teto de bônus por CPF, prazo de crédito, necessidade de inscrição.
+- "tetoTransferencia": siga a regra de teto abaixo sempre que houver limite/CAP de bônus por CPF.
+- "loja", "cupom", "importante": vazios.
+
 COMPRA BONIFICADA (oferta onde se ganha pontos/milhas OU cashback por real ou dólar gasto em parceiro):
 - "titulo": template exato: "[X] pontos por [real/dólar] entre [Parceiro] e [Programa]" para pontos, ou "[X]% de cashback em [Parceiro]" para cashback. Use "Até" só se houver variação.
 - PARCEIRO ÚNICO: preencha normalmente com o nome da loja no título e em "loja".
@@ -4239,6 +4255,16 @@ function aplicarOfertaIA(obj, linkFallback) {
   function norm(str){ if(!str) return str; return String(str).replace(/\bHTC\b/gi,'Hoteis.com').replace(/\bHotel Urbano\b/gi,'Hoteis.com'); }
   obj.titulo=norm(obj.titulo); obj.resumo=norm(obj.resumo); obj.descricao=norm(obj.descricao);
   obj.loja=norm(obj.loja); obj.cupom=norm(obj.cupom); obj.importante=norm(obj.importante); obj.link=norm(obj.link);
+
+  // Rede de segurança: bônus percentual ao transferir é transferência, mesmo
+  // que a IA tenha devolvido outra categoria (caso Livelo x LATAM 27%, 23/11).
+  var txtCat = [obj.titulo, obj.bonus, obj.resumo, obj.programa].filter(Boolean).join(' ');
+  if (obj.categoria !== 'transferencia' && obj.categoria !== 'compra'
+      && /transfer/i.test(txtCat) && /\d{1,3}\s*%/.test(txtCat) && !/cashback/i.test(txtCat)) {
+    obj.categoria = 'transferencia';
+  }
+  // Loja e texto "Importante" só existem na compra bonificada.
+  if (obj.categoria && obj.categoria !== 'compra_bonificada') { obj.importante = ''; obj.loja = ''; }
 
   var vals = {};
   if (obj.titulo)     vals['o-titulo']=obj.titulo;
@@ -4552,8 +4578,11 @@ function gerarOferta() {
   var prazoFmt='';
   if (prazoRaw){var pp=prazoRaw.split('-');if(pp.length===3)prazoFmt=pp[2]+'/'+pp[1]+'/'+pp[0];}
 
+  var catEl     = document.getElementById('o-categoria');
+  var categoria = catEl ? catEl.value : '';
+
   // Usa montarMensagemRadar se houver campos estruturados OU prazo preenchido
-  var temEstrutura = teto || restricoes.length || milheiro || programa || prazoFmt;
+  var temEstrutura = teto || restricoes.length || milheiro || programa || prazoFmt || categoria === 'transferencia';
   var msg = '';
   if (temEstrutura) {
     var obj = {
@@ -4568,8 +4597,15 @@ function gerarOferta() {
       milheiro: milheiro,
       tetoTransferencia: teto,
       restricoes: restricoes,
-      link: link
+      link: link,
+      categoria: categoria
     };
+    // Transferência: deduz origem/destino/bônus como na aba Aprovar ofertas,
+    // para a mensagem sair no mesmo padrão (com o bloco de histórico).
+    if (categoria === 'transferencia') {
+      var ded = deduzirTransferencia(obj);
+      obj.origem = ded.origem; obj.destino = ded.destino; obj.bonusMax = ded.bonusMax;
+    }
     msg = montarMensagemRadar(obj);
   } else {
     // Formato legado para quem preenche manualmente sem nenhum campo estruturado
