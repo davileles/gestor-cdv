@@ -1322,7 +1322,7 @@ body[data-tema="light"] .main-tab.active{background:rgba(217,51,58,.08)}
     <select id="as-oferta" onchange="asRender()" title="Só as assinaturas e acessos desta oferta (vale para os cartões, a lista e o CSV)"><option value="">Todas as ofertas</option></select>
     <label class="chk-box" title="Mostra só as ofertas que liberam o painel (veja Regras de acesso) + quem tem acesso ao produto Clube do Viajante - @davileles sem assinatura paga. Desmarcado = todas as assinaturas de todos os produtos."><input type="checkbox" id="as-so-painel" onchange="asRender()"/> Só o painel</label>
     <label class="chk-box" title="Tira da conta os acessos vitalícios e os acessos ao painel sem fatura (grátis, convite, ex-alunos)"><input type="checkbox" id="as-sem-gratis" onchange="asSalvarFiltro();asRender()"/> Esconder vitalícios e acessos sem fatura</label>
-    <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (mesmo produto ou um que libera o painel). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
+    <label class="chk-box" title="Em Vencem, Venceram e Renovação desligada, tira quem já tem outra assinatura ou acesso ativo terminando depois (renovou ou assinou outro produto; só curso vitalício que não dá o painel não conta). A pessoa é reconhecida pelo e-mail ou pelo telefone."><input type="checkbox" id="as-esconder-segue" onchange="asSalvarFiltro();asRender()" checked/> Esconder quem segue com outra assinatura</label>
     <label class="chk-box" id="as-excl-box" style="display:none" title="Produtos que você excluiu na Hubla. O histórico continua guardado; desmarcado, eles somem da lista de produtos, das linhas e dos cartões."><input type="checkbox" id="as-mostrar-excluidos" onchange="asSalvarFiltro();asMontarProdutos();asRender()"/> <span id="as-excl-txt">Mostrar produtos excluídos</span></label>
   </div>
   <div class="as-filtros" id="as-ex-filtros" style="display:none">
@@ -3580,14 +3580,19 @@ function asIndexarPessoas() {
   AS.pessoas = {};
   L.forEach(function(a, i){ var r = 'p' + raiz(i); a._pessoa = r; (AS.pessoas[r] = AS.pessoas[r] || []).push(a); });
   var t = function(x){ return x ? new Date(x).getTime() : 0; };
+  // Compara com TODAS as assinaturas da pessoa (e-mail e telefone juntos),
+  // não só as que batem pela mesma chave. Segue = outra ativa que termina
+  // depois e cobre esta (mesmo produto ou painel) ou que é uma assinatura com
+  // prazo de qualquer produto (renovou/assinou outra). Só curso vitalício que
+  // não dá o painel nem é do mesmo produto não conta (desde 24/11/2026).
   L.forEach(function(a) {
-    var vistos = {}, segue = [], tambem = [];
-    chaves(a).forEach(function(k){ (idx[k] || []).forEach(function(b) {
-      if (b === a || vistos[b.id] || !asAtiva(b)) return; vistos[b.id] = 1;
+    var segue = [], tambem = [];
+    (AS.pessoas[a._pessoa] || []).forEach(function(b) {
+      if (b === a || !asAtiva(b)) return;
       var depois = b.situacao === 'vitalicio' || !b.fim || !a.fim || t(b.fim) > t(a.fim);
-      var cobre = b.liberaPainel || asAcessoPainel(b) || (b.produtoId && b.produtoId === a.produtoId);
+      var cobre = b.liberaPainel || asAcessoPainel(b) || (b.produtoId && b.produtoId === a.produtoId) || b.situacao !== 'vitalicio';
       (depois && cobre ? segue : tambem).push(b);
-    }); });
+    });
     a._segue = segue; a._tambem = tambem;
   });
 }
