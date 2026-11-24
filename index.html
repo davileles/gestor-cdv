@@ -3894,6 +3894,12 @@ function asOfertaMini(a, destaque) {
     (a.turmas && a.turmas.length ? '<div class="as-sub">Turma: ' + a.turmas.map(escapeHtml).join(', ') + '</div>' : '') +
   '</div>';
 }
+// Ordem dos cards de uma pessoa: ativas primeiro (vitalício/sem fim no topo,
+// depois a que vence mais longe); em seguida as encerradas, da mais recente.
+function asOrdemCards(L) {
+  var t = function(a){ return (a.situacao === 'vitalicio' || a.acessoVitalicio || !a.fim) ? 9e15 : new Date(a.fim).getTime(); };
+  return L.slice().sort(function(a, b){ return (asAtiva(b) - asAtiva(a)) || (t(b) - t(a)); });
+}
 function asLinhaPessoa(pid, naVisao) {
   var todas = (AS.pessoas && AS.pessoas[pid]) || naVisao;
   var a0 = naVisao[0];
@@ -3908,8 +3914,7 @@ function asLinhaPessoa(pid, naVisao) {
   return '<tr class="as-pessoa" ondblclick="asHistorico(\'' + pid + '\')">' +
     '<td data-l="Membro"><div class="as-nome">' + escapeHtml(a0.nome || a0.email || '(sem nome)') + '</div><div class="as-sub">' + contato + '</div>' +
       '<div class="as-sub">' + nAtivas + ' ativa' + (nAtivas === 1 ? '' : 's') + ' · ' + todas.length + ' no total · <a href="#" onclick="event.preventDefault();asHistorico(\'' + pid + '\')">histórico</a></div></td>' +
-    '<td data-l="Ofertas">' + naVisao.map(function(a){ return asOfertaMini(a, true); }).join('') +
-      ativas.map(function(a){ return asOfertaMini(a, false); }).join('') + '</td>' +
+    '<td data-l="Ofertas">' + asOrdemCards(naVisao.concat(ativas)).map(function(a){ return asOfertaMini(a, !!ids[a.id]); }).join('') + '</td>' +
   '</tr>';
 }
 function asHistorico(pid) {
